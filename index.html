@@ -1,0 +1,198 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>咕噜·igloo | Gulu's Space</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入FontAwesome用于图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 导航栏 & Logo区域 -->
+    <header>
+        <div class="header-container">
+            <div class="logo-area">
+                <!-- 修改为本地logo图片 -->
+                <img src="images/logo.jpg" alt="Logo" class="logo-img">
+                <h1 class="logo-text">咕噜·igloo</h1>
+                <!-- 鼠标悬停会变化的猫头照片，图片在CSS里设置 -->
+                <div class="cat-head-hover" title="咕噜的绝招"></div>
+            </div>
+            <nav>
+                <a href="#profile">简历</a>
+                <a href="#movies">参演电影</a>
+                <a href="#gallery">照片集</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- 社交媒体风格的个人资料头部 -->
+        <section class="profile-section" id="profile">
+            <div class="profile-header">
+                <!-- 修改为本地封面图，可以是gif或jpg -->
+                <div class="cover-photo">
+                    <img src="images/cover.gif" alt="Cover">
+                </div>
+                <!-- 修改为本地头像图 -->
+                <div class="avatar-container">
+                    <img src="images/avatar.jpg" alt="咕噜头像" class="avatar">
+                </div>
+            </div>
+            <div class="profile-info">
+                <h2>咕噜 (Gulu) <i class="fas fa-paw paw-icon"></i></h2>
+                <p class="bio">水滴鼻</p>
+
+                <div class="resume-card">
+                    <h3>📃 咕噜简历</h3>
+                    <ul>
+                        <li><strong>姓名：</strong> 咕噜 (Gulu)</li>
+                        <li><strong>性别：</strong> 女猫咪</li>
+                        <li><strong>品种：</strong> 斯芬克斯串串</li>
+                        <li><strong>爱好：</strong> 窗外八卦、皮套隐身、偷走橡皮擦。</li>
+                        <li><strong>⚠警告：</strong> 夜间水杯大盗</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 参演电影区块 -->
+        <section class="movies-section" id="movies">
+            <h3>🎬 参演的电影/大片</h3>
+            <div class="movie-list">
+                <div class="movie-card">
+                    <!-- 修改为电影1海报 -->
+                    <img src="images/movie1.jpg" alt="电影海报1">
+                    <h4>《咕噜也疯狂》</h4>
+                    <p>饰演：咕噜猫</p>
+                </div>
+                <div class="movie-card">
+                    <!-- 修改为电影2海报 -->
+                    <img src="images/movie2.jpg" alt="电影海报2">
+                    <h4>《咕噜总动员》</h4>
+                    <p>饰演：玩具猫</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 动态/照片集及互动区 -->
+        <section class="feed-section" id="gallery">
+            <h3>📸 最新动态 & 照片集</h3>
+
+            <!-- 第一条动态（原有的） -->
+            <div class="post-card">
+                <div class="post-header">
+                    <img src="images/avatar.jpg" alt="头像" class="post-avatar">
+                    <div class="post-user-info">
+                        <strong>咕噜·igloo</strong>
+                        <span>刚刚发布</span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <p>先数皱纹，再数毛毛</p>
+                    <img src="images/post-image1.jpg" alt="咕噜搞笑" class="post-image">
+                </div>
+                <div class="interaction-stats">
+                    <span class="like-count">10,234</span> 次赞
+                </div>
+                <div class="interaction-actions">
+                    <button class="action-btn like-btn">
+                        <i class="far fa-heart heart-icon"></i> 点赞
+                    </button>
+                    <button class="action-btn comment-btn">
+                        <i class="far fa-comment"></i> 评论
+                    </button>
+                </div>
+                <div class="comments-section">
+                    <ul class="comment-list">
+                        <li><strong>长沙湾呱呱:</strong> 呱呱！</li>
+                        <li><strong>长沙湾阿虎:</strong> 嗷</li>
+                    </ul>
+                    <form class="comment-form">
+                        <input type="text" class="comment-input" placeholder="写下你的评论..." required>
+                        <button type="submit">发送</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 第二条动态（新增：打橡皮/偷喝水） -->
+            <div class="post-card">
+                <div class="post-header">
+                    <img src="images/avatar.jpg" alt="头像" class="post-avatar">
+                    <div class="post-user-info">
+                        <strong>咕噜·igloo</strong>
+                        <span>3小时前</span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <p>橡皮小偷/p>
+                    <img src="images/post-image2.jpg" alt="大战橡皮擦" class="post-image">
+                </div>
+                <div class="interaction-stats">
+                    <span class="like-count">8,562</span> 次赞
+                </div>
+                <div class="interaction-actions">
+                    <button class="action-btn like-btn">
+                        <i class="far fa-heart heart-icon"></i> 点赞
+                    </button>
+                    <button class="action-btn comment-btn">
+                        <i class="far fa-comment"></i> 评论
+                    </button>
+                </div>
+                <div class="comments-section">
+                    <ul class="comment-list">
+                        <li><strong>加图:</strong> 咕噜，还我橡皮</li>
+                    </ul>
+                    <form class="comment-form">
+                        <input type="text" class="comment-input" placeholder="写下你的评论..." required>
+                        <button type="submit">发送</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 第三条动态（新增：出门散步/叠被子） -->
+            <div class="post-card">
+                <div class="post-header">
+                    <img src="images/avatar.jpg" alt="头像" class="post-avatar">
+                    <div class="post-user-info">
+                        <strong>咕噜·igloo</strong>
+                        <span>昨天</span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <p>不许出手，这是咕咚🐾</p>
+                    <img src="images/post-image3.jpg" alt="散步与叠被子" class="post-image">
+                </div>
+                <div class="interaction-stats">
+                    <span class="like-count">12,055</span> 次赞
+                </div>
+                <div class="interaction-actions">
+                    <button class="action-btn like-btn">
+                        <i class="far fa-heart heart-icon"></i> 点赞
+                    </button>
+                    <button class="action-btn comment-btn">
+                        <i class="far fa-comment"></i> 评论
+                    </button>
+                </div>
+                <div class="comments-section">
+                    <ul class="comment-list">
+                        <li><strong>咕咚:</strong> 这是咕噜</li>
+                        <li><strong>老鼠一号:</strong> 谢谢你，我打字很慢 只</li>
+                    </ul>
+                    <form class="comment-form">
+                        <input type="text" class="comment-input" placeholder="写下你的评论..." required>
+                        <button type="submit">发送</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2024 咕噜·igloo. All rights reserved by 咕噜的绝招.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
