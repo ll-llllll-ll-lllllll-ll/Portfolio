@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Artist Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&family=IBM+Plex+Serif:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 语言切换器 -->
+    <div id="language-switcher" class="lang-nav">
+        <span class="lang-btn active" data-lang="zh">ZH</span> |
+        <span class="lang-btn" data-lang="en">EN</span> |
+        <span class="lang-btn" data-lang="ja">JA</span>
+    </div>
+
+    <!-- 顶层：导航层级面包屑（初始隐藏） -->
+    <div id="breadcrumbs" class="breadcrumbs">
+        <span class="back-btn" onclick="goBack()">[ < 返回上级 ]</span>
+        <span id="current-level" class="level-indicator">Home</span>
+    </div>
+
+    <!-- 横向视窗 -->
+    <div class="viewport">
+        <!-- 包含三个板块的滑动容器 -->
+        <div class="slider-container" id="slider">
+
+            <!-- 板块 1：废墟园林 -->
+            <div class="series-panel" id="panel-garden" onclick="enterSeries('garden')">
+                <div class="panel-bg-wrapper">
+                    <!-- 模糊图片交替 -->
+                    <img src="img1-blur.jpg" class="bg-img img-a">
+                    <img src="img2-blur.jpg" class="bg-img img-b">
+                </div>
+                <div class="panel-content">
+                    <h2 class="panel-title" data-i18n="garden_title">废墟园林</h2>
+                    <div class="nested-content" id="nested-garden">
+
+                        <!-- 【第2层：系列介绍与作品列表】 -->
+                        <div class="level-2-works">
+                            <p class="concept-text">
+                                探讨 <span class="concept-italic">Ruinenlust</span>（废墟狂热）的当代变体，建筑作为 <span class="concept-italic">Transitional Organisms</span>。
+                            </p>
+
+                            <!-- 👇 变成横向滑动的底片轨道 -->
+                            <div class="works-grid">
+                                <!-- 底片 1 -->
+                                <div class="work-item" onclick="openWorkDetail(event, '作品 01', 'garden')">
+                                    <div class="work-img-box">
+                                        <!-- 放入对应的缩略图 -->
+                                        <img src="img1-blur.jpg" alt="thumb">
+                                    </div>
+                                    <span class="work-title">01 / 作品名称</span>
+                                </div>
+                                <!-- 底片 2 -->
+                                <div class="work-item" onclick="openWorkDetail(event, '作品 02', 'garden')">
+                                    <div class="work-img-box">
+                                        <img src="img2-blur.jpg" alt="thumb">
+                                    </div>
+                                    <span class="work-title">02 / 作品名称</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 【第3层：无刷新抽屉叠加层】 -->
+                        <div class="level-3-drawer" id="drawer-garden">
+                            <div class="drawer-header">
+                                <span class="drawer-close" onclick="closeWorkDetail(event, 'garden')">← 返回卷宗</span>
+                                <h3 class="work-detail-title"></h3>
+                            </div>
+                            <div class="drawer-body">
+                                <!-- 动态内容注入区 -->
+                                <p class="concept-text" style="color: #666;">（作品详细的影像、声音与文本将在此处铺陈...）</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 板块 2：the-instrument (语言异化) -->
+            <div class="series-panel" id="panel-instrument" onclick="enterSeries('instrument')">
+                <div class="panel-bg-wrapper">
+                    <img src="img3-blur.jpg" class="bg-img img-a">
+                    <img src="img4-blur.jpg" class="bg-img img-b">
+                </div>
+                <div class="panel-content">
+                    <!-- 特殊的 data-i18n-inverse 标记，用于触发异化翻译 -->
+                    <h2 class="panel-title" data-i18n="instrument_title">the-instrument 系列</h2>
+                    <div class="nested-content" id="nested-instrument">
+                        <!-- 【第2层：系列介绍与作品列表】 -->
+                        <div class="level-2-works">
+                            <p class="concept-text">
+                                声音、机械与 <span class="concept-italic">Acoustic Estrangement</span>。
+                            </p>
+                            <!-- 👇 变成横向滑动的底片轨道 -->
+                            <div class="work-img-box">
+                                <!-- 底片 1 -->
+                                <div class="work-item" onclick="openWorkDetail(event, 'Instrument 01', 'instrument')">
+                                    <div class="film-frame">
+                                        <!-- 放入对应的缩略图 -->
+                                        <img src="img3-blur.jpg" alt="thumb">
+                                    </div>
+                                    <span class="work-title">01 / 作品名称</span>
+                                </div>
+                                <!-- 底片 2 -->
+                                <div class="work-item" onclick="openWorkDetail(event, 'Instrument 02', 'instrument')">
+                                    <div class="work-img-box">
+                                        <img src="img4-blur.jpg" alt="thumb">
+                                    </div>
+                                    <span class="work-title">02 / 作品名称</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 【第3层：无刷新抽屉叠加层】 -->
+                        <div class="level-3-drawer" id="drawer-instrument">
+                            <div class="drawer-header">
+                                <span class="drawer-close" onclick="closeWorkDetail(event, 'instrument')">← 返回卷宗</span>
+                                <h3 class="work-detail-title"></h3>
+                            </div>
+                            <div class="drawer-body">
+                                <p class="concept-text" style="color: #666;">（作品详细的影像、声音与文本将在此处铺陈...）</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 板块 3：虚构地形学 -->
+            <div class="series-panel" id="panel-topography" onclick="enterSeries('topography')">
+                <div class="panel-bg-wrapper">
+                    <img src="img5-blur.jpg" class="bg-img img-a">
+                    <img src="img6-blur.jpg" class="bg-img img-b">
+                </div>
+                <div class="panel-content">
+                    <h2 class="panel-title" data-i18n="geo_title">虚构地形学</h2>
+                    <div class="nested-content" id="nested-topography">
+                        <!-- 【第2层：系列介绍与作品列表】 -->
+                        <div class="level-2-works">
+                            <p class="concept-text">
+                                重塑地质与 <span class="concept-italic">Fictional Topography</span> 的边界。
+                            </p>
+
+                            <!-- 👇 变成横向滑动的底片轨道 -->
+                            <div class="works-grid">
+                                <!-- 底片 1 -->
+                                <div class="work-item" onclick="openWorkDetail(event, '雾件 01', 'topography')">
+                                    <div class="work-img-box">
+                                        <!-- 放入对应的缩略图 -->
+                                        <img src="img5-blur.jpg" alt="thumb">
+                                    </div>
+                                    <span class="work-title">01 / 作品名称</span>
+                                </div>
+                                <!-- 底片 2 -->
+                                <div class="work-item" onclick="openWorkDetail(event, '雾件 02', 'topography')">
+                                    <div class="work-img-box">
+                                        <img src="img6-blur.jpg" alt="thumb">
+                                    </div>
+                                    <span class="work-title">02 / 作品名称</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 【第3层：无刷新抽屉叠加层】 -->
+                        <div class="level-3-drawer" id="drawer-topography">
+                            <div class="drawer-header">
+                                <span class="drawer-close" onclick="closeWorkDetail(event, 'topography')">← 返回卷宗</span>
+                                <h3 class="work-detail-title"></h3>
+                            </div>
+                            <div class="drawer-body">
+                                <p class="concept-text" style="color: #666;">（作品详细的影像、声音与文本将在此处铺陈...）</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 【新增】底部文字状态指示器 -->
+        <div class="text-scrollbar" id="text-scrollbar">
+            <!-- data-target 对应板块的 id，用于点击跳转与联动 -->
+            <span class="nav-title active" data-target="panel-garden" data-i18n="garden_title">废墟园林</span>
+            <span class="nav-separator"> / </span>
+            <span class="nav-title" data-target="panel-instrument" data-i18n="instrument_title">the-instrument 系列</span>
+            <span class="nav-separator"> / </span>
+            <span class="nav-title" data-target="panel-topography" data-i18n="geo_title">虚构地形学</span>
+        </div>
+
+        <script src="script.js"></script>
+</body>
+</html>

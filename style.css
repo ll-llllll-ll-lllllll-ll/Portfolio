@@ -1,0 +1,389 @@
+:root {
+    --bg-color: #fffffb;
+    --text-color: #111;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-color);
+    font-family: "IBM Plex Sans JP", sans-serif;
+    font-weight: 300;
+    overflow: hidden; /* 锁定外层滚动 */
+}
+
+/* 语言与面包屑导航 */
+.lang-nav, .breadcrumbs {
+    position: fixed;
+    z-index: 9999;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    mix-blend-mode: difference;
+    color: #fff;
+}
+
+.lang-nav {
+    top: 20px;
+    right: 20px;
+}
+
+.breadcrumbs {
+    top: 20px;
+    left: 20px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+    .breadcrumbs.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+.lang-btn, .back-btn {
+    cursor: crosshair;
+}
+
+    .lang-btn.active {
+        font-weight: 500;
+        text-decoration: underline;
+    }
+
+/* 核心：概念斜体系统 */
+.concept-italic {
+    font-family: "IBM Plex Serif", serif;
+    font-style: italic;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: rgba(0,0,0,0.7);
+}
+
+/* 视窗与滑动容器 */
+.viewport {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+/* 修改容器，补足首尾到达中心的距离 */
+.slider-container {
+    display: flex;
+    width: 100vw;
+    height: 70vh;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 0 10vw; /* 【新增】提供 10vw 的预留空间，让首个板块能完美居中 */
+    box-sizing: border-box; /* 【新增】防止 padding 撑破容器 */
+}
+    .slider-container::-webkit-scrollbar {
+        display: none;
+    }
+
+/* 调整板块状态：移除原有的缩放和透明度变化，保持纯粹的平移 */
+.series-panel {
+    flex: 0 0 70vw;
+    height: 100%;
+    margin: 0 5vw;
+    position: relative;
+    scroll-snap-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+    /* 当板块处于视觉中心时：只剥除模糊罩，不再进行 scale 缩放 */
+    .series-panel.in-view .bg-img {
+        filter: blur(0px) grayscale(0%);
+    }
+/* 图片模糊与交替系统 */
+.panel-bg-wrapper {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.bg-img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(12px) grayscale(50%);
+    transition: filter 0.5s ease, opacity 1.5s ease;
+}
+
+.img-a {
+    animation: crossfade 8s infinite alternate;
+}
+
+.img-b {
+    animation: crossfade 8s infinite alternate-reverse;
+}
+
+@keyframes crossfade {
+    0%, 30% {
+        opacity: 1;
+    }
+
+    70%, 100% {
+        opacity: 0;
+    }
+}
+
+/* Hover 拿走模糊罩 */
+.series-panel:hover .bg-img {
+    filter: blur(0px) grayscale(0%);
+}
+
+/* 内容层级 */
+.panel-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    transition: background 0.4s;
+}
+
+.series-panel:hover .panel-content {
+    background: rgba(255,255,255,0);
+}
+
+.panel-title {
+    font-size: 24px;
+    letter-spacing: 4px;
+    font-weight: 300;
+    color: #fff;
+    mix-blend-mode: difference;
+    transition: transform 0.5s;
+}
+
+/* =========================
+   嵌套层级 基础容器 (从底部拉起的抽屉)
+========================= */
+.nested-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70%; /* 占据底部 70% 面积 */
+    background: #fffffb; /* 背景色 */
+    color: #111;
+    z-index: 15;
+    /* 核心动画：初始状态隐藏在视窗下方 */
+    transform: translateY(100%);
+    opacity: 0;
+    transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.8s ease;
+}
+
+/* === 状态：展开某关系列 === */
+.series-panel.expanded {
+    flex: 0 0 95vw; /* 稍微撑满屏幕 */
+    cursor: default;
+    transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1); /* 放慢变宽的动画，解决跳动感 */
+}
+
+    /* 背景图片被挤压成顶部 30% 的横条横幅 */
+    .series-panel.expanded .panel-bg-wrapper {
+        height: 30%;
+        top: 0;
+        transition: height 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    /* 标题上移至 30% 的横幅正中央 */
+    .series-panel.expanded .panel-title {
+        transform: translateY(-25vh);
+        transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    /* 触发抽屉从底部拉起 */
+    .series-panel.expanded .nested-content {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+/* =========================
+   Level-2 (扁平极简作品列表层)
+========================= */
+.level-2-works {
+    padding: 50px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
+}
+
+/* 横向排布的画廊轨道 */
+.works-grid {
+    display: flex;
+    gap: 40px;
+    margin-top: 40px;
+    overflow-x: auto; /* 允许横向滑动 */
+    padding-bottom: 30px;
+    /* 隐藏滚动条，让界面更纯粹干净 */
+    scrollbar-width: none;
+}
+
+    .works-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+/* 单个作品容器 */
+.work-item {
+    flex: 0 0 420px; /* 调整为更宽的横向画幅，更像扁平栏目 */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.5s ease;
+}
+
+    .work-item:hover {
+        opacity: 1;
+        transform: translateY(-5px); /* 悬停时微微上浮 */
+    }
+
+/* 纯净的图片视觉容器 */
+.work-img-box {
+    width: 100%;
+    height: 240px; /* 合适的高宽比 */
+    position: relative;
+    overflow: hidden;
+    background: #eaeaea; /* 图片未加载时的占位底色 */
+    border-radius: 2px; /* 极简的微小圆角，如果不想要圆角可以改为 0 */
+}
+
+    /* 内部图片 */
+    .work-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1); /* 柔和的过渡 */
+    }
+
+/* 悬停时图片微微放大，增加呼吸感，没有任何多余滤镜 */
+.work-item:hover .work-img-box img {
+    transform: scale(1.03);
+}
+
+/* 作品下方的标题 */
+.work-title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-align: center;
+    font-weight: 400;
+    color: #111;
+}
+
+/* =========================
+   Level-3 (作品详情抽屉层)
+========================= */
+.level-3-drawer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 50px;
+    box-sizing: border-box;
+    background: #fffffb;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+    z-index: 20;
+}
+
+.nested-content.show-detail .level-2-works {
+    transform: translateX(-10%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.nested-content.show-detail .level-3-drawer {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.drawer-close {
+    cursor: pointer;
+    font-size: 13px;
+    opacity: 0.6;
+    margin-right: 20px;
+    transition: opacity 0.2s;
+}
+
+    .drawer-close:hover {
+        opacity: 1;
+    }
+
+.work-detail-title {
+    font-weight: 400;
+    letter-spacing: 2px;
+    margin: 0;
+}
+/* =========================
+   底部文字滚动条 (Text Scrollbar)
+========================= */
+.text-scrollbar {
+    position: fixed;
+    bottom: 40px;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    z-index: 1000;
+    color: #fff;
+    mix-blend-mode: difference;
+    font-size: 13px;
+    letter-spacing: 2px;
+    pointer-events: none; /* 防止整行容器遮挡其他点击 */
+    transition: opacity 0.5s ease;
+}
+
+    /* 进入内页时隐藏底部状态栏 */
+    .text-scrollbar.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+.nav-title {
+    opacity: 0.3;
+    cursor: crosshair;
+    pointer-events: auto; /* 允许单独的文本被点击 */
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+    .nav-title:hover {
+        opacity: 0.8;
+    }
+
+    /* 当前处于中心的板块对应的高亮样式 */
+    .nav-title.active {
+        opacity: 1;
+        font-weight: 500;
+        transform: scale(1.1);
+    }
+
+.nav-separator {
+    opacity: 0.2;
+}
