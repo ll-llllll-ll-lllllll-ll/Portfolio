@@ -131,9 +131,9 @@ const collections = [
     group: "collection",
     title: { zh: "废墟地图", en: "Ruin Atlas", ja: "廃墟地図" },
     intro: {
-      zh: "一张持续生长的废墟地图。那些在路途中偶然遇见、被记录、被命名的遗构，被重新放回同一片地表。它既像档案，也像一张永远没有完成的地图：地点不断加入，分类不断松动，地理也随着记录者的移动被重新书写。",
-      en: "An evolving atlas of ruins. Remnants encountered by chance, recorded and named along the way are placed back onto a shared surface. It is part archive and part unfinished map: new sites keep entering, categories remain loose, and geography is rewritten by the movement of those who record it.",
-      ja: "成長し続ける廃墟の地図。移動の途中で偶然出会い、記録され、名づけられた遺構を、もう一度ひとつの地表へ戻していく。アーカイブであると同時に、決して完成しない地図でもある。場所は増え続け、分類は揺らぎ、記録する人の移動によって地理そのものが書き換えられていく。"
+      zh: "一张由城市、废墟与断裂共同构成的文明地表。",
+      en: "A surface of civilisation composed of cities, ruins and fractures.",
+      ja: "都市、廃墟、断裂によって構成された文明の地表。"
     },
     visit: "https://ruin-archive.site/",
     visitLabel: {
@@ -146,33 +146,35 @@ const collections = [
         src: "https://ruin-archive.site/assets/ruin-map.svg",
         fit: "contain",
         caption: {
-          zh: "地表图层 · 墟域图",
-          en: "terrain layer · Ruin Atlas",
-          ja: "地表レイヤー · 廃墟地図"
+          zh: "ruin-map · urban traces / recorded ruins",
+          en: "ruin-map · urban traces / recorded ruins",
+          ja: "ruin-map · urban traces / recorded ruins"
+        }
+      }
+    ],
+    notes: [
+      {
+        title: { zh: "文明灯火", en: "lights of civilisation", ja: "文明の灯火" },
+        body: {
+          zh: "地图上的黑点并不是虚构出来的星群。它们来自真实世界中 urban areas 的尺度与范围，再经过估算，被投放到地形地图之上。当国界、道路、地名与行政区这些解释性的图层被拿走，剩下的便近乎只是纯粹的文明灯火。我们从宇宙中回望自身时，会想到那颗“暗淡蓝点”——存在如此微小、短暂而偶然；但若把视线再次翻转，密集扩张的文明也可以像自然表面生长出的疮孔。我的废墟记录同样以“点”出现。它们没有被从城市中单独抬高出来，而是融入这个 massive collection：坐落在城市的角落、边缘和缝隙里，或干脆再次被城市吞没。现代废墟往往正是这样的存在——仍然是文明的产物，却又尚未真正回到纯粹的自然之中。",
+          en: "The black points on the map are not an invented constellation. Their scale and spread are estimated from real urban areas and laid over a terrain map. Once borders, roads, place names and administrative layers are removed, what remains is almost nothing but the lights of civilisation. Seen from the cosmos, our existence recalls the “Pale Blue Dot”: faint, brief and contingent. Turn the view around, however, and civilisation can also resemble lesions opening across the surface of nature. My records of ruins are expressed as points too. They are not lifted out of the city as exceptional objects, but absorbed into this massive collection—hidden in corners, edges and gaps, or submerged again by the city itself. This is often the condition of the modern ruin: still a product of civilisation, yet not returned to a purely natural state.",
+          ja: "地図上の黒い点は、架空の星座ではない。実在する urban areas の大きさと広がりをもとに推定され、地形図の上へ置かれている。国境、道路、地名、行政区といった解釈のレイヤーを取り去ると、そこに残るのはほとんど純粋な文明の灯火だけになる。宇宙から自分たちを見返すとき、私たちは「Pale Blue Dot」を思い出す――存在はそれほど微かで、短く、偶然だ。しかし視線を反転させれば、拡張する文明は自然の表面に開いていく瘡孔のようにも見える。私が記録する廃墟もまた「点」として表される。それらは都市から特別な対象として持ち上げられるのではなく、この massive collection の中へ溶け込む。都市の隅、縁、隙間に潜み、ときには都市そのものに再び呑み込まれていく。現代の廃墟とはしばしばそのようなものだ。なお文明の産物でありながら、まだ純粋な自然へ帰りきってはいない。"
         }
       },
       {
-        src: "https://ruin-archive.site/attachments/aether-scorched-earth/photo-1.jpg",
-        caption: {
-          zh: "电台路焦土 · 上海",
-          en: "Aether Scorched-earth · Shanghai",
-          ja: "Aether Scorched-earth · 上海"
+        title: { zh: "每一次裂纹", en: "each fracture", ja: "ひとつひとつの亀裂" },
+        body: {
+          zh: "网站中的裂纹不是一张固定的装饰图。每一次进入时，断裂都会重新生成，因此没有两次完全相同。裂口的方向、位置与组合不断改变，像真实废墟中的坍塌一样：一次材料失效、一次天气变化、一次受力偏移，都会把结构推向另一种结果。废墟从来不是一个静止的形象，而是混沌作用留下的瞬时截面。网页不断改变自己的裂纹，是为了让这个界面也保留同样的不确定性。",
+          en: "The fractures on the site are not a fixed decorative image. They are generated anew each time the site is entered, so no two breaks are exactly the same. Direction, position and combination keep changing, much like collapse in a real ruin: one material failure, one shift in weather, one change in load can send a structure toward a different outcome. A ruin is never a static image; it is a temporary cross-section of chaotic processes. The interface regenerates its cracks so that it carries the same uncertainty.",
+          ja: "サイト上の亀裂は、固定された装飾画像ではない。訪れるたびに断裂は生成し直され、まったく同じものは二度と現れない。裂け目の方向、位置、組み合わせは絶えず変わる。それは実際の廃墟の崩壊に似ている。素材のひとつの失敗、天候の変化、荷重のずれが、構造を別の結果へ押し出す。廃墟は静止したイメージではなく、混沌とした作用が残した一瞬の断面である。ウェブページが自らの亀裂を生成し直すのは、この界面にも同じ不確定性を残すためだ。"
         }
       },
       {
-        src: "https://ruin-archive.site/attachments/suspended-homeland/photo-1.jpg",
-        caption: {
-          zh: "隐染悬里 · 双叶町",
-          en: "Suspended Homeland · Futaba",
-          ja: "Suspended Homeland · 双葉町"
-        }
-      },
-      {
-        src: "https://ruin-archive.site/attachments/cliff-granary/photo-1.jpg",
-        caption: {
-          zh: "悬崖遗构 · 四川",
-          en: "cliff remnant · Sichuan",
-          ja: "崖際の遺構 · 四川"
+        title: { zh: "残破画框", en: "the broken frame", ja: "壊れた額縁" },
+        body: {
+          zh: "整个网站的界面被处理得像一副残破的画框。这来自《墟构师宣言》中关于“画框”的理解：文明原本就是我们观看世界的框架，它划定内部与外部、用途与无用、秩序与自然；而当这个框架自身坍塌，留下来的便是被称作“废墟”的残破画框。透过那些断裂的边缘，我们不再只是观看框中的风景，也第一次意识到支撑观看本身的系统会溃败、会失效，也同样脆弱。于是视线开始转向构筑我们观察方式的“文明碎片”。它们像可以被读取的残片，重新拼成另一种理解世界的方法。因此，废墟地图被放在这副破碎画框的中央：不是为了重新确认文明与自然之间清楚的边界，而是借由残片重新观察两者如何交叠、侵入、退却，并在彼此之间维持一种始终暧昧的关系。",
+          en: "The whole interface is treated as a broken picture frame. This grows from the idea of the frame in the Manifesto of the Ruinwright: civilisation is itself a framework through which we see the world, separating inside from outside, use from uselessness, order from nature. When that framework collapses, what remains is the damaged frame we call a ruin. Through its broken edges we no longer merely look at the scenery inside; we also become aware that the system supporting the act of seeing can fail, collapse and prove fragile. Attention then turns toward the “fragments of civilisation” that construct our way of looking. Read like remnants, they can be recomposed into another way of understanding the world. The ruin map therefore sits at the centre of this broken frame—not to restore a clean boundary between civilisation and nature, but to use the fragments to observe how they overlap, invade, recede, and remain unresolved within one another.",
+          ja: "サイト全体の界面は、壊れた額縁のように扱われている。これは『墟構師宣言』における「額縁」の考え方から来ている。文明そのものが、私たちが世界を見るための枠組みであり、内と外、用途と無用、秩序と自然を分けてきた。しかしその枠組み自体が崩壊すると、残るのは「廃墟」と呼ばれる破損した額縁である。その断裂した縁を通して、私たちは額の内側の風景だけを見るのではなく、見るという行為を支えていたシステムそのものも崩れ、失効し、脆いのだと気づく。そこで視線は、私たちの見方を組み立ててきた「文明の断片」へ向かい始める。断片は読み取られ、別の世界理解の方法として再構成される。だから廃墟地図は、この壊れた額縁の中央に置かれている。文明と自然のあいだに明快な境界を引き直すためではなく、断片を通して、両者がどのように重なり、侵入し、退き、互いの中で曖昧な関係を保ち続けるかを見るために。"
         }
       }
     ]
@@ -522,8 +524,6 @@ function renderRoom(item) {
         '<p class="room-group">' + escapeHtml(groupLabel) + "</p>" +
         '<h1>' + escapeHtml(localised(item.title)) + "</h1>" +
         '<p class="room-intro">' + escapeHtml(localised(item.intro)) + "</p>" +
-        (item.visit ? '<a class="room-visit" href="' + item.visit + '" target="_blank" rel="noreferrer">' +
-          escapeHtml(localised(item.visitLabel)) + '<span aria-hidden="true"> ↗</span></a>' : "") +
       "</section>";
 
   images.forEach(function(image, index) {
@@ -532,6 +532,22 @@ function renderRoom(item) {
       '<figcaption>' + escapeHtml(localised(image.caption)) + "</figcaption>" +
     "</figure>";
   });
+
+  if (Array.isArray(item.notes) && item.notes.length) {
+    html += '<section class="room-notes">';
+    item.notes.forEach(function(note) {
+      html += '<article class="room-note">' +
+        '<p class="room-note-title">' + escapeHtml(localised(note.title)) + "</p>" +
+        '<p class="room-note-body">' + escapeHtml(localised(note.body)) + "</p>" +
+      "</article>";
+    });
+    html += "</section>";
+  }
+
+  if (item.visit) {
+    html += '<div class="room-visit-wrap"><a class="room-visit" href="' + item.visit + '" target="_blank" rel="noreferrer">' +
+      escapeHtml(localised(item.visitLabel)) + '<span aria-hidden="true"> ↗</span></a></div>';
+  }
 
   html += '<footer class="room-footer">' +
     '<button type="button" data-action="route" data-route="' + next.slug + '">' +
