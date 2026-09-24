@@ -80,6 +80,7 @@ a:focus-visible {
 .ambient-field,
 .ambient-video,
 .ambient-still,
+.ambient-empty,
 .ambient-veil,
 .ambient-grain {
   position: absolute;
@@ -104,6 +105,29 @@ a:focus-visible {
 
 .ambient-still {
   filter: grayscale(0.88) saturate(0.35) contrast(0.78) brightness(0.42) blur(0.4px);
+}
+
+.ambient-empty {
+  background:
+    radial-gradient(circle at 58% 42%, rgba(168, 174, 169, 0.13), transparent 34%),
+    linear-gradient(180deg, #111412 0%, #090b0a 56%, #050606 100%);
+}
+
+.ambient-empty-cloud {
+  background:
+    radial-gradient(ellipse at 52% 34%, rgba(181, 184, 177, 0.15), transparent 32%),
+    linear-gradient(180deg, #141615 0%, #090b0a 62%, #060706 100%);
+}
+
+.ambient-empty-lake {
+  background:
+    linear-gradient(180deg, #101311 0 48%, #0a0d0b 49% 53%, #060807 100%);
+}
+
+.ambient-empty-sky {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(184, 187, 179, 0.12), transparent 40%),
+    linear-gradient(180deg, #131614 0%, #080a09 74%);
 }
 
 .ambient-veil {
