@@ -138,6 +138,30 @@ const collections = [
     }
   },
   {
+    slug: "room-by-the-lake",
+    group: "collection",
+    title: { zh: "room by the lake, 2020", en: "room by the lake, 2020", ja: "room by the lake, 2020" },
+    intro: {
+      zh: "布面油画 · 60 × 91 cm · 密西根湖",
+      en: "Oil on canvas · 60 × 91 cm · Lake Michigan",
+      ja: "キャンバスに油彩 · 60 × 91 cm · ミシガン湖"
+    },
+    images: [
+      {
+        src: "./collections/room-by-the-lake/room-by-the-lake-detail.webp",
+        caption: {
+          zh: "room by the lake, 2020 · 布面油画 · 60 × 91 cm · 密西根湖",
+          en: "room by the lake, 2020 · oil on canvas · 60 × 91 cm · Lake Michigan",
+          ja: "room by the lake, 2020 · キャンバスに油彩 · 60 × 91 cm · ミシガン湖"
+        }
+      },
+      {
+        src: "./collections/room-by-the-lake/room-by-the-lake-installation.webp",
+        caption: { zh: "展览现场", en: "installation view", ja: "展示風景" }
+      }
+    ]
+  },
+  {
     slug: "seawater",
     group: "collection",
     title: { zh: "海水收集", en: "Seawater Collection", ja: "海水採集" },
