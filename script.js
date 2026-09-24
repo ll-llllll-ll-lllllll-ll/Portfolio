@@ -273,7 +273,6 @@ function renderHome() {
       </div>
 
       <header class="home-bar">
-        <button type="button" class="home-mark" data-action="close-index">LQY</button>
         ${languageSwitch()}
       </header>
 
