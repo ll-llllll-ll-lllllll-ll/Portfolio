@@ -217,13 +217,84 @@ const collections = [
   {
     slug: "fragrance-hall",
     group: "collection",
-    title: { zh: "芬芳厅", en: "Hall of Fragrance", ja: "芬芳庁" },
+    title: { zh: "芬芳厅", en: "Hall of Fragrance", ja: "芬芳室" },
     intro: {
-      zh: "一个收留奇怪景观的房间。它们可能过于人工，也可能过于自然；可能庄严、荒唐、甜美或令人不安。暂时不分类，只让它们彼此靠近。",
-      en: "A room for strange landscapes: too artificial or too natural, solemn, absurd, sweet or uneasy. For now they remain unclassified, simply allowed to sit beside one another.",
-      ja: "奇妙な景観を置いておく部屋。人工的すぎたり、自然すぎたり、荘厳だったり、滑稽だったり、甘美だったり、不穏だったりする。いまは分類せず、ただ互いの近くに置いておく。"
+      zh: "《芬芳厅》收集那些被时间、用途与时代甩在身后的场景：已经离开使用时间的场地、因时代而被抛弃的建物，以及投入了大量人力去完成、最后却无人问津的地方。它们不是为了证明“废墟很美”，而是想观察：当人与人之间的共鸣在建造、使用与遗弃的链条里逐渐断裂以后，空间会如何显露出一种未经设计、近乎荒诞的美。",
+      en: "Hall of Fragrance gathers places left behind by time, use and historical change: sites outside their period of use, buildings abandoned by an era, and environments completed through enormous labour only to be left largely unattended. It is not an attempt to prove that ruins are beautiful, but to observe what kind of unplanned, almost absurd beauty appears when resonance between people gradually breaks down across the chain of building, using and abandoning a place.",
+      ja: "《芬芳室》は、時間・用途・時代の変化から取り残された場所を集める。使用の時間を終えた敷地、時代によって捨てられた建物、多大な労力を費やして完成したにもかかわらず、ほとんど顧みられない空間である。ここで「廃墟は美しい」と証明したいわけではない。建設、使用、放棄へと続く過程のなかで、人と人との共鳴が少しずつ途切れたとき、空間がどのような、設計されていない、ほとんど不条理な美を露わにするのかを見ている。"
     },
-    images: []
+    images: [],
+    notes: [
+      {
+        title: { zh: "未驯化的空间", en: "untrained spaces", ja: "飼い慣らされていない空間" },
+        body: {
+          zh: [
+            "凝视这些“未驯化”的空间时，我很难再把它们和某个人的意图、某套社会规则或某种明确用途联系起来。原本能够解释空间的能指链像是突然断掉了：空洞的空间因此变得像深渊一样，反过来凝视着站在其中的人。",
+            "我无法理解它所承受过的全部痛苦，它也无法理解我为什么站在这里看它。我们之间没有共识，也没有可供翻译的共同语言。于是问题不再是“它为何如此”，而是“不知道究竟哪一方更荒诞”。在这种互相无法理解的距离里，焦虑随之出现。"
+          ],
+          en: [
+            "When I look at these “untrained” spaces, it becomes difficult to connect them to one person’s intention, a social rule or a clearly defined use. The chain of signifiers that once made the space legible seems to break. Emptiness deepens into something like an abyss, and the space appears to look back at the person standing before it.",
+            "I cannot understand the full extent of what it has endured, and it cannot understand why I am here looking at it. There is no shared agreement and no common language through which either side can be translated. The question is no longer simply why the place looks this way, but which side is more absurd. Anxiety emerges from this distance of mutual incomprehension."
+          ],
+          ja: [
+            "こうした「飼い慣らされていない」空間を見つめていると、それを誰かの意図、社会の規則、明確な用途へ結びつけることが難しくなる。かつて空間を説明していたシニフィアンの連鎖が突然切れたように、空洞は深淵のような深さを持ち、見る者を逆に見返してくる。",
+            "私はその場所が引き受けてきた痛みの全体を理解できないし、場所の側も、なぜ私がここでそれを見ているのかを理解できない。共有された合意も、翻訳のための共通言語もない。すると問いは「なぜこうなったのか」ではなく、「どちらのほうがより不条理なのか分からない」というものに変わる。相互に理解できない距離から、不安が立ち上がる。"
+          ]
+        }
+      },
+      {
+        title: { zh: "一段引文", en: "a passage", ja: "ある一節" },
+        quote: {
+          zh: "“塞维利亚·摩尔人国王宫殿——这是一座按照幻想的原始冲动建成的建筑物，没有任何实用方面的考虑能阻止这一幻想。那高高在上的房间只是为梦想和庆典建造的，房间里成为主题的除了跳舞就是沉寂，因为一切人的活动都被房间纹饰里那没有声息的嘈杂吸收了。”",
+          en: "“The Palace of the Moorish Kings in Seville — a building erected according to a primitive impulse of fantasy, where no practical consideration could restrain imagination. Its elevated rooms were made only for dreams and festivities; nothing takes place there but dancing or silence, for all human activity is absorbed by the noiseless clamour of the ornament.”",
+          ja: "「セビリアのムーア人王宮――幻想の原始的な衝動に従って建てられ、実用上の考慮がその幻想を妨げることのない建築。高みにある部屋は夢と祝祭のためだけにつくられ、そこにある主題は踊りか沈黙しかない。人間のあらゆる活動は、室内装飾の無音の喧騒に吸収されてしまう。」"
+        },
+        attribution: { zh: "— 噩梦审核员", en: "— Nightmare Auditor", ja: "— 『噩夢審査員』" }
+      },
+      {
+        title: { zh: "共鸣的缺失", en: "a failure of resonance", ja: "共鳴の欠如" },
+        body: {
+          zh: [
+            "这些场景常常出现在那些被描述为“新自由主义时期发展得太快，而新的美学来不及跟上”的地方。真正吸引我的并不是一句简单的“审美落后”，而是它背后那条漫长的生产链：大量人力与时间被投入其中，但当要求在不同阶段层层传递时，共鸣不断减少，价值不断被妥协和淡化，最后仍被准确地落实。",
+            "于是一些空间像是“得罪了风水师，并且真的照着施工图建完了”。它们的荒诞并不一定来自某个设计者强烈的主观意图，反而可能来自每一个参与者都能够暂时把自己从要求中抽离，再依赖某种无端传承的经验，把前一环留下的东西继续做下去。制造仍然高效地发生，却没有谁真正靠近最终使用者的需要。",
+            "我并不要求身边的一切都拥有大自然那样看似无可置疑的合理性。人也没有蜜蜂筑巢般单一而稳定的社会使命。城市本来就是人类搭建出的另一种自然。但在这些记录里，我看到的是人与人之间共鸣的缺失如何沉积成一种荒诞的美学：空间仍然属于人类构筑的自然，却与其中的人失去了联系。",
+            "而我自己也不是站在外面的审判者。我同样是失去共鸣的一环。我之所以会从这些环境中看见本不该被透露出来的诡异，也同时看见一种未经设计的美，恰恰说明我和它之间也存在着无法互相理解的距离。"
+          ],
+          en: [
+            "These scenes often appear in places described as having developed too quickly during the neoliberal period for any new aesthetic language to keep pace. What interests me is not a simple claim that taste has lagged behind, but the long production chain underneath: enormous labour and time are invested, while resonance is gradually lost as requirements pass from one stage to another, values are compromised and diluted, and the result is nevertheless implemented with remarkable precision.",
+            "Some places end up looking as though someone had offended a feng-shui master and then faithfully built the offending plan. Their absurdity does not necessarily come from a designer with an emphatic personal vision. It may emerge because each participant can detach from a possibly unreasonable demand, rely on inherited experience, and efficiently continue what the previous stage has handed over. Making proceeds, yet no one comes especially close to the actual needs of the eventual audience.",
+            "I do not expect everything around me to possess the apparent rationality of nature. Humans do not have the singular social mission of bees building a hive. A city is already another kind of nature made by humans. What these records reveal to me is how a lack of resonance between people can sediment into an absurd aesthetic: the environment still belongs to this human-made nature, while losing its connection to the humans within it.",
+            "Nor am I an outside judge. I am also part of that loss of resonance. The fact that I see an uncanniness the environment was never meant to disclose, and at the same time an undesigned beauty, is evidence of the same distance of incomprehension between it and me."
+          ],
+          ja: [
+            "これらの風景はしばしば、「新自由主義の時代に発展が速すぎ、新しい美学が変化に追いつかなかった」と語られる場所に現れる。しかし私が惹かれるのは、単純な「美意識の遅れ」ではなく、その背後にある長い生産の連鎖である。膨大な労働と時間が投入されながら、要求が段階ごとに伝達されるたびに共鳴は失われ、価値は妥協され、薄まり、それでも最終的には正確に実装されていく。",
+            "その結果、ときに空間は「風水師を怒らせ、そのまま施工図どおりに完成させた」かのように見える。その不条理は、必ずしも強い主観を持つ設計者から生まれるのではない。むしろ各段階の担い手が、おそらく不合理ですらある要求から一時的に自分を切り離し、根拠の分からないまま受け継がれた経験によって、前の工程から渡されたものを効率よく続けていくことで生まれる。製造は進むが、最終的な利用者の必要へ近づく者はいない。",
+            "私は、身の回りのすべてに自然のような疑いようのない合理性を求めているわけではない。人間には、蜂が巣をつくるような単一で安定した社会的使命はない。都市はそもそも、人間が組み立てたもうひとつの自然である。私がこれらの記録に見るのは、人と人との共鳴の欠如が、どのように不条理な美学として堆積していくかということだ。空間はなお人間がつくった自然に属しながら、その内部の人間との関係を失っている。",
+            "そして私は、その外側に立つ審判者ではない。私自身も、共鳴を失った連鎖の一部である。本来は露出するはずのなかった不気味さをそこに見つけ、それと同時に設計されていない美しさを見るということ自体が、私とその空間のあいだにも相互理解できない距離があることを示している。"
+          ]
+        }
+      },
+      {
+        title: { zh: "秘密基地", en: "the secret base", ja: "秘密基地" },
+        body: {
+          zh: [
+            "孩子为什么会把无人的角落做成秘密基地？有些地方似乎从诞生起就在自动筛选自己的光顾者。它不是为孩童设计的儿童乐园，也不是成人替孩童搭好的童真故事。相反，它更像小时候偶然发现的“秘密基地”：只欢迎那些愿意弯下腰、暂时放弃成人体型和成人尺度的人。",
+            "对秘密基地的好奇很难一直保存到成年。长大的过程，也是成人与孩童彼此失去理解的过程：我们不再像小时候那样珍视微不足道的东西，不再轻易被一个简单的新发现震动，也越来越不愿承认，那些没有用途的幻想曾经真的提供过安全感和幸福感。",
+            "于是成人离开了孩童的视角，又带着明确而功利的目的，创造出一些最终无人愿意光顾的场所。它们在社会的角落里逐渐摇摇欲坠。原本许诺幸福的乌托邦，也因为彼此理解的缺失，被撕开一道异常瘆人的裂口——像共鸣平原中突然出现的一大片深渊。"
+          ],
+          en: [
+            "Why do children turn unattended corners into secret bases? Some places seem to select their visitors by themselves. They are neither playgrounds designed for children nor adult constructions of a ready-made childhood fantasy. They are closer to the secret bases discovered in childhood, welcoming only those willing to bend down, temporarily abandon adult scale, and enter a child’s field of view once more.",
+            "Curiosity about a secret base rarely survives intact into adulthood. Growing up is also a process in which adults and children become less able to understand one another: we cease to treasure insignificant things in the same way, are less easily shaken by a small new discovery, and become reluctant to admit that purposeless fantasies once genuinely offered safety and happiness.",
+            "Adults leave the child’s point of view and then, with explicit and practical aims, create places that eventually no one wishes to visit. These corners of society begin to sway and deteriorate. Utopias that once promised happiness are torn open by the same absence of mutual understanding, leaving an unsettling rupture — a sudden abyss across a plain of resonance."
+          ],
+          ja: [
+            "なぜ子どもは、人のいない隅を秘密基地にするのだろう。ある場所は、生まれたときから自分の訪問者を選別しているように見える。それは子どものためにつくられた遊園地でも、大人が子どもに用意した「童心」の物語でもない。むしろ幼い頃に偶然見つけた秘密基地に近く、腰をかがめ、大人の体格と尺度を一時的に手放し、もう一度子どもの視野へ入ろうとする者だけを迎え入れる。",
+            "秘密基地への好奇心は、成人までそのまま残りにくい。成長とは、大人と子どもが互いを理解できなくなっていく過程でもある。些細なものをかつてのように大切にできず、単純な発見に簡単には驚かなくなり、役に立たない幻想が本当に安心や幸福を与えていたことさえ、認めにくくなる。",
+            "そして大人は子どもの視点を離れ、明確で功利的な目的をもって、結局は誰も訪れたがらない場所をつくる。そうした社会の隅は次第に崩れかけていく。幸福を約束していたはずのユートピアも、相互理解の欠如によって不気味な裂け目を開き、共鳴の平原に突然現れた巨大な深淵のようになる。"
+          ]
+        }
+      }
+    ]
   }
 ];
 
@@ -536,9 +607,27 @@ function renderRoom(item) {
   if (Array.isArray(item.notes) && item.notes.length) {
     html += '<section class="room-notes">';
     item.notes.forEach(function(note) {
+      var body = localised(note.body);
+      var bodyHtml = "";
+      if (Array.isArray(body)) {
+        bodyHtml = body.map(function(paragraph) {
+          return '<p class="room-note-body">' + escapeHtml(paragraph) + "</p>";
+        }).join("");
+      } else if (body) {
+        bodyHtml = '<p class="room-note-body">' + escapeHtml(body) + "</p>";
+      }
+
+      var quoteHtml = "";
+      if (note.quote) {
+        quoteHtml = '<blockquote class="room-note-quote">' +
+          '<p>' + escapeHtml(localised(note.quote)) + "</p>" +
+          (note.attribution ? '<cite>' + escapeHtml(localised(note.attribution)) + "</cite>" : "") +
+        "</blockquote>";
+      }
+
       html += '<article class="room-note">' +
         '<p class="room-note-title">' + escapeHtml(localised(note.title)) + "</p>" +
-        '<p class="room-note-body">' + escapeHtml(localised(note.body)) + "</p>" +
+        '<div class="room-note-copy">' + bodyHtml + quoteHtml + "</div>" +
       "</article>";
     });
     html += "</section>";
