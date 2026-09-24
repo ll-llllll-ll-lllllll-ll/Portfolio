@@ -146,9 +146,7 @@ const collections = [
       en: "Small amounts of seawater kept from different coasts. Place, date, vessel and water form the record together; they prove nothing, but keep a small part of a sea once reached.",
       ja: "異なる海岸から少量の海水を残す。場所、日付、容器、水そのものが一つの記録になる。何かを証明するためではなく、かつて辿り着いた海の小さな一部を保存する。"
     },
-    images: [
-      { src: "./img5-blur.jpg", caption: { zh: "collection / developing", en: "collection / developing", ja: "collection / developing" } }
-    ]
+    images: []
   },
   {
     slug: "fragrance-hall",
@@ -159,9 +157,7 @@ const collections = [
       en: "A room for strange landscapes: too artificial or too natural, solemn, absurd, sweet or uneasy. For now they remain unclassified, simply allowed to sit beside one another.",
       ja: "奇妙な景観を置いておく部屋。人工的すぎたり、自然すぎたり、荘厳だったり、滑稽だったり、甘美だったり、不穏だったりする。いまは分類せず、ただ互いの近くに置いておく。"
     },
-    images: [
-      { src: "./img6-blur.jpg", caption: { zh: "奇怪景观 / developing", en: "strange landscape / developing", ja: "奇妙な景観 / developing" } }
-    ]
+    images: []
   }
 ];
 
