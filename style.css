@@ -595,7 +595,6 @@ a:focus-visible {
 .room-visit {
   display: inline-block;
   width: max-content;
-  margin-top: 34px;
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(23, 24, 19, 0.24);
   color: rgba(23, 24, 19, 0.56);
@@ -614,6 +613,43 @@ a:focus-visible {
 .room-visit span {
   display: inline-block;
   margin-left: 5px;
+}
+
+
+.room-notes {
+  width: min(920px, calc(100vw - 48px));
+  margin: 2vh auto 8vh;
+  border-top: 1px solid var(--black-hairline);
+}
+
+.room-note {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.34fr) minmax(0, 1fr);
+  gap: clamp(28px, 6vw, 86px);
+  padding: clamp(54px, 8vh, 92px) 0;
+  border-bottom: 1px solid var(--black-hairline);
+}
+
+.room-note-title {
+  margin: 0;
+  color: rgba(23, 24, 19, 0.38);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.room-note-body {
+  max-width: 680px;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(16px, 1.22vw, 18px);
+  letter-spacing: 0.03em;
+  line-height: 2.05;
+}
+
+.room-visit-wrap {
+  width: min(920px, calc(100vw - 48px));
+  margin: 0 auto 15vh;
+  padding-top: 2px;
 }
 
 .room-image {
@@ -809,6 +845,27 @@ a:focus-visible {
   .room-image img {
     height: 64svh;
     min-height: 330px;
+  }
+
+  .room-notes {
+    width: calc(100vw - 36px);
+    margin-top: 0;
+  }
+
+  .room-note {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 48px 0;
+  }
+
+  .room-note-body {
+    font-size: 16px;
+    line-height: 1.95;
+  }
+
+  .room-visit-wrap {
+    width: calc(100vw - 36px);
+    margin-bottom: 12vh;
   }
 }
 
