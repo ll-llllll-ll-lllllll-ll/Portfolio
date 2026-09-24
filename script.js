@@ -130,12 +130,52 @@ const collections = [
     slug: "ruin-atlas",
     group: "collection",
     title: { zh: "废墟地图", en: "Ruin Atlas", ja: "廃墟地図" },
-    external: "https://ruin-archive.site/",
-    note: {
-      zh: "持续生长的遗构地图与档案。",
-      en: "An evolving map and archive of remnants.",
-      ja: "増え続ける遺構の地図とアーカイブ。"
-    }
+    intro: {
+      zh: "一张持续生长的废墟地图。那些在路途中偶然遇见、被记录、被命名的遗构，被重新放回同一片地表。它既像档案，也像一张永远没有完成的地图：地点不断加入，分类不断松动，地理也随着记录者的移动被重新书写。",
+      en: "An evolving atlas of ruins. Remnants encountered by chance, recorded and named along the way are placed back onto a shared surface. It is part archive and part unfinished map: new sites keep entering, categories remain loose, and geography is rewritten by the movement of those who record it.",
+      ja: "成長し続ける廃墟の地図。移動の途中で偶然出会い、記録され、名づけられた遺構を、もう一度ひとつの地表へ戻していく。アーカイブであると同時に、決して完成しない地図でもある。場所は増え続け、分類は揺らぎ、記録する人の移動によって地理そのものが書き換えられていく。"
+    },
+    visit: "https://ruin-archive.site/",
+    visitLabel: {
+      zh: "进入完整地图",
+      en: "enter the full atlas",
+      ja: "地図全体を見る"
+    },
+    images: [
+      {
+        src: "https://ruin-archive.site/assets/ruin-map.svg",
+        fit: "contain",
+        caption: {
+          zh: "地表图层 · 墟域图",
+          en: "terrain layer · Ruin Atlas",
+          ja: "地表レイヤー · 廃墟地図"
+        }
+      },
+      {
+        src: "https://ruin-archive.site/attachments/aether-scorched-earth/photo-1.jpg",
+        caption: {
+          zh: "电台路焦土 · 上海",
+          en: "Aether Scorched-earth · Shanghai",
+          ja: "Aether Scorched-earth · 上海"
+        }
+      },
+      {
+        src: "https://ruin-archive.site/attachments/suspended-homeland/photo-1.jpg",
+        caption: {
+          zh: "隐染悬里 · 双叶町",
+          en: "Suspended Homeland · Futaba",
+          ja: "Suspended Homeland · 双葉町"
+        }
+      },
+      {
+        src: "https://ruin-archive.site/attachments/cliff-granary/photo-1.jpg",
+        caption: {
+          zh: "悬崖遗构 · 四川",
+          en: "cliff remnant · Sichuan",
+          ja: "崖際の遺構 · 四川"
+        }
+      }
+    ]
   },
   {
     slug: "room-by-the-lake",
@@ -185,7 +225,7 @@ const collections = [
   }
 ];
 
-const rooms = works.concat(collections.filter(function(item) { return !item.external; }));
+const rooms = works.concat(collections);
 
 const state = {
   lang: readLanguage(),
@@ -410,13 +450,8 @@ function indexPanel() {
   html += '</section><section class="index-group"><p class="index-heading">' + labels[state.lang].collection + "</p>";
 
   collections.forEach(function(item) {
-    if (item.external) {
-      html += '<a class="index-link" href="' + item.external + '" target="_blank" rel="noreferrer">' +
-        escapeHtml(localised(item.title)) + '<span aria-hidden="true"> ↗</span></a>';
-    } else {
-      html += '<button type="button" class="index-link" data-action="route" data-route="' + item.slug + '">' +
-        escapeHtml(localised(item.title)) + "</button>";
-    }
+    html += '<button type="button" class="index-link" data-action="route" data-route="' + item.slug + '">' +
+      escapeHtml(localised(item.title)) + "</button>";
   });
 
   html += "</section></div></aside>";
@@ -487,10 +522,12 @@ function renderRoom(item) {
         '<p class="room-group">' + escapeHtml(groupLabel) + "</p>" +
         '<h1>' + escapeHtml(localised(item.title)) + "</h1>" +
         '<p class="room-intro">' + escapeHtml(localised(item.intro)) + "</p>" +
+        (item.visit ? '<a class="room-visit" href="' + item.visit + '" target="_blank" rel="noreferrer">' +
+          escapeHtml(localised(item.visitLabel)) + '<span aria-hidden="true"> ↗</span></a>' : "") +
       "</section>";
 
   images.forEach(function(image, index) {
-    html += '<figure class="room-image">' +
+    html += '<figure class="room-image' + (image.fit === "contain" ? " is-contain" : "") + '">' +
       '<img src="' + image.src + '" alt="" ' + (index ? 'loading="lazy"' : "") + " />" +
       '<figcaption>' + escapeHtml(localised(image.caption)) + "</figcaption>" +
     "</figure>";
