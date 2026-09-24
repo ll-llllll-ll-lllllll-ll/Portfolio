@@ -637,13 +637,43 @@ a:focus-visible {
   letter-spacing: 0.12em;
 }
 
-.room-note-body {
+.room-note-copy {
   max-width: 680px;
-  margin: 0;
+}
+
+.room-note-body {
+  margin: 0 0 1.45em;
   font-family: var(--serif);
   font-size: clamp(16px, 1.22vw, 18px);
   letter-spacing: 0.03em;
   line-height: 2.05;
+}
+
+.room-note-body:last-child {
+  margin-bottom: 0;
+}
+
+.room-note-quote {
+  margin: 0;
+  padding: 0;
+}
+
+.room-note-quote p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(17px, 1.35vw, 20px);
+  letter-spacing: 0.025em;
+  line-height: 2.05;
+}
+
+.room-note-quote cite {
+  display: block;
+  margin-top: 28px;
+  color: rgba(23, 24, 19, 0.42);
+  font-family: var(--sans);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.08em;
 }
 
 .room-visit-wrap {
@@ -860,6 +890,11 @@ a:focus-visible {
 
   .room-note-body {
     font-size: 16px;
+    line-height: 1.95;
+  }
+
+  .room-note-quote p {
+    font-size: 17px;
     line-height: 1.95;
   }
 
