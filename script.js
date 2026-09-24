@@ -304,7 +304,7 @@ function ambientMedia(date, type, entry) {
     return '<video class="ambient-video" autoplay muted playsinline loop preload="metadata"' + poster +
       ' src="' + escapeHtml(entry.src) + '"></video>';
   }
-  return '<img class="ambient-still" src="' + ambientMeta[type].image + '" alt="" />';
+  return '<div class="ambient-empty ambient-empty-' + type + '" aria-hidden="true"></div>';
 }
 
 function calendarGrid() {
