@@ -78,19 +78,19 @@ const ambientMeta = {
 
 const calendarIntro = {
   zh: [
-    "这个日历不记录行程，只记录天空、水面与天气。",
-    "“海之日”“云之日”“湖之日”“天之日”并不是节日。它们只是把某一天轻轻交给一种景象。每天进入这里，首页只保留一段大约二十秒的风景：湖边的风、海面、云层，或从高处望见的天。",
-    "这些影像不承担介绍作品的任务，也不要求观看者抵达某个结论。它们来自平日里偶然发现的美。看过作品之后，也可以回到这里——像漫长的探索最终又回到火堆旁。这个网站因此不只是一排作品，更是一处可以停留、放松，并重新抬头看一眼世界的地方。"
+    "这个日历不记录行程，只记录天空、水面与天气。“海之日”“云之日”“湖之日”“天之日”并不是节日，而是把某一天轻轻交给一种景象。每次进入这里，首页只留下大约二十秒的风景：湖边的风、海面、云层，或从高处望见的天。",
+    "我把这些短片看作香水店里放在一众香水旁的一小碟咖啡豆。咖啡豆本身并非真正“无味”——它仍然有苦味与焦香；但在高浓度气味不断叠加的环境里，它承担了一种重新校准感官的作用。这里所谓的“纯净”也不是空白，而是一枚纯净锚点：在现代生活过量的信息、图像、情绪与判断之间，让观看暂时退回到被解释、命名和要求之前。对我而言，天空、海洋、湖泊与云层就是这样的锚点。",
+    "我并不希望艺术只是继续增加观看者的压力与内耗。艺术当然可以指向不公、提出问题，也值得引发讨论；但讨论不必以撕裂本身为目的，它仍可以建立在对更好结果的相信之上。因此，我更愿意把创作看作对“纯粹之物”的回应：保留人在经历复杂世界之后，仍能被简单的美触动的能力。看过作品以后，也可以回到这里——像漫长的探索最终回到火堆旁。所谓纯粹的心灵，并不是从未见过复杂，而是在复杂之后，仍愿意抬头看一眼天空。"
   ],
   en: [
-    "This calendar does not keep appointments. It keeps sky, water and weather.",
-    "A day of the sea, clouds, lake or sky is not a holiday. It simply gives one day to one kind of view. Each visit begins with a short field film: wind by a lake, the surface of the sea, a bank of clouds, or the sky seen from high above.",
-    "These images do not introduce the work or ask for a conclusion. They come from ordinary moments of beauty. After wandering through the work, one can return here as one returns to a small fire after a long exploration: not a shelf of things to consume, but a place to stay for a while and look up again."
+    "This calendar does not keep appointments. It keeps sky, water and weather. A day of the sea, clouds, lake or sky is not a holiday, but a way of quietly giving one day to one kind of view. Each visit leaves only a short landscape on the homepage: wind beside a lake, the surface of the sea, a bank of clouds, or the sky seen from high above.",
+    "I think of these films as the small dish of coffee beans sometimes placed among perfumes. Coffee is not truly neutral—it carries bitterness and roast of its own—but amid layers of concentrated scent it can serve as a point of recalibration. The “purity” here is similar. It is not emptiness, but a pure anchor: a stable reference within the excess of information, images, emotion and judgement that shapes modern life, allowing perception to return for a moment to something before explanation, naming and demand. For me, sky, sea, lake and cloud can hold that role.",
+    "I do not want art merely to add pressure or another layer of inner friction. Art can of course address injustice, raise difficult questions and provoke debate; but debate need not treat rupture as an end in itself. It can still begin from a belief that something better is possible. I would rather understand my work as a response to simple, irreducible things: a way of preserving our ability to be moved by beauty after passing through a complicated world. After looking through the work, one can return here as to a small fire after a long exploration. A pure mind is not one that has never encountered complexity, but one that can still look up at the sky after it."
   ],
   ja: [
-    "このカレンダーは予定ではなく、空、水面、天気を記録する。",
-    "「海の日」「雲の日」「湖の日」「空の日」は祝日ではない。ただ一日を、ひとつの景色にそっと渡すための名前だ。ここを訪れるたび、湖畔の風、海面、雲、高い場所から見た空など、短いフィールド映像が流れる。",
-    "これらの映像は作品を説明するためのものではなく、結論へ導くものでもない。日常の中で偶然見つけた美しさを置いておく。作品のあいだを歩いたあと、長い探索の果てに焚き火へ戻るように、またここへ戻ってこられる。ここは作品を並べる棚ではなく、少し留まり、息をほどき、もう一度世界を見上げるための場所でありたい。"
+    "このカレンダーは予定ではなく、空、水面、天気を記録する。「海の日」「雲の日」「湖の日」「空の日」は祝日ではなく、一日をひとつの景色へそっと渡すための名前だ。ここを訪れるたび、湖畔の風、海面、雲、高い場所から見た空など、およそ二十秒の風景だけがホームに残る。",
+    "私はこれらの短い映像を、香水店で多くの香りのそばに置かれる小皿のコーヒー豆のように考えている。コーヒー豆は本当の意味で「無臭」ではない。苦味や焦げた香りを自分自身のうちに持っている。それでも濃い香りが重なり続ける環境では、感覚をいったん調整し直すための基準になりうる。ここでいう「純粋」も空白ではなく、ひとつの純粋な錨である。情報、イメージ、感情、判断が過剰に重なる現代生活のなかで、見ることを一瞬だけ、説明され、名づけられ、要求される以前へ戻すための基準。私にとって、空、海、湖、雲がその役割を担う。",
+    "私は、芸術が見る人にさらに圧力や内耗を加えるだけのものにはなってほしくない。不公正を示し、問いを立て、議論を呼び起こすことはもちろん芸術の役割になりうる。しかし議論は、亀裂そのものを目的にする必要はなく、よりよい結果を信じることから始めることもできる。だから私は制作を、より単純で純粋なものへの応答として考えたい。複雑な世界を通ったあとにも、なお美しさに動かされる力を残しておくために。作品を見たあと、長い探索の果てに焚き火へ戻るように、またここへ帰ってこられる。純粋な心とは、複雑さを知らない心ではなく、複雑さのあとでも空を見上げることのできる心だ。"
   ]
 };
 
