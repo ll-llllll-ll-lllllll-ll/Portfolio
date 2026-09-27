@@ -1,4 +1,36 @@
 /*
+  Simplified Chinese typography
+  -----------------------------
+  Keep the Latin old-style serif voice, but give Simplified Chinese a closer,
+  lighter Song / Mincho companion instead of falling back unpredictably.
+*/
+
+html:lang(zh-Hans) {
+  --serif: "Iowan Old Style", "Baskerville", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+}
+
+html:lang(ja) {
+  --serif: "Iowan Old Style", "Baskerville", "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+
+html:lang(zh-Hans) .room-intro,
+html:lang(zh-Hans) .room-note-body,
+html:lang(zh-Hans) .room-note-quote p,
+html:lang(zh-Hans) .calendar-intro p,
+html:lang(zh-Hans) .index-link,
+html:lang(zh-Hans) .calendar-day-name,
+html:lang(zh-Hans) .calendar-type,
+html:lang(zh-Hans) .ambient-caption,
+html:lang(zh-Hans) .fragrance-theme {
+  font-weight: 300;
+}
+
+html:lang(zh-Hans) .room-lead h1,
+html:lang(zh-Hans) .calendar-current {
+  font-weight: 400;
+}
+
+/*
   Room image stages
   -----------------
   Every work / collection image now sits inside the same quiet grey viewing field.
@@ -25,7 +57,7 @@
 .room-image img,
 .room-image.is-contain img {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: block;
   width: auto;
   height: auto;
@@ -42,7 +74,7 @@
 
 .room-image figcaption {
   position: relative;
-  z-index: 3;
+  z-index: 4;
   justify-self: stretch;
   width: 100%;
   margin-top: 12px;
@@ -51,14 +83,31 @@
 /*
   room by the lake
   ----------------
-  The first painting sits over a barely perceptible field of moving water.
-  The source video is deliberately destroyed as an image: monochrome, very dark,
-  enlarged and strongly blurred. What remains should read only as a slow drift of
-  light, like an after-image that appears after staring at the painting for a while.
+  The video remains the preferred source, but mobile Safari can suppress autoplay
+  (especially in Low Power Mode). A second, extremely soft CSS light field therefore
+  lives behind the video. It is almost invisible when the video plays, but prevents
+  the grey stage from becoming completely static when autoplay is refused.
 */
 .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
-  background: #7f7f7b;
+  background: #797976;
   isolation: isolate;
+}
+
+.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination::before {
+  position: absolute;
+  z-index: 0;
+  inset: -30%;
+  content: "";
+  opacity: 0.30;
+  transform: scale(1.1) translate3d(-2%, -1%, 0);
+  background:
+    radial-gradient(ellipse at 28% 46%, rgba(235, 235, 229, 0.34) 0 7%, transparent 24%),
+    radial-gradient(ellipse at 71% 53%, rgba(220, 220, 214, 0.24) 0 6%, transparent 22%),
+    radial-gradient(ellipse at 52% 68%, rgba(245, 245, 238, 0.15) 0 5%, transparent 20%),
+    linear-gradient(105deg, rgba(18, 18, 18, 0.92), rgba(74, 74, 72, 0.65) 48%, rgba(17, 17, 17, 0.92));
+  filter: grayscale(1) blur(38px);
+  animation: lake-afterimage 17s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
 .room-image-ripple,
@@ -68,27 +117,42 @@
 }
 
 .room-image-ripple {
-  z-index: 0;
+  z-index: 1;
   inset: -18%;
   width: 136%;
   height: 136%;
   object-fit: cover;
-  opacity: 0.24;
+  opacity: 0.23;
   transform: scale(1.08);
   filter: grayscale(1) saturate(0) contrast(0.82) brightness(0.16) blur(44px);
 }
 
 .room-image-ripple-veil {
-  z-index: 1;
+  z-index: 2;
   inset: 0;
   background:
-    radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.54), rgba(137, 137, 132, 0.72) 62%, rgba(111, 111, 108, 0.80) 100%),
-    rgba(145, 145, 140, 0.68);
+    radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.50), rgba(137, 137, 132, 0.69) 62%, rgba(104, 104, 101, 0.79) 100%),
+    rgba(137, 137, 133, 0.64);
   mix-blend-mode: normal;
 }
 
 .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination img {
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes lake-afterimage {
+  0% {
+    transform: scale(1.10) translate3d(-3%, -1.5%, 0) rotate(-0.35deg);
+    opacity: 0.20;
+  }
+  45% {
+    transform: scale(1.16) translate3d(1.5%, 0.8%, 0) rotate(0.2deg);
+    opacity: 0.31;
+  }
+  100% {
+    transform: scale(1.12) translate3d(3%, -0.6%, 0) rotate(0.42deg);
+    opacity: 0.23;
+  }
 }
 
 @media (max-width: 760px) {
@@ -106,19 +170,29 @@
   }
 
   .room-image-ripple {
-    inset: -24%;
-    width: 148%;
-    height: 148%;
-    filter: grayscale(1) saturate(0) contrast(0.80) brightness(0.18) blur(36px);
+    inset: -30%;
+    width: 160%;
+    height: 160%;
+    opacity: 0.28;
+    filter: grayscale(1) saturate(0) contrast(0.82) brightness(0.20) blur(32px);
+  }
+
+  .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination::before {
+    inset: -36%;
+    opacity: 0.34;
+    filter: grayscale(1) blur(30px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .room-image-ripple {
-    display: none;
+  .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination::before {
+    animation: none;
+    transform: scale(1.1);
+    opacity: 0.22;
   }
 
-  .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
-    background: #8c8c87;
+  /* Keep the first video frame visible rather than removing the background entirely. */
+  .room-image-ripple {
+    display: block;
   }
 }
