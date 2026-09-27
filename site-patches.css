@@ -1,0 +1,124 @@
+/*
+  Room image stages
+  -----------------
+  Every work / collection image now sits inside the same quiet grey viewing field.
+  The photograph or painting keeps its original aspect ratio and is never cropped.
+  Portrait images use the same stage area as landscape images instead of expanding
+  to fill the whole screen.
+*/
+
+.room-image {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  width: min(90vw, 1280px);
+  height: min(82svh, 880px);
+  min-height: 560px;
+  margin: 0 auto 16vh;
+  padding: clamp(28px, 4.8vw, 76px) clamp(24px, 5.4vw, 84px) clamp(20px, 3vw, 38px);
+  overflow: hidden;
+  background: #deddd7;
+}
+
+.room-image img,
+.room-image.is-contain img {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: calc(100% - 34px);
+  padding: 0;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  filter: none;
+}
+
+.room-image figcaption {
+  position: relative;
+  z-index: 3;
+  justify-self: stretch;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/*
+  room by the lake
+  ----------------
+  The first painting sits over a barely perceptible field of moving water.
+  The source video is deliberately destroyed as an image: monochrome, very dark,
+  enlarged and strongly blurred. What remains should read only as a slow drift of
+  light, like an after-image that appears after staring at the painting for a while.
+*/
+.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
+  background: #7f7f7b;
+  isolation: isolate;
+}
+
+.room-image-ripple,
+.room-image-ripple-veil {
+  position: absolute;
+  pointer-events: none;
+}
+
+.room-image-ripple {
+  z-index: 0;
+  inset: -18%;
+  width: 136%;
+  height: 136%;
+  object-fit: cover;
+  opacity: 0.24;
+  transform: scale(1.08);
+  filter: grayscale(1) saturate(0) contrast(0.82) brightness(0.16) blur(44px);
+}
+
+.room-image-ripple-veil {
+  z-index: 1;
+  inset: 0;
+  background:
+    radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.54), rgba(137, 137, 132, 0.72) 62%, rgba(111, 111, 108, 0.80) 100%),
+    rgba(145, 145, 140, 0.68);
+  mix-blend-mode: normal;
+}
+
+.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination img {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 760px) {
+  .room-image {
+    width: calc(100vw - 24px);
+    height: min(70svh, 620px);
+    min-height: 420px;
+    margin-bottom: 13vh;
+    padding: 22px 18px 18px;
+  }
+
+  .room-image img,
+  .room-image.is-contain img {
+    max-height: calc(100% - 32px);
+  }
+
+  .room-image-ripple {
+    inset: -24%;
+    width: 148%;
+    height: 148%;
+    filter: grayscale(1) saturate(0) contrast(0.80) brightness(0.18) blur(36px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-image-ripple {
+    display: none;
+  }
+
+  .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
+    background: #8c8c87;
+  }
+}
