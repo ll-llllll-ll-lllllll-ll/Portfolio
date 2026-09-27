@@ -1,3 +1,9 @@
+/* Keep artwork / collection images in their original colour. */
+.room-image img,
+.room-image.is-contain img {
+  filter: none;
+}
+
 .fragrance-room .room-scroll {
   background: var(--paper);
 }
@@ -15,15 +21,18 @@
   background: #e9e8e2;
 }
 
+/*
+  The theme switcher belongs to the gallery itself. It now scrolls away with the
+  photographs instead of sticking to the viewport while the images move beneath it.
+*/
 .fragrance-theme-nav {
-  position: sticky;
-  top: 54px;
-  z-index: 12;
+  position: relative;
+  top: auto;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   border-bottom: 1px solid var(--black-hairline);
-  background: rgba(233, 232, 226, 0.92);
-  backdrop-filter: blur(14px);
+  background: #e9e8e2;
 }
 
 .fragrance-theme {
@@ -167,7 +176,8 @@
   }
 
   .fragrance-theme-nav {
-    top: 50px;
+    position: relative;
+    top: auto;
     display: flex;
     overflow-x: auto;
     scrollbar-width: none;
