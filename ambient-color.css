@@ -1,90 +1,92 @@
 /*
-  Ambient colour system
-  ---------------------
-  The homepage keeps the source video's colour, then quiets it with a low-saturation
-  cyanotype-like grade. Two lightweight blend layers push the shadows toward deep
-  Prussian blue and let cyan / blue highlights breathe without turning the whole
-  image into monochrome.
+  Ambient colour system — filter-only edition
+  -------------------------------------------
+  The uploaded WebM files stay untouched. The homepage always plays the original
+  source video and applies a light, day-specific CSS grade in the browser.
+  No duplicated video layer, no baked LUT, no generated cyanotype asset.
 */
 
 .home-view {
-  --ambient-saturation: 0.78;
-  --ambient-contrast: 1.04;
-  --ambient-brightness: 0.78;
-  --ambient-hue: -5deg;
-  --ambient-wash-opacity: 0.28;
-  --ambient-cyan-opacity: 0.20;
-  --ambient-grain-opacity: 0.055;
-  --ambient-shadow-rgb: 5, 18, 38;
-  --ambient-mid-rgb: 18, 53, 86;
-  --ambient-light-rgb: 124, 184, 208;
+  --ambient-saturation: 0.82;
+  --ambient-contrast: 1.03;
+  --ambient-brightness: 0.79;
+  --ambient-hue: -4deg;
+  --ambient-veil-top: rgba(4, 11, 20, 0.18);
+  --ambient-veil-bottom: rgba(2, 7, 14, 0.34);
+  --ambient-edge: rgba(2, 8, 17, 0.22);
+  --ambient-grain-opacity: 0.052;
 }
 
-/* Ocean: darkest / densest Prussian blue. */
+/*
+  SEA / OCEAN
+  Deepest preset. Preserve real colour, but cool the mids and deepen the water.
+*/
 .home-view.ambient-day-sea {
-  --ambient-saturation: 0.86;
+  --ambient-saturation: 0.90;
   --ambient-contrast: 1.10;
-  --ambient-brightness: 0.70;
-  --ambient-hue: -4deg;
-  --ambient-wash-opacity: 0.36;
-  --ambient-cyan-opacity: 0.20;
-  --ambient-grain-opacity: 0.058;
-  --ambient-shadow-rgb: 2, 12, 28;
-  --ambient-mid-rgb: 8, 40, 76;
-  --ambient-light-rgb: 84, 153, 192;
-}
-
-/* Lake: softer, quieter, with a trace of teal left in the source image. */
-.home-view.ambient-day-lake {
-  --ambient-saturation: 0.80;
-  --ambient-contrast: 1.00;
-  --ambient-brightness: 0.77;
+  --ambient-brightness: 0.71;
   --ambient-hue: -7deg;
-  --ambient-wash-opacity: 0.29;
-  --ambient-cyan-opacity: 0.16;
-  --ambient-grain-opacity: 0.050;
-  --ambient-shadow-rgb: 5, 18, 26;
-  --ambient-mid-rgb: 18, 57, 72;
-  --ambient-light-rgb: 112, 174, 190;
+  --ambient-veil-top: rgba(3, 13, 29, 0.18);
+  --ambient-veil-bottom: rgba(1, 8, 22, 0.40);
+  --ambient-edge: rgba(1, 8, 24, 0.27);
+  --ambient-grain-opacity: 0.055;
 }
 
-/* Cloud: the palest grade; highlights stay close to cool paper-white. */
-.home-view.ambient-day-cloud {
-  --ambient-saturation: 0.66;
-  --ambient-contrast: 0.97;
-  --ambient-brightness: 0.84;
-  --ambient-hue: -4deg;
-  --ambient-wash-opacity: 0.22;
-  --ambient-cyan-opacity: 0.14;
-  --ambient-grain-opacity: 0.043;
-  --ambient-shadow-rgb: 10, 17, 27;
-  --ambient-mid-rgb: 43, 65, 86;
-  --ambient-light-rgb: 174, 201, 214;
-}
-
-/* Sky: keeps the most source colour, especially dusk and atmospheric blues. */
-.home-view.ambient-day-sky {
-  --ambient-saturation: 0.94;
-  --ambient-contrast: 1.04;
-  --ambient-brightness: 0.81;
+/*
+  LAKE
+  Softer and quieter. Keep some green / cyan in vegetation and water.
+*/
+.home-view.ambient-day-lake {
+  --ambient-saturation: 0.84;
+  --ambient-contrast: 1.00;
+  --ambient-brightness: 0.79;
   --ambient-hue: -5deg;
-  --ambient-wash-opacity: 0.25;
-  --ambient-cyan-opacity: 0.27;
-  --ambient-grain-opacity: 0.046;
-  --ambient-shadow-rgb: 4, 15, 34;
-  --ambient-mid-rgb: 19, 57, 98;
-  --ambient-light-rgb: 132, 193, 220;
+  --ambient-veil-top: rgba(5, 18, 24, 0.12);
+  --ambient-veil-bottom: rgba(3, 12, 18, 0.30);
+  --ambient-edge: rgba(3, 12, 18, 0.18);
+  --ambient-grain-opacity: 0.047;
+}
+
+/*
+  CLOUD
+  Palest treatment. Keep cloud highlights almost neutral and avoid dirty greys.
+*/
+.home-view.ambient-day-cloud {
+  --ambient-saturation: 0.72;
+  --ambient-contrast: 0.98;
+  --ambient-brightness: 0.87;
+  --ambient-hue: -2deg;
+  --ambient-veil-top: rgba(12, 20, 29, 0.08);
+  --ambient-veil-bottom: rgba(6, 12, 20, 0.23);
+  --ambient-edge: rgba(7, 14, 22, 0.14);
+  --ambient-grain-opacity: 0.040;
+}
+
+/*
+  SKY
+  Most faithful to the original source. Blues stay vivid, while sunset warmth is
+  still allowed to survive instead of being forced into monochrome cyan.
+*/
+.home-view.ambient-day-sky {
+  --ambient-saturation: 1.00;
+  --ambient-contrast: 1.04;
+  --ambient-brightness: 0.83;
+  --ambient-hue: -3deg;
+  --ambient-veil-top: rgba(5, 14, 29, 0.09);
+  --ambient-veil-bottom: rgba(3, 9, 20, 0.25);
+  --ambient-edge: rgba(3, 10, 23, 0.16);
+  --ambient-grain-opacity: 0.043;
 }
 
 .home-view .ambient-field {
   isolation: isolate;
-  background: rgb(var(--ambient-shadow-rgb));
+  background: #07101b;
 }
 
+/* Original source video / still: browser-only colour grade, no grayscale. */
 .home-view .ambient-video,
 .home-view .ambient-still {
   z-index: 0;
-  /* Deliberately no grayscale(): source colour survives beneath the blue grade. */
   filter:
     saturate(var(--ambient-saturation))
     contrast(var(--ambient-contrast))
@@ -101,131 +103,69 @@
     blur(0.35px);
 }
 
+/* Keep the fallback colour fields quiet, but do not simulate a fake photograph. */
 .home-view .ambient-empty {
   z-index: 0;
   background:
-    radial-gradient(circle at 54% 35%, rgba(var(--ambient-light-rgb), 0.11), transparent 38%),
-    linear-gradient(
-      180deg,
-      rgba(var(--ambient-mid-rgb), 0.68) 0%,
-      rgba(var(--ambient-shadow-rgb), 0.96) 68%,
-      rgb(var(--ambient-shadow-rgb)) 100%
-    );
+    radial-gradient(circle at 54% 34%, rgba(122, 169, 195, 0.08), transparent 38%),
+    linear-gradient(180deg, #102131 0%, #07121d 64%, #040a10 100%);
 }
 
-.home-view .ambient-empty-cloud {
+.home-view.ambient-day-cloud .ambient-empty {
   background:
-    radial-gradient(ellipse at 51% 29%, rgba(var(--ambient-light-rgb), 0.18), transparent 38%),
-    linear-gradient(180deg, rgba(var(--ambient-mid-rgb), 0.75), rgb(var(--ambient-shadow-rgb)) 75%);
+    radial-gradient(ellipse at 51% 30%, rgba(186, 204, 213, 0.12), transparent 40%),
+    linear-gradient(180deg, #17222d 0%, #0b141d 70%, #070d13 100%);
 }
 
-.home-view .ambient-empty-lake {
+.home-view.ambient-day-lake .ambient-empty {
   background:
-    linear-gradient(
-      180deg,
-      rgba(var(--ambient-mid-rgb), 0.58) 0 47%,
-      rgba(var(--ambient-shadow-rgb), 0.90) 50% 56%,
-      rgb(var(--ambient-shadow-rgb)) 100%
-    );
+    linear-gradient(180deg, #10232a 0 47%, #09171c 50% 57%, #050d11 100%);
 }
 
-.home-view .ambient-empty-sky {
+.home-view.ambient-day-sky .ambient-empty {
   background:
-    radial-gradient(circle at 50% 16%, rgba(var(--ambient-light-rgb), 0.17), transparent 43%),
-    linear-gradient(180deg, rgba(var(--ambient-mid-rgb), 0.78), rgb(var(--ambient-shadow-rgb)) 82%);
-}
-
-.ambient-colorwash,
-.ambient-cyan {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+    radial-gradient(circle at 50% 15%, rgba(137, 183, 211, 0.11), transparent 44%),
+    linear-gradient(180deg, #13263a 0%, #071322 82%);
 }
 
 /*
-  A very thin cyanotype bath. `color` changes chroma while leaving much of the
-  video's luminance structure intact, so this reads as atmosphere rather than
-  a flat blue overlay.
+  A very faint blue-black veil keeps the page calm and the white interface legible.
+  This is deliberately weaker than the previous cyanotype bath: the source video's
+  own colour is now the main image.
 */
-.ambient-colorwash {
-  z-index: 1;
-  opacity: var(--ambient-wash-opacity);
-  mix-blend-mode: color;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(var(--ambient-light-rgb), 0.15) 0%,
-      rgba(var(--ambient-mid-rgb), 0.48) 45%,
-      rgba(var(--ambient-shadow-rgb), 0.88) 100%
-    );
-}
-
-/* Blue / cyan light is allowed to survive in the upper and middle values. */
-.ambient-cyan {
-  z-index: 2;
-  opacity: var(--ambient-cyan-opacity);
-  mix-blend-mode: screen;
-  background:
-    radial-gradient(
-      ellipse at 50% 28%,
-      rgba(var(--ambient-light-rgb), 0.48) 0%,
-      rgba(var(--ambient-mid-rgb), 0.18) 37%,
-      transparent 68%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(var(--ambient-light-rgb), 0.10),
-      rgba(var(--ambient-mid-rgb), 0.05) 55%,
-      transparent 82%
-    );
-}
-
-/* Replace neutral black with blue-black so shadows stay deep rather than grey. */
 .home-view .ambient-veil {
-  z-index: 3;
+  z-index: 1;
   mix-blend-mode: multiply;
   background:
     linear-gradient(
       180deg,
-      rgba(var(--ambient-shadow-rgb), 0.40) 0%,
-      rgba(var(--ambient-shadow-rgb), 0.08) 29%,
-      rgba(var(--ambient-shadow-rgb), 0.025) 58%,
-      rgba(var(--ambient-shadow-rgb), 0.42) 100%
+      var(--ambient-veil-top) 0%,
+      rgba(0, 0, 0, 0.02) 30%,
+      rgba(0, 0, 0, 0.01) 58%,
+      var(--ambient-veil-bottom) 100%
     ),
-    radial-gradient(
-      circle at 52% 43%,
-      transparent 24%,
-      rgba(var(--ambient-shadow-rgb), 0.31) 100%
-    );
+    radial-gradient(circle at 52% 43%, transparent 28%, var(--ambient-edge) 100%);
 }
 
-/* The grain is blue-grey rather than white, closer to a print / emulsion surface. */
 .home-view .ambient-grain {
-  z-index: 4;
+  z-index: 2;
   opacity: var(--ambient-grain-opacity);
   mix-blend-mode: soft-light;
-  background-image: radial-gradient(rgba(var(--ambient-light-rgb), 0.42) 0.5px, transparent 0.72px);
+  background-image: radial-gradient(rgba(170, 194, 207, 0.36) 0.5px, transparent 0.72px);
 }
 
-/* Keep UI readable without turning the footage into a dark plate. */
 .home-view .home-head,
 .home-view .index-toggle,
 .home-view .home-today {
-  text-shadow: 0 1px 12px rgba(var(--ambient-shadow-rgb), 0.36);
+  text-shadow: 0 1px 12px rgba(0, 8, 18, 0.32);
 }
 
 @media (max-width: 760px) {
-  /* Small screens need slightly more image brightness because the crop is tighter. */
-  .home-view {
-    --ambient-brightness-mobile: 0.83;
-  }
-
-  .home-view.ambient-day-sea { --ambient-brightness-mobile: 0.75; }
-  .home-view.ambient-day-lake { --ambient-brightness-mobile: 0.81; }
-  .home-view.ambient-day-cloud { --ambient-brightness-mobile: 0.88; }
-  .home-view.ambient-day-sky { --ambient-brightness-mobile: 0.85; }
+  .home-view { --ambient-brightness-mobile: 0.84; }
+  .home-view.ambient-day-sea { --ambient-brightness-mobile: 0.76; }
+  .home-view.ambient-day-lake { --ambient-brightness-mobile: 0.82; }
+  .home-view.ambient-day-cloud { --ambient-brightness-mobile: 0.90; }
+  .home-view.ambient-day-sky { --ambient-brightness-mobile: 0.87; }
 
   .home-view .ambient-video,
   .home-view .ambient-still {
@@ -234,12 +174,5 @@
       contrast(var(--ambient-contrast))
       brightness(var(--ambient-brightness-mobile))
       hue-rotate(var(--ambient-hue));
-  }
-}
-
-@supports not (mix-blend-mode: color) {
-  .ambient-colorwash {
-    mix-blend-mode: normal;
-    opacity: 0.12;
   }
 }
