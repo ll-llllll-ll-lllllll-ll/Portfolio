@@ -1,11 +1,11 @@
 "use strict";
 
 /*
-  Ambient colour hooks
-  --------------------
-  Applies a day-type class to the homepage and inserts two non-interactive
-  colour layers. The main calendar remains the source of truth for which day
-  type is active, so calendar browsing and today's view always stay in sync.
+  Ambient colour hooks — filter-only edition
+  ------------------------------------------
+  The calendar decides the current day type. This script only applies the matching
+  class to the homepage so CSS can grade the original uploaded video differently
+  for sea / cloud / lake / sky. It never replaces or duplicates the source video.
 */
 
 (function () {
@@ -30,29 +30,16 @@
 
   function clearDayClasses(node) {
     DAY_TYPES.forEach(function (type) {
-      node.classList.remove("ambient-day-" + type);
+      if (node) node.classList.remove("ambient-day-" + type);
       document.body.classList.remove("ambient-day-" + type);
     });
-  }
-
-  function ensureLayer(field, className, beforeNode) {
-    var layer = field.querySelector("." + className);
-    if (layer) return layer;
-
-    layer = document.createElement("span");
-    layer.className = className;
-    layer.setAttribute("aria-hidden", "true");
-    field.insertBefore(layer, beforeNode || null);
-    return layer;
   }
 
   function applyAmbientColour() {
     var home = document.querySelector(".home-view");
 
     if (!home) {
-      DAY_TYPES.forEach(function (type) {
-        document.body.classList.remove("ambient-day-" + type);
-      });
+      clearDayClasses(null);
       if (themeMeta) themeMeta.setAttribute("content", "#080a09");
       return;
     }
@@ -65,14 +52,7 @@
     document.body.classList.add("ambient-day-" + type);
 
     var field = home.querySelector(".ambient-field");
-    if (field) {
-      field.dataset.ambientType = type;
-      var veil = field.querySelector(".ambient-veil");
-
-      /* DOM order is the paint order: video → colour bath → cyan light → veil → grain. */
-      ensureLayer(field, "ambient-colorwash", veil);
-      ensureLayer(field, "ambient-cyan", veil);
-    }
+    if (field) field.dataset.ambientType = type;
 
     if (themeMeta) themeMeta.setAttribute("content", themeColors[type] || "#080a09");
   }
