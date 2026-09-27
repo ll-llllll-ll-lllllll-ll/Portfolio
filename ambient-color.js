@@ -67,17 +67,11 @@
     var field = home.querySelector(".ambient-field");
     if (field) {
       field.dataset.ambientType = type;
-
       var veil = field.querySelector(".ambient-veil");
-      var colorwash = ensureLayer(field, "ambient-colorwash", veil);
-      ensureLayer(field, "ambient-cyan", veil);
 
-      /* Keep the intended paint order: video → colour bath → cyan light → veil → grain. */
-      if (veil && colorwash.nextSibling !== veil) {
-        var cyan = field.querySelector(".ambient-cyan");
-        field.insertBefore(colorwash, veil);
-        if (cyan) field.insertBefore(cyan, veil);
-      }
+      /* DOM order is the paint order: video → colour bath → cyan light → veil → grain. */
+      ensureLayer(field, "ambient-colorwash", veil);
+      ensureLayer(field, "ambient-cyan", veil);
     }
 
     if (themeMeta) themeMeta.setAttribute("content", themeColors[type] || "#080a09");
