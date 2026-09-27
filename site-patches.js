@@ -68,7 +68,6 @@
     };
 
     works.push(fictionalTopography);
-    /* rooms was built before this extension loaded; insert the work before collections. */
     rooms.splice(2, 0, fictionalTopography);
   }
 
@@ -87,7 +86,6 @@
 
     footerButton.dataset.route = next.slug;
 
-    /* Avoid rewriting the footer on every MutationObserver pass. */
     if (footerButton.dataset.groupNext !== next.slug) {
       footerButton.dataset.groupNext = next.slug;
       footerButton.innerHTML = escapeHtml(localised(next.title)) + '<span aria-hidden="true"> →</span>';
@@ -102,21 +100,31 @@
 
     firstFrame.classList.add("has-ripple-hallucination");
 
+    var reduceMotion = false;
+    try {
+      reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch (_) {}
+
     var video = document.createElement("video");
     video.className = "room-image-ripple";
-    video.autoplay = true;
+    video.autoplay = !reduceMotion;
+    video.defaultMuted = true;
     video.muted = true;
     video.loop = true;
     video.playsInline = true;
-    video.preload = "metadata";
+    video.controls = false;
+    video.preload = "auto";
+    video.disablePictureInPicture = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.setAttribute("disablepictureinpicture", "");
     video.setAttribute("aria-hidden", "true");
     video.setAttribute("tabindex", "-1");
 
     /*
-      Source reference: Pexels video 5678004, dark ocean water with gentle ripples.
-      The small source is attempted first; the known UHD source is a fallback.
-      The footage is transformed so heavily (blur / monochrome / darkness) that it
-      acts only as moving light behind the grey display field.
+      Pexels 5678004: dark ocean water with gentle ripples.
+      Try the smaller rendition first; UHD remains as a fallback source.
     */
     var sources = [
       "https://videos.pexels.com/video-files/5678004/5678004-sd_640_360_30fps.mp4",
@@ -137,8 +145,63 @@
     firstFrame.insertBefore(video, firstFrame.firstChild);
     firstFrame.insertBefore(veil, firstFrame.querySelector("img"));
 
-    var playPromise = video.play();
-    if (playPromise && typeof playPromise.catch === "function") playPromise.catch(function () {});
+    function markPlaying() {
+      firstFrame.classList.add("is-ripple-playing");
+      firstFrame.classList.remove("is-ripple-blocked");
+    }
+
+    function markBlocked() {
+      if (!video.paused) return;
+      firstFrame.classList.add("is-ripple-blocked");
+    }
+
+    function tryPlay() {
+      if (reduceMotion || !document.documentElement.contains(video)) return;
+      video.muted = true;
+      var promise;
+      try {
+        promise = video.play();
+      } catch (_) {
+        markBlocked();
+        return;
+      }
+      if (promise && typeof promise.catch === "function") {
+        promise.catch(markBlocked);
+      }
+    }
+
+    video.addEventListener("playing", markPlaying);
+    video.addEventListener("loadeddata", function () {
+      if (!reduceMotion) tryPlay();
+    });
+    video.addEventListener("error", markBlocked);
+    video.addEventListener("stalled", markBlocked);
+
+    if ("IntersectionObserver" in window) {
+      var visibilityObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.05) {
+            tryPlay();
+          } else if (!video.paused) {
+            video.pause();
+          }
+        });
+      }, { threshold: [0, 0.05, 0.25] });
+      visibilityObserver.observe(firstFrame);
+    } else {
+      tryPlay();
+    }
+
+    /*
+      iOS may refuse autoplay while Low Power Mode is active. Any later user gesture
+      is a valid opportunity to retry, while the CSS light field stays visible before it.
+    */
+    function resumeAfterGesture() {
+      if (video.paused) tryPlay();
+    }
+
+    document.addEventListener("pointerdown", resumeAfterGesture, { once: true, passive: true, capture: true });
+    document.addEventListener("touchstart", resumeAfterGesture, { once: true, passive: true, capture: true });
   }
 
   function refineCurrentRoom() {
@@ -166,7 +229,6 @@
     observer.observe(appNode, { childList: true, subtree: true });
   }
 
-  /* Re-render once so the restored third work appears in the index immediately. */
   render();
   requestAnimationFrame(refineCurrentRoom);
 })();
