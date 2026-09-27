@@ -86,7 +86,12 @@
     if (!footerButton || !next) return;
 
     footerButton.dataset.route = next.slug;
-    footerButton.innerHTML = escapeHtml(localised(next.title)) + '<span aria-hidden="true"> →</span>';
+
+    /* Avoid rewriting the footer on every MutationObserver pass. */
+    if (footerButton.dataset.groupNext !== next.slug) {
+      footerButton.dataset.groupNext = next.slug;
+      footerButton.innerHTML = escapeHtml(localised(next.title)) + '<span aria-hidden="true"> →</span>';
+    }
   }
 
   function addRippleHallucination(item) {
@@ -131,6 +136,9 @@
 
     firstFrame.insertBefore(video, firstFrame.firstChild);
     firstFrame.insertBefore(veil, firstFrame.querySelector("img"));
+
+    var playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") playPromise.catch(function () {});
   }
 
   function refineCurrentRoom() {
