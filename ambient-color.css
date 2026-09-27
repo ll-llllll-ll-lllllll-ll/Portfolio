@@ -1,0 +1,245 @@
+/*
+  Ambient colour system
+  ---------------------
+  The homepage keeps the source video's colour, then quiets it with a low-saturation
+  cyanotype-like grade. Two lightweight blend layers push the shadows toward deep
+  Prussian blue and let cyan / blue highlights breathe without turning the whole
+  image into monochrome.
+*/
+
+.home-view {
+  --ambient-saturation: 0.78;
+  --ambient-contrast: 1.04;
+  --ambient-brightness: 0.78;
+  --ambient-hue: -5deg;
+  --ambient-wash-opacity: 0.28;
+  --ambient-cyan-opacity: 0.20;
+  --ambient-grain-opacity: 0.055;
+  --ambient-shadow-rgb: 5, 18, 38;
+  --ambient-mid-rgb: 18, 53, 86;
+  --ambient-light-rgb: 124, 184, 208;
+}
+
+/* Ocean: darkest / densest Prussian blue. */
+.home-view.ambient-day-sea {
+  --ambient-saturation: 0.86;
+  --ambient-contrast: 1.10;
+  --ambient-brightness: 0.70;
+  --ambient-hue: -4deg;
+  --ambient-wash-opacity: 0.36;
+  --ambient-cyan-opacity: 0.20;
+  --ambient-grain-opacity: 0.058;
+  --ambient-shadow-rgb: 2, 12, 28;
+  --ambient-mid-rgb: 8, 40, 76;
+  --ambient-light-rgb: 84, 153, 192;
+}
+
+/* Lake: softer, quieter, with a trace of teal left in the source image. */
+.home-view.ambient-day-lake {
+  --ambient-saturation: 0.80;
+  --ambient-contrast: 1.00;
+  --ambient-brightness: 0.77;
+  --ambient-hue: -7deg;
+  --ambient-wash-opacity: 0.29;
+  --ambient-cyan-opacity: 0.16;
+  --ambient-grain-opacity: 0.050;
+  --ambient-shadow-rgb: 5, 18, 26;
+  --ambient-mid-rgb: 18, 57, 72;
+  --ambient-light-rgb: 112, 174, 190;
+}
+
+/* Cloud: the palest grade; highlights stay close to cool paper-white. */
+.home-view.ambient-day-cloud {
+  --ambient-saturation: 0.66;
+  --ambient-contrast: 0.97;
+  --ambient-brightness: 0.84;
+  --ambient-hue: -4deg;
+  --ambient-wash-opacity: 0.22;
+  --ambient-cyan-opacity: 0.14;
+  --ambient-grain-opacity: 0.043;
+  --ambient-shadow-rgb: 10, 17, 27;
+  --ambient-mid-rgb: 43, 65, 86;
+  --ambient-light-rgb: 174, 201, 214;
+}
+
+/* Sky: keeps the most source colour, especially dusk and atmospheric blues. */
+.home-view.ambient-day-sky {
+  --ambient-saturation: 0.94;
+  --ambient-contrast: 1.04;
+  --ambient-brightness: 0.81;
+  --ambient-hue: -5deg;
+  --ambient-wash-opacity: 0.25;
+  --ambient-cyan-opacity: 0.27;
+  --ambient-grain-opacity: 0.046;
+  --ambient-shadow-rgb: 4, 15, 34;
+  --ambient-mid-rgb: 19, 57, 98;
+  --ambient-light-rgb: 132, 193, 220;
+}
+
+.home-view .ambient-field {
+  isolation: isolate;
+  background: rgb(var(--ambient-shadow-rgb));
+}
+
+.home-view .ambient-video,
+.home-view .ambient-still {
+  z-index: 0;
+  /* Deliberately no grayscale(): source colour survives beneath the blue grade. */
+  filter:
+    saturate(var(--ambient-saturation))
+    contrast(var(--ambient-contrast))
+    brightness(var(--ambient-brightness))
+    hue-rotate(var(--ambient-hue));
+}
+
+.home-view .ambient-still {
+  filter:
+    saturate(var(--ambient-saturation))
+    contrast(var(--ambient-contrast))
+    brightness(var(--ambient-brightness))
+    hue-rotate(var(--ambient-hue))
+    blur(0.35px);
+}
+
+.home-view .ambient-empty {
+  z-index: 0;
+  background:
+    radial-gradient(circle at 54% 35%, rgba(var(--ambient-light-rgb), 0.11), transparent 38%),
+    linear-gradient(
+      180deg,
+      rgba(var(--ambient-mid-rgb), 0.68) 0%,
+      rgba(var(--ambient-shadow-rgb), 0.96) 68%,
+      rgb(var(--ambient-shadow-rgb)) 100%
+    );
+}
+
+.home-view .ambient-empty-cloud {
+  background:
+    radial-gradient(ellipse at 51% 29%, rgba(var(--ambient-light-rgb), 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(var(--ambient-mid-rgb), 0.75), rgb(var(--ambient-shadow-rgb)) 75%);
+}
+
+.home-view .ambient-empty-lake {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--ambient-mid-rgb), 0.58) 0 47%,
+      rgba(var(--ambient-shadow-rgb), 0.90) 50% 56%,
+      rgb(var(--ambient-shadow-rgb)) 100%
+    );
+}
+
+.home-view .ambient-empty-sky {
+  background:
+    radial-gradient(circle at 50% 16%, rgba(var(--ambient-light-rgb), 0.17), transparent 43%),
+    linear-gradient(180deg, rgba(var(--ambient-mid-rgb), 0.78), rgb(var(--ambient-shadow-rgb)) 82%);
+}
+
+.ambient-colorwash,
+.ambient-cyan {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/*
+  A very thin cyanotype bath. `color` changes chroma while leaving much of the
+  video's luminance structure intact, so this reads as atmosphere rather than
+  a flat blue overlay.
+*/
+.ambient-colorwash {
+  z-index: 1;
+  opacity: var(--ambient-wash-opacity);
+  mix-blend-mode: color;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--ambient-light-rgb), 0.15) 0%,
+      rgba(var(--ambient-mid-rgb), 0.48) 45%,
+      rgba(var(--ambient-shadow-rgb), 0.88) 100%
+    );
+}
+
+/* Blue / cyan light is allowed to survive in the upper and middle values. */
+.ambient-cyan {
+  z-index: 2;
+  opacity: var(--ambient-cyan-opacity);
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(
+      ellipse at 50% 28%,
+      rgba(var(--ambient-light-rgb), 0.48) 0%,
+      rgba(var(--ambient-mid-rgb), 0.18) 37%,
+      transparent 68%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(var(--ambient-light-rgb), 0.10),
+      rgba(var(--ambient-mid-rgb), 0.05) 55%,
+      transparent 82%
+    );
+}
+
+/* Replace neutral black with blue-black so shadows stay deep rather than grey. */
+.home-view .ambient-veil {
+  z-index: 3;
+  mix-blend-mode: multiply;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--ambient-shadow-rgb), 0.40) 0%,
+      rgba(var(--ambient-shadow-rgb), 0.08) 29%,
+      rgba(var(--ambient-shadow-rgb), 0.025) 58%,
+      rgba(var(--ambient-shadow-rgb), 0.42) 100%
+    ),
+    radial-gradient(
+      circle at 52% 43%,
+      transparent 24%,
+      rgba(var(--ambient-shadow-rgb), 0.31) 100%
+    );
+}
+
+/* The grain is blue-grey rather than white, closer to a print / emulsion surface. */
+.home-view .ambient-grain {
+  z-index: 4;
+  opacity: var(--ambient-grain-opacity);
+  mix-blend-mode: soft-light;
+  background-image: radial-gradient(rgba(var(--ambient-light-rgb), 0.42) 0.5px, transparent 0.72px);
+}
+
+/* Keep UI readable without turning the footage into a dark plate. */
+.home-view .home-head,
+.home-view .index-toggle,
+.home-view .home-today {
+  text-shadow: 0 1px 12px rgba(var(--ambient-shadow-rgb), 0.36);
+}
+
+@media (max-width: 760px) {
+  /* Small screens need slightly more image brightness because the crop is tighter. */
+  .home-view {
+    --ambient-brightness-mobile: 0.83;
+  }
+
+  .home-view.ambient-day-sea { --ambient-brightness-mobile: 0.75; }
+  .home-view.ambient-day-lake { --ambient-brightness-mobile: 0.81; }
+  .home-view.ambient-day-cloud { --ambient-brightness-mobile: 0.88; }
+  .home-view.ambient-day-sky { --ambient-brightness-mobile: 0.85; }
+
+  .home-view .ambient-video,
+  .home-view .ambient-still {
+    filter:
+      saturate(var(--ambient-saturation))
+      contrast(var(--ambient-contrast))
+      brightness(var(--ambient-brightness-mobile))
+      hue-rotate(var(--ambient-hue));
+  }
+}
+
+@supports not (mix-blend-mode: color) {
+  .ambient-colorwash {
+    mix-blend-mode: normal;
+    opacity: 0.12;
+  }
+}
