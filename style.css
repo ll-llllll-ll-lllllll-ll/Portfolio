@@ -1635,198 +1635,165 @@ html:lang(zh-Hans) .calendar-current {
   }
 }
 
-/* ===== Site-wide dark room theme ===== */
+/* ===== Site-wide light room theme ===== */
 /*
-  Keep the ambient homepage as-is, but move every work / collection room into
-  the same low-light visual world. Artwork keeps its original colour; only the
-  interface, paper, grey stages, captions and editorial chrome are darkened.
+  Restore the editorial paper surface for work / collection rooms. The ambient
+  homepage remains dark because its own full-screen video field paints above this.
 */
 :root {
-  --ink: #ecebe4;
-  --paper: #0d0f0e;
-  --black-hairline: rgba(244, 244, 238, 0.12);
+  --ink: #181914;
+  --paper: #f4f3ee;
+  --black-hairline: rgba(23, 24, 19, 0.12);
 }
 
 html,
 body {
-  background: #080a09;
+  background: #f4f3ee;
 }
 
 .room-view {
-  background: #0d0f0e;
-  color: rgba(242, 241, 233, 0.90);
+  background: #f4f3ee;
+  color: rgba(23, 24, 19, 0.88);
 }
 
 .room-scroll,
 .fragrance-room .room-scroll {
-  background: #0d0f0e;
+  background: #f4f3ee;
 }
 
 .room-head {
-  border-bottom-color: rgba(244, 244, 238, 0.12);
-  background: rgba(11, 13, 12, 0.90);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+  border-bottom-color: rgba(23, 24, 19, 0.12);
+  background: rgba(244, 243, 238, 0.92);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.38);
 }
 
 .room-head > p {
-  color: rgba(242, 241, 233, 0.56);
+  color: rgba(23, 24, 19, 0.53);
 }
 
 .room-head .language button {
-  color: rgba(242, 241, 233, 0.30);
+  color: rgba(23, 24, 19, 0.30);
 }
 
 .room-head .language button:hover,
 .room-head .language button.is-active {
-  color: rgba(248, 247, 240, 0.92);
+  color: rgba(23, 24, 19, 0.88);
 }
 
 .room-back {
-  color: rgba(242, 241, 233, 0.48);
+  color: rgba(23, 24, 19, 0.46);
 }
 
 .room-group,
 .room-note-title {
-  color: rgba(242, 241, 233, 0.38);
+  color: rgba(23, 24, 19, 0.38);
 }
 
 .room-intro,
 .room-note-body,
 .room-note-quote p,
 .room-footer button {
-  color: rgba(242, 241, 233, 0.84);
+  color: rgba(23, 24, 19, 0.82);
 }
 
 .room-note-quote cite,
 .room-image figcaption {
-  color: rgba(242, 241, 233, 0.42);
+  color: rgba(23, 24, 19, 0.42);
 }
 
 .room-visit {
-  border-bottom-color: rgba(242, 241, 233, 0.22);
-  color: rgba(242, 241, 233, 0.60);
+  border-bottom-color: rgba(23, 24, 19, 0.22);
+  color: rgba(23, 24, 19, 0.58);
 }
 
 .room-visit:hover {
-  color: rgba(250, 249, 242, 0.94);
-  border-bottom-color: rgba(242, 241, 233, 0.60);
+  color: rgba(23, 24, 19, 0.92);
+  border-bottom-color: rgba(23, 24, 19, 0.52);
 }
 
 .room-notes,
 .room-note,
 .room-footer {
-  border-color: rgba(244, 244, 238, 0.11);
+  border-color: rgba(23, 24, 19, 0.11);
 }
 
-/* Darker exhibition fields: still visibly grey, but no longer read as white panels. */
 .room-view[data-group="collection"] .room-image {
-  background: #2a2d2b;
+  background: #d8d7d1;
   box-shadow:
-    0 0 0 1px rgba(244, 244, 238, 0.075),
-    0 28px 70px rgba(0, 0, 0, 0.16);
-}
-
-.room-view[data-room="seawater"] .room-image {
-  background: #232624;
+    0 0 0 1px rgba(23, 24, 19, 0.065),
+    0 24px 64px rgba(55, 54, 49, 0.075);
 }
 
 .room-view[data-group="collection"] .room-image figcaption {
-  color: rgba(239, 238, 230, 0.43);
+  color: rgba(23, 24, 19, 0.40);
 }
 
-/* Keep the after-image visible against the darker plate without turning it neon. */
 .room-view[data-group="collection"] .room-image::before {
-  opacity: 0.48;
-  filter: grayscale(1) brightness(0.72) blur(18px);
-}
-
-.room-view[data-room="seawater"] .room-image::before {
-  display: none;
-}
-
-.seawater-caustics {
   opacity: 0.50;
-  filter: grayscale(1) contrast(1.08) brightness(0.72) blur(4px);
+  filter: grayscale(1) blur(18px);
 }
 
-/* Fragrance gallery follows the same dark editorial surface. */
+/* Fragrance gallery returns to the pale editorial surface too. */
 .fragrance-gallery,
 .fragrance-theme-nav {
-  border-color: rgba(244, 244, 238, 0.11);
-  background: #101211;
+  border-color: rgba(23, 24, 19, 0.11);
+  background: #f1f0eb;
 }
 
 .fragrance-theme {
-  border-right-color: rgba(244, 244, 238, 0.10);
-  color: rgba(242, 241, 233, 0.46);
+  border-right-color: rgba(23, 24, 19, 0.10);
+  color: rgba(23, 24, 19, 0.46);
 }
 
 .fragrance-theme:hover,
 .fragrance-theme.is-active {
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(248, 247, 240, 0.90);
+  background: rgba(23, 24, 19, 0.045);
+  color: rgba(23, 24, 19, 0.88);
 }
 
 .fragrance-theme-index,
-.fragrance-theme-count {
-  color: rgba(242, 241, 233, 0.28);
-}
-
-.fragrance-frame figcaption {
-  color: rgba(242, 241, 233, 0.38);
-}
-
+.fragrance-theme-count,
+.fragrance-frame figcaption,
 .fragrance-arrow {
-  color: rgba(242, 241, 233, 0.28);
+  color: rgba(23, 24, 19, 0.34);
 }
 
 .fragrance-arrow:hover {
-  color: rgba(248, 247, 240, 0.88);
-  background: rgba(255, 255, 255, 0.05);
+  color: rgba(23, 24, 19, 0.84);
+  background: rgba(23, 24, 19, 0.04);
 }
 
 .fragrance-thumb.is-active {
-  border-color: rgba(242, 241, 233, 0.40);
+  border-color: rgba(23, 24, 19, 0.36);
 }
 
 @media (max-width: 760px) {
   .room-view[data-group="collection"] .room-image {
     box-shadow:
-      0 0 0 1px rgba(244, 244, 238, 0.07),
-      0 18px 44px rgba(0, 0, 0, 0.14);
+      0 0 0 1px rgba(23, 24, 19, 0.06),
+      0 18px 42px rgba(55, 54, 49, 0.065);
   }
 
   .room-view[data-group="collection"] .room-image::before {
     opacity: 0.54;
-    filter: grayscale(1) brightness(0.74) blur(14px);
-  }
-
-  .seawater-caustics {
-    opacity: 0.54;
-    filter: grayscale(1) contrast(1.08) brightness(0.76) blur(3px);
+    filter: grayscale(1) blur(14px);
   }
 }
 
-
-
-/* ===== Seawater long-space light world ===== */
-/*
-  The two seawater works now occupy one continuous dark optical space rather than
-  two isolated grey plates. A viewport canvas underneath the scroll layer renders
-  perspective caustics and physically-derived cast shadows from the image blocks.
-*/
+/* ===== Seawater long-space — WebGL caustics + event-driven shadows ===== */
 .room-view[data-room="seawater"] {
-  background: #070807;
+  background: #f4f3ee;
 }
 
 .room-view[data-room="seawater"] .room-scroll {
-  z-index: 2;
+  position: relative;
+  z-index: 3;
   background: transparent;
 }
 
-.seawater-world-light {
+.seawater-world-light,
+.seawater-world-shadow {
   position: absolute;
-  z-index: 1;
   top: 54px;
   right: 0;
   bottom: 0;
@@ -1835,12 +1802,20 @@ body {
   height: calc(100% - 54px);
   pointer-events: none;
   opacity: 0;
-  background: #070807;
-  transition: opacity 620ms ease;
+  transition: opacity 420ms ease;
 }
 
-/* The old per-image plate disappears only for this collection. Its dimensions are
-   still retained as spatial intervals in the long page, so the images keep air. */
+.seawater-world-light {
+  z-index: 1;
+  background: transparent;
+  image-rendering: auto;
+}
+
+.seawater-world-shadow {
+  z-index: 2;
+  background: transparent;
+}
+
 .room-view[data-room="seawater"] .room-image,
 .room-view[data-room="seawater"] .room-image.is-contain {
   overflow: visible;
@@ -1857,49 +1832,30 @@ body {
 
 .room-view[data-room="seawater"] .room-image img,
 .room-view[data-room="seawater"] .room-image.is-contain img {
-  z-index: 3;
+  z-index: 4;
   background: transparent;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.055),
-    0 9px 24px rgba(0, 0, 0, 0.13);
+    0 1px 0 rgba(255, 255, 255, 0.34),
+    0 8px 22px rgba(40, 40, 36, 0.085);
 }
 
 .room-view[data-room="seawater"] .room-image figcaption {
-  z-index: 4;
-  color: rgba(239, 238, 230, 0.42);
-  text-shadow: 0 1px 9px rgba(0, 0, 0, 0.62);
+  z-index: 5;
+  color: rgba(23, 24, 19, 0.42);
+  text-shadow: none;
 }
 
-/* Keep the written sections legible once the optical corridor has faded away. */
 .room-view[data-room="seawater"] .room-lead,
 .room-view[data-room="seawater"] .room-notes,
 .room-view[data-room="seawater"] .room-footer {
   position: relative;
-  z-index: 3;
+  z-index: 4;
 }
 
 @media (max-width: 760px) {
-  .seawater-world-light {
-    transition-duration: 420ms;
-  }
-
-  .room-view[data-room="seawater"] .room-image img,
-  .room-view[data-room="seawater"] .room-image.is-contain img {
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.05),
-      0 7px 18px rgba(0, 0, 0, 0.12);
+  .seawater-world-light,
+  .seawater-world-shadow {
+    transition-duration: 300ms;
   }
 }
 
-
-/* ===== Seawater light-space refinement v2 ===== */
-.room-view[data-room="seawater"] .seawater-world-light {
-  filter: blur(0.35px);
-  transform: translateZ(0);
-}
-
-@media (max-width: 760px) {
-  .room-view[data-room="seawater"] .seawater-world-light {
-    filter: blur(0.25px);
-  }
-}

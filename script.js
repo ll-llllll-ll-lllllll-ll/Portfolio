@@ -1166,7 +1166,7 @@ render();
 
     if (!home) {
       clearDayClasses(null);
-      if (themeMeta) themeMeta.setAttribute("content", "#080a09");
+      if (themeMeta) themeMeta.setAttribute("content", "#f4f3ee");
       return;
     }
 
@@ -1468,42 +1468,59 @@ render();
     var scroll = room.querySelector(".room-scroll");
     if (!scroll || room.querySelector(".seawater-world-light")) return;
 
-    var canvas = document.createElement("canvas");
-    canvas.className = "seawater-world-light";
-    canvas.setAttribute("aria-hidden", "true");
-    room.insertBefore(canvas, scroll);
+    /*
+      Performance architecture
+      ------------------------
+      Caustics are now a low-power WebGL fragment shader: the GPU evaluates the
+      continuous optical field in parallel, so there is no JavaScript per-pixel loop.
+      Cast shadows stay on a separate 2D canvas and are redrawn only when scroll / size
+      changes, because their geometry does not need to animate every frame.
+    */
+    var lightCanvas = document.createElement("canvas");
+    lightCanvas.className = "seawater-world-light";
+    lightCanvas.setAttribute("aria-hidden", "true");
 
-    var ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) return;
+    var shadowCanvas = document.createElement("canvas");
+    shadowCanvas.className = "seawater-world-shadow";
+    shadowCanvas.setAttribute("aria-hidden", "true");
 
-    var low = document.createElement("canvas");
-    var lowCtx = low.getContext("2d", { alpha: true, willReadFrequently: true });
-    if (!lowCtx) return;
+    room.insertBefore(lightCanvas, scroll);
+    room.insertBefore(shadowCanvas, scroll);
+
+    var gl = lightCanvas.getContext("webgl", {
+      alpha: true,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      preserveDrawingBuffer: false,
+      powerPreference: "low-power"
+    });
+    var shadowCtx = shadowCanvas.getContext("2d", { alpha: true });
+
+    if (!gl || !shadowCtx) {
+      lightCanvas.remove();
+      shadowCanvas.remove();
+      return;
+    }
 
     var reduceMotion = false;
     try {
       reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     } catch (_) {}
 
-    var width = 0;
-    var height = 0;
-    var ratio = 1;
-    var lowWidth = 150;
-    var lowHeight = 220;
-    var imageData = null;
-    var pixels = null;
-    var lastFieldDraw = 0;
-    var lastFrameDraw = 0;
-    var scheduled = false;
+    var width = 1;
+    var height = 1;
+    var lightScale = 0.75;
+    var shadowScale = 1;
     var active = false;
+    var sceneScheduled = false;
+    var lastLightFrame = 0;
+    var staticDrawn = false;
+    var cachedLight = { x: 0, y: 0, z: 760, progress: 0 };
+    var cachedBounds = { cx: 0.5, halfW: 0.28, top: 0.12, bottom: 0.88 };
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
-    }
-
-    function smoothstep(min, max, value) {
-      var x = clamp((value - min) / (max - min), 0, 1);
-      return x * x * (3 - 2 * x);
     }
 
     function scrollProgress() {
@@ -1511,39 +1528,12 @@ render();
       return clamp(scroll.scrollTop / maxScroll, 0, 1);
     }
 
-    function resizeWorld() {
-      var rect = canvas.getBoundingClientRect();
-      width = Math.max(1, Math.round(rect.width));
-      height = Math.max(1, Math.round(rect.height));
-      var mobile = width <= 760;
-
-      ratio = Math.min(window.devicePixelRatio || 1, mobile ? 1.2 : 1.5);
-      canvas.width = Math.max(1, Math.round(width * ratio));
-      canvas.height = Math.max(1, Math.round(height * ratio));
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-      lowWidth = mobile
-        ? Math.min(260, Math.max(220, Math.round(width * 0.58)))
-        : Math.min(560, Math.max(420, Math.round(width * 0.33)));
-      lowHeight = Math.max(120, Math.round(lowWidth * height / width));
-      low.width = lowWidth;
-      low.height = lowHeight;
-      imageData = lowCtx.createImageData(lowWidth, lowHeight);
-      pixels = imageData.data;
-
-      scheduleWorld(true);
-    }
-
     function lightForScroll() {
       var p = scrollProgress();
 
-      /*
-        Small counter-clockwise arc only:
-        start at 9 o'clock (180deg), end around 7 o'clock (240deg).
-        The page therefore changes gently rather than swinging around the viewer.
-      */
-      var theta = (180 + p * 60) * Math.PI / 180;
-      var radius = Math.min(width, height) * (width <= 760 ? 0.44 : 0.48);
+      /* 9 o'clock -> 7 o'clock: a small counter-clockwise 60-degree arc. */
+      var theta = (180 - p * 60) * Math.PI / 180;
+      var radius = Math.min(width, height) * (width <= 760 ? 0.43 : 0.47);
 
       return {
         x: width * 0.5 + Math.cos(theta) * radius,
@@ -1553,221 +1543,172 @@ render();
       };
     }
 
-    function subjectBounds(canvasRect) {
-      var images = scroll.querySelectorAll(".room-image img");
-      if (!images.length) {
-        return {
-          cx: width * 0.5,
-          halfW: width * 0.24,
-          top: height * 0.18,
-          bottom: height * 0.82
-        };
+    function compileShader(type, source) {
+      var shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        var message = gl.getShaderInfoLog(shader) || "WebGL shader compile failed";
+        gl.deleteShader(shader);
+        throw new Error(message);
       }
-
-      var minL = Infinity;
-      var maxR = -Infinity;
-      var minT = Infinity;
-      var maxB = -Infinity;
-
-      images.forEach(function (img) {
-        var rect = img.getBoundingClientRect();
-        minL = Math.min(minL, rect.left - canvasRect.left);
-        maxR = Math.max(maxR, rect.right - canvasRect.left);
-        minT = Math.min(minT, rect.top - canvasRect.top);
-        maxB = Math.max(maxB, rect.bottom - canvasRect.top);
-      });
-
-      return {
-        cx: (minL + maxR) * 0.5,
-        halfW: (maxR - minL) * 0.5 + width * 0.12,
-        top: minT - height * 0.10,
-        bottom: maxB + height * 0.16
-      };
+      return shader;
     }
 
-    function corridorIsVisible() {
-      var images = scroll.querySelectorAll(".room-image img");
-      if (!images.length) return false;
+    var vertexSource = [
+      "attribute vec2 a_position;",
+      "void main() {",
+      "  gl_Position = vec4(a_position, 0.0, 1.0);",
+      "}"
+    ].join("\\n");
 
-      var canvasRect = canvas.getBoundingClientRect();
-      var first = images[0].getBoundingClientRect();
-      var last = images[images.length - 1].getBoundingClientRect();
-      var padding = height * 0.65;
+    var fragmentSource = [
+      "precision mediump float;",
+      "uniform vec2 u_resolution;",
+      "uniform float u_time;",
+      "uniform vec2 u_light;",
+      "uniform vec4 u_bounds;",
+      "uniform float u_aspect;",
+      "",
+      "float sat(float x) { return clamp(x, 0.0, 1.0); }",
+      "",
+      "void main() {",
+      "  vec2 uv = vec2(gl_FragCoord.x / u_resolution.x, 1.0 - gl_FragCoord.y / u_resolution.y);",
+      "",
+      "  float xNorm = abs((uv.x - u_bounds.x) / max(u_bounds.y, 0.001));",
+      "  float beamX = 1.0 - smoothstep(0.70, 1.06, xNorm);",
+      "  float above = max(0.0, (u_bounds.z - uv.y) / 0.18);",
+      "  float below = max(0.0, (uv.y - u_bounds.w) / 0.22);",
+      "  float beamY = 1.0 - smoothstep(0.0, 1.0, max(above, below));",
+      "  float corridor = beamX * beamY;",
+      "",
+      "  vec2 toCenter = vec2(0.5, 0.52) - u_light;",
+      "  toCenter.x *= u_aspect;",
+      "  vec2 fromLight = uv - u_light;",
+      "  fromLight.x *= u_aspect;",
+      "  float cone = smoothstep(-0.08, 0.28, dot(normalize(fromLight + vec2(0.0001)), normalize(toCenter + vec2(0.0001))));",
+      "",
+      "  float distanceFromLight = length(fromLight);",
+      "  float perspective = 1.0 + distanceFromLight * 0.72;",
+      "  vec2 p = fromLight / perspective;",
+      "  p *= 8.0;",
+      "",
+      "  float t = u_time * 1.12;",
+      "  vec2 q = p;",
+      "  q.x += 0.34 * sin(p.y * 1.28 + t * 1.18) + 0.12 * sin(p.y * 2.35 - t * 0.84 + 1.4);",
+      "  q.y += 0.34 * cos(p.x * 1.16 - t * 1.02) + 0.12 * cos(p.x * 2.08 + t * 0.78);",
+      "",
+      "  float a = sin(q.x * 2.05 + sin(q.y * 1.55 + t * 0.92));",
+      "  float b = cos(q.y * 2.02 + sin(q.x * 1.42 - t * 0.80));",
+      "  float c = sin((q.x + q.y) * 1.28 + cos((q.x - q.y) * 1.38 + t * 0.68));",
+      "  float d = cos((q.x - q.y) * 1.62 + sin(q.y * 1.10 - t * 0.72));",
+      "  float f = (a + b + c + d) * 0.25;",
+      "",
+      "  float ridge = max(0.0, 1.0 - abs(f) * 1.62);",
+      "  float core = pow(ridge, 8.0) * 1.16;",
+      "  float halo = pow(max(0.0, 1.0 - abs(f) * 1.00), 2.6) * 0.14;",
+      "",
+      "  float f2 = sin(q.x * 1.52 + sin(q.y * 2.08 + t * 0.70)) * 0.56 +",
+      "             cos(q.y * 1.64 + sin(q.x * 1.86 - t * 0.76)) * 0.44;",
+      "  float crossing = pow(max(0.0, 1.0 - abs(f2) * 1.40), 7.0) * 0.28;",
+      "  float shimmer = 0.84 + 0.16 * (0.5 + 0.5 * sin(q.x * 0.78 - q.y * 0.61 + t * 1.42));",
+      "",
+      "  float caustic = sat((core + halo + crossing) * shimmer * cone);",
+      "  float field = corridor * (0.72 + 0.28 * cone);",
+      "",
+      "  vec3 base = vec3(0.905, 0.905, 0.885);",
+      "  vec3 highlight = vec3(1.0, 0.998, 0.985);",
+      "  vec3 color = mix(base, highlight, sat(caustic * 1.08));",
+      "  float alpha = field * (0.54 + caustic * 0.34);",
+      "  gl_FragColor = vec4(color, alpha);",
+      "}"
+    ].join("\\n");
 
-      return first.top < canvasRect.bottom + padding && last.bottom > canvasRect.top - padding;
+    var program;
+    try {
+      program = gl.createProgram();
+      gl.attachShader(program, compileShader(gl.VERTEX_SHADER, vertexSource));
+      gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fragmentSource));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(program) || "WebGL program link failed");
+      }
+    } catch (_) {
+      lightCanvas.remove();
+      shadowCanvas.remove();
+      return;
     }
 
-    function renderCausticField(light, now) {
-      if (!pixels || !imageData) return;
+    gl.useProgram(program);
 
-      var canvasRect = canvas.getBoundingClientRect();
-      var bounds = subjectBounds(canvasRect);
-      var centerX = width * 0.5;
-      var centerY = height * 0.5;
-      var dirX = centerX - light.x;
-      var dirY = centerY - light.y;
-      var dirLength = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-      var ndx = dirX / dirLength;
-      var ndy = dirY / dirLength;
+    var positionLocation = gl.getAttribLocation(program, "a_position");
+    var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    var timeLocation = gl.getUniformLocation(program, "u_time");
+    var lightLocation = gl.getUniformLocation(program, "u_light");
+    var boundsLocation = gl.getUniformLocation(program, "u_bounds");
+    var aspectLocation = gl.getUniformLocation(program, "u_aspect");
 
-      /* Much calmer internal motion; scroll is still the main driver. */
-      var phase = scroll.scrollTop * 0.00135 + (reduceMotion ? 0 : now * 0.00125);
-      var pointer = 0;
-      var x, y;
+    var buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,
+       1, -1,
+      -1,  1,
+       1,  1
+    ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-      for (y = 0; y < lowHeight; y += 1) {
-        var sy = (y + 0.5) / lowHeight * height;
+    function resizeWorld() {
+      var rect = lightCanvas.getBoundingClientRect();
+      width = Math.max(1, Math.round(rect.width));
+      height = Math.max(1, Math.round(rect.height));
+      var mobile = width <= 760;
 
-        for (x = 0; x < lowWidth; x += 1) {
-          var sx = (x + 0.5) / lowWidth * width;
-          var vx = sx - light.x;
-          var vy = sy - light.y;
-          var distance = Math.sqrt(vx * vx + vy * vy) + 0.0001;
-          var dot = (vx * ndx + vy * ndy) / distance;
+      /* One logical pixel is already enough for a smooth shader; Retina 2x/3x is wasted work. */
+      lightScale = mobile ? 0.86 : 0.74;
+      shadowScale = 1;
 
-          /* Narrower projected cone. */
-          var cone = smoothstep(-0.06, 0.42, dot);
+      lightCanvas.width = Math.max(1, Math.round(width * lightScale));
+      lightCanvas.height = Math.max(1, Math.round(height * lightScale));
+      shadowCanvas.width = Math.max(1, Math.round(width * shadowScale));
+      shadowCanvas.height = Math.max(1, Math.round(height * shadowScale));
 
-          /* Keep the light inside a long corridor around the two artworks. */
-          var xNorm = Math.abs((sx - bounds.cx) / Math.max(bounds.halfW, 1));
-          var beamX = 1 - smoothstep(0.72, 1.16, xNorm);
-          var above = Math.max(0, (bounds.top - sy) / (height * 0.22));
-          var below = Math.max(0, (sy - bounds.bottom) / (height * 0.26));
-          var beamY = 1 - smoothstep(0.00, 1.00, Math.max(above, below));
-          var corridorMask = beamX * beamY;
-
-          /*
-            Water-caustic field: a thin bright ridge sits inside a much softer halo.
-            Two warped interference families cross each other, which produces the
-            branching / web-like highlights of real reflected water rather than a
-            single inflated contour line. The sharp core and soft halo deliberately
-            have much higher contrast than the previous version.
-          */
-          var perspective = 1 + distance / (width <= 760 ? 1040 : 1360);
-          var u = vx / (40 * perspective);
-          var v = vy / (40 * perspective);
-          var qx = u + 0.26 * Math.sin(v * 1.30 + phase * 0.62) +
-            0.11 * Math.sin(v * 2.20 - phase * 0.38 + 1.2);
-          var qy = v + 0.26 * Math.cos(u * 1.18 - phase * 0.54) +
-            0.11 * Math.cos(u * 2.00 + phase * 0.34);
-
-          var a = Math.sin(qx * 2.10 + Math.sin(qy * 1.52 + phase * 0.42));
-          var b = Math.cos(qy * 2.06 + Math.sin(qx * 1.38 - phase * 0.36));
-          var c = Math.sin((qx + qy) * 1.24 + Math.cos((qx - qy) * 1.34 + phase * 0.30));
-          var d = Math.cos((qx - qy) * 1.56 + Math.sin(qy * 1.08 - phase * 0.26));
-          var f = (a + b + c + d) * 0.25;
-
-          var ridge = Math.max(0, 1 - Math.abs(f) * 1.62);
-          var core = Math.pow(ridge, 9.0) * 1.08;
-          var halo = Math.pow(Math.max(0, 1 - Math.abs(f) * 0.98), 2.45) * 0.16;
-
-          var f2 = Math.sin(qx * 1.46 + Math.sin(qy * 2.12 + phase * 0.28)) * 0.55 +
-            Math.cos(qy * 1.60 + Math.sin(qx * 1.82 - phase * 0.31)) * 0.45;
-          var crossing = Math.pow(Math.max(0, 1 - Math.abs(f2) * 1.38), 8.0) * 0.30;
-
-          /* Uneven shimmer keeps the network organic instead of uniformly luminous. */
-          var shimmer = 0.82 + 0.18 * (0.5 + 0.5 * Math.sin(qx * 0.72 - qy * 0.58 + phase * 0.92));
-          var falloff = 0.92 - 0.24 * clamp(distance / 1550, 0, 1);
-          var value = clamp((core + halo + crossing) * shimmer * cone * corridorMask * falloff, 0, 1);
-          var alpha = Math.round(value * 238);
-
-          pixels[pointer] = 242;
-          pixels[pointer + 1] = 242;
-          pixels[pointer + 2] = 235;
-          pixels[pointer + 3] = alpha;
-          pointer += 4;
-        }
-      }
-
-      lowCtx.putImageData(imageData, 0, 0);
+      gl.viewport(0, 0, lightCanvas.width, lightCanvas.height);
+      shadowCtx.setTransform(shadowScale, 0, 0, shadowScale, 0, 0);
+      staticDrawn = false;
+      scheduleScene();
     }
 
     function convexHull(points) {
       if (points.length <= 1) return points.slice();
-
       var sorted = points.slice().sort(function (a, b) {
         return a.x === b.x ? a.y - b.y : a.x - b.x;
       });
-
       function cross(o, a, b) {
         return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
       }
-
       var lower = [];
       sorted.forEach(function (point) {
-        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
-          lower.pop();
-        }
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) lower.pop();
         lower.push(point);
       });
-
       var upper = [];
       for (var i = sorted.length - 1; i >= 0; i -= 1) {
         var point = sorted[i];
-        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
-          upper.pop();
-        }
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) upper.pop();
         upper.push(point);
       }
-
       lower.pop();
       upper.pop();
       return lower.concat(upper);
     }
 
-    function shadowHull(rect, light, elevation, offsetX, offsetY, canvasRect) {
-      var sourceX = light.x + (offsetX || 0);
-      var sourceY = light.y + (offsetY || 0);
-      var left = rect.left - canvasRect.left;
-      var right = rect.right - canvasRect.left;
-      var top = rect.top - canvasRect.top;
-      var bottom = rect.bottom - canvasRect.top;
-      var base = [
-        { x: left, y: top },
-        { x: right, y: top },
-        { x: right, y: bottom },
-        { x: left, y: bottom }
-      ];
-      var projection = light.z / Math.max(1, light.z - elevation);
-      var projected = base.map(function (point) {
-        return {
-          x: sourceX + (point.x - sourceX) * projection,
-          y: sourceY + (point.y - sourceY) * projection
-        };
-      });
-
-      /*
-        The base rectangle plus its point-light projection is the silhouette of a
-        shallow 3D block. Their convex hull gives the directional cast-shadow wedge.
-      */
-      return convexHull(base.concat(projected));
-    }
-
-    function fillHull(points, alpha) {
-      if (!points.length) return;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      points.forEach(function (point, index) {
-        if (index === 0) ctx.moveTo(point.x, point.y);
-        else ctx.lineTo(point.x, point.y);
-      });
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
     function lerpPoint(a, b, t) {
-      return {
-        x: a.x + (b.x - a.x) * t,
-        y: a.y + (b.y - a.y) * t
-      };
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
     }
 
-    function projectRect(rect, light, elevation, offsetX, offsetY, canvasRect) {
-      var sourceX = light.x + (offsetX || 0);
-      var sourceY = light.y + (offsetY || 0);
+    function projectRect(rect, light, elevation, canvasRect) {
       var left = rect.left - canvasRect.left;
       var right = rect.right - canvasRect.left;
       var top = rect.top - canvasRect.top;
@@ -1781,8 +1722,8 @@ render();
       var projection = light.z / Math.max(1, light.z - elevation);
       var projected = base.map(function (point) {
         return {
-          x: sourceX + (point.x - sourceX) * projection,
-          y: sourceY + (point.y - sourceY) * projection
+          x: light.x + (point.x - light.x) * projection,
+          y: light.y + (point.y - light.y) * projection
         };
       });
       return { base: base, projected: projected };
@@ -1790,23 +1731,23 @@ render();
 
     function fillHullBlur(points, alpha, blurPx) {
       if (!points.length) return;
-      ctx.save();
-      ctx.filter = blurPx > 0 ? ("blur(" + blurPx + "px)") : "none";
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
+      shadowCtx.save();
+      shadowCtx.filter = blurPx > 0 ? ("blur(" + blurPx + "px)") : "none";
+      shadowCtx.globalAlpha = alpha;
+      shadowCtx.fillStyle = "#000";
+      shadowCtx.beginPath();
       points.forEach(function (point, index) {
-        if (index === 0) ctx.moveTo(point.x, point.y);
-        else ctx.lineTo(point.x, point.y);
+        if (index === 0) shadowCtx.moveTo(point.x, point.y);
+        else shadowCtx.lineTo(point.x, point.y);
       });
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+      shadowCtx.closePath();
+      shadowCtx.fill();
+      shadowCtx.restore();
     }
 
-    function renderShadows(light) {
-      var canvasRect = canvas.getBoundingClientRect();
-      var images = scroll.querySelectorAll(".room-image img");
+    function renderShadows(light, canvasRect, images) {
+      shadowCtx.setTransform(shadowScale, 0, 0, shadowScale, 0, 0);
+      shadowCtx.clearRect(0, 0, width, height);
       var mobile = width <= 760;
 
       images.forEach(function (image, index) {
@@ -1818,101 +1759,123 @@ render();
           mobile ? 72 : 96,
           mobile ? 150 : 220
         );
-        var geom = projectRect(rect, light, elevation, 0, 0, canvasRect);
+        var geom = projectRect(rect, light, elevation, canvasRect);
 
-        /* Solid contact shadow: the caustics should disappear directly behind the object. */
-        /* A broad low-density penumbra establishes the full shadow footprint first. */
         var broadHull = convexHull(geom.base.concat(geom.projected));
-        fillHullBlur(broadHull, mobile ? 0.12 : 0.14, mobile ? 24 : 34);
+        fillHullBlur(broadHull, mobile ? 0.075 : 0.09, mobile ? 24 : 34);
 
-        var contactHull = convexHull(
-          geom.base.concat(geom.base.map(function (p, idx) {
-            return lerpPoint(p, geom.projected[idx], 0.22);
-          }))
-        );
-        fillHullBlur(contactHull, 0.76, 0);
+        var contactHull = convexHull(geom.base.concat(geom.base.map(function (p, idx) {
+          return lerpPoint(p, geom.projected[idx], 0.22);
+        })));
+        fillHullBlur(contactHull, mobile ? 0.36 : 0.40, 0);
 
-        /*
-          Split the projected wedge into depth bands. Blur grows with distance,
-          so the image edge stays comparatively crisp while the far end becomes
-          a broad soft penumbra. Each darker band also suppresses the caustic field
-          underneath instead of letting the bright lines remain visible through it.
-        */
-        var bands = mobile ? 9 : 12;
+        var bands = mobile ? 8 : 10;
         for (var i = 0; i < bands; i += 1) {
           var t0 = 0.08 + (i / bands) * 0.98;
           var t1 = 0.08 + ((i + 1) / bands) * 0.98;
-          var near = geom.base.map(function (p, idx) {
-            return lerpPoint(p, geom.projected[idx], t0);
-          });
-          var far = geom.base.map(function (p, idx) {
-            return lerpPoint(p, geom.projected[idx], t1);
-          });
+          var near = geom.base.map(function (p, idx) { return lerpPoint(p, geom.projected[idx], t0); });
+          var far = geom.base.map(function (p, idx) { return lerpPoint(p, geom.projected[idx], t1); });
           var bandHull = convexHull(near.concat(far));
-          var blurPx = mobile ? (0.7 + i * 2.0) : (0.8 + i * 2.6);
-          var alpha = mobile ? (0.34 - i * 0.025) : (0.32 - i * 0.021);
-          fillHullBlur(bandHull, Math.max(alpha, 0.075), blurPx);
+          var blurPx = mobile ? (0.7 + i * 2.1) : (0.8 + i * 2.8);
+          var alpha = mobile ? (0.16 - i * 0.013) : (0.15 - i * 0.011);
+          fillHullBlur(bandHull, Math.max(alpha, 0.035), blurPx);
         }
       });
     }
 
-    function drawWorld(now, forceField) {
-      if (!canvas.isConnected || !width || !height) return;
-
-      active = corridorIsVisible();
-      canvas.style.opacity = active ? "1" : "0";
-      if (!active) return;
-
-      var light = lightForScroll();
-      var fieldInterval = width <= 760 ? 40 : 32;
-      if (forceField || now - lastFieldDraw >= fieldInterval) {
-        lastFieldDraw = now;
-        renderCausticField(light, now);
+    function measureScene() {
+      if (!lightCanvas.isConnected) return;
+      var images = Array.prototype.slice.call(scroll.querySelectorAll(".room-image img"));
+      if (!images.length) {
+        active = false;
+        return;
       }
 
-      ctx.save();
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "#070807";
-      ctx.fillRect(0, 0, width, height);
-      ctx.globalCompositeOperation = "screen";
-      ctx.globalAlpha = width <= 760 ? 0.58 : 0.54;
-      ctx.imageSmoothingEnabled = true;
-      if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(low, 0, 0, width, height);
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
-      renderShadows(light);
-      ctx.restore();
+      var canvasRect = lightCanvas.getBoundingClientRect();
+      var first = images[0].getBoundingClientRect();
+      var last = images[images.length - 1].getBoundingClientRect();
+      var padding = height * 0.62;
+      active = first.top < canvasRect.bottom + padding && last.bottom > canvasRect.top - padding;
+
+      lightCanvas.style.opacity = active ? "1" : "0";
+      shadowCanvas.style.opacity = active ? "1" : "0";
+      if (!active) return;
+
+      var minL = Infinity;
+      var maxR = -Infinity;
+      var minT = Infinity;
+      var maxB = -Infinity;
+      images.forEach(function (image) {
+        var rect = image.getBoundingClientRect();
+        minL = Math.min(minL, rect.left - canvasRect.left);
+        maxR = Math.max(maxR, rect.right - canvasRect.left);
+        minT = Math.min(minT, rect.top - canvasRect.top);
+        maxB = Math.max(maxB, rect.bottom - canvasRect.top);
+      });
+
+      cachedBounds = {
+        cx: ((minL + maxR) * 0.5) / width,
+        halfW: (((maxR - minL) * 0.5) + width * 0.12) / width,
+        top: (minT - height * 0.10) / height,
+        bottom: (maxB + height * 0.16) / height
+      };
+      cachedLight = lightForScroll();
+      renderShadows(cachedLight, canvasRect, images);
+      staticDrawn = false;
     }
 
-    function scheduleWorld(forceField) {
-      if (scheduled) return;
-      scheduled = true;
-      requestAnimationFrame(function (now) {
-        scheduled = false;
-        drawWorld(now, !!forceField);
+    function scheduleScene() {
+      if (sceneScheduled) return;
+      sceneScheduled = true;
+      requestAnimationFrame(function () {
+        sceneScheduled = false;
+        measureScene();
       });
     }
 
-    function idleLoop(now) {
-      if (!canvas.isConnected) return;
-      var interval = width <= 760 ? 44 : 34;
-      if (!reduceMotion && now - lastFrameDraw >= interval) {
-        lastFrameDraw = now;
-        scheduleWorld(false);
-      }
-      requestAnimationFrame(idleLoop);
+    function renderLight(now) {
+      if (!active) return;
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(program);
+
+      gl.uniform2f(resolutionLocation, lightCanvas.width, lightCanvas.height);
+      gl.uniform1f(timeLocation, reduceMotion ? 0 : now * 0.001);
+      gl.uniform2f(lightLocation, cachedLight.x / width, cachedLight.y / height);
+      gl.uniform4f(boundsLocation, cachedBounds.cx, cachedBounds.halfW, cachedBounds.top, cachedBounds.bottom);
+      gl.uniform1f(aspectLocation, width / Math.max(1, height));
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
-    scroll.addEventListener("scroll", function () {
-      scheduleWorld(true);
-    }, { passive: true });
+    function lightLoop(now) {
+      if (!lightCanvas.isConnected) return;
+
+      /* Motion speed comes from shader time; frame-rate is intentionally modest for power. */
+      var frameInterval = width <= 760 ? 42 : 33;
+      if (active && (!reduceMotion || !staticDrawn) && now - lastLightFrame >= frameInterval) {
+        lastLightFrame = now;
+        renderLight(now);
+        staticDrawn = true;
+      }
+      requestAnimationFrame(lightLoop);
+    }
+
+    scroll.addEventListener("scroll", scheduleScene, { passive: true });
     window.addEventListener("resize", resizeWorld, { passive: true });
     window.addEventListener("orientationchange", resizeWorld, { passive: true });
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) {
+        staticDrawn = false;
+        scheduleScene();
+      }
+    });
+
+    scroll.querySelectorAll(".room-image img").forEach(function (image) {
+      if (!image.complete) image.addEventListener("load", scheduleScene, { once: true });
+    });
 
     resizeWorld();
-    requestAnimationFrame(idleLoop);
+    requestAnimationFrame(lightLoop);
   }
 
 
