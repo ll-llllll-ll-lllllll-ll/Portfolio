@@ -783,58 +783,58 @@ render();
       key: "sky",
       label: { zh: "天空", en: "sky", ja: "空" },
       files: [
-        "000057.jpg",
-        "462c9a97ap146b34bfe8f23096c2689d.jpg",
-        "608a07420r5cfad4735397269a857ccb.jpg",
-        "8f86c1e11paab3325da830066ad1b709.jpg",
-        "c0b5c2248ud2a095f952f58af6bd9fb9.jpg",
-        "d864ec74dt2c044147f641f235bc7b20.jpg",
-        "ddbfceb5ape4a16c6b7b9a181c9b3332.jpg",
-        "e2b56c3b4o3ebc958f52dd022d0490eb.jpg",
-        "f22a74cfeqc385f8e0853bae46b9d433.jpg"
+        "01.jpg",
+        "02.jpg",
+        "03.jpg",
+        "04.jpg",
+        "05.jpg",
+        "06.jpg",
+        "07.jpg",
+        "08.jpg",
+        "09.jpg"
       ]
     },
     {
       key: "cosmos",
       label: { zh: "宇宙", en: "cosmos", ja: "宇宙" },
       files: [
-        "000078.JPG",
-        "9fe84c63dta21e7ebf383cfe2d157f27.jpg",
-        "de10d8031s2de79ea47e293a9a1afd7c.jpg"
+        "01.jpg",
+        "02.jpg",
+        "03.jpg"
       ]
     },
     {
       key: "organs",
       label: { zh: "肢体", en: "body", ja: "身体" },
       files: [
-        "000108.jpg",
-        "000113.jpg",
-        "000134.jpg",
-        "4210c03c1g4345bb6213714d891fc932.jpg",
-        "6cec7b2f2v6092bdd583e55259903e7a.jpg",
-        "70a83cc2dt704a7046721cbe3efa8368.jpg",
-        "a2f29a837o20fd283566eb0a201bc7b1.jpg"
+        "01.jpg",
+        "02.jpg",
+        "03.jpg",
+        "04.jpg",
+        "05.jpg",
+        "06.jpg",
+        "07.jpg"
       ]
     },
     {
       key: "gallery",
       label: { zh: "画廊", en: "gallery", ja: "ギャラリー" },
       files: [
-        "000004.jpg",
-        "6e9fbf451q4bc131bd3cd08b3f8a5f87.jpg",
-        "7ee931d8cm935a65a2a083b603fc9f7c.jpg",
-        "IMG_3698.JPG"
+        "01.jpg",
+        "02.jpg",
+        "03.jpg",
+        "04.jpg"
       ]
     },
     {
       key: "eyes",
       label: { zh: "眼睛", en: "eyes", ja: "眼" },
       files: [
-        "000070.JPG",
-        "580d71044uf482acbe8fe83889c90908.jpg",
-        "62defc0b3q1e47538697ef3691d9d352.jpg",
-        "6af5a5930i15445bd3770279dc2083fd.jpg",
-        "d8c1d9ddakfe606ae370b74f34b17a5c.jpg"
+        "01.jpg",
+        "02.jpg",
+        "03.jpg",
+        "04.jpg",
+        "05.jpg"
       ]
     }
   ];
