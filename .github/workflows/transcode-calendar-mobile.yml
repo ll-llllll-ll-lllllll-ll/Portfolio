@@ -69,3 +69,6 @@ jobs:
             echo 'No MP4 files were generated.'
             exit 1
           fi
+
+# This workflow intentionally creates MP4 only as a mobile compatibility layer;
+# the original WebM files remain untouched and continue to be used on desktop.
