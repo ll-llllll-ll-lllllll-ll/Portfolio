@@ -1,0 +1,137 @@
+name: Diagnose mobile calendar video
+
+on:
+  push:
+    branches:
+      - diag-mobile-calendar
+    paths:
+      - '.github/workflows/diag-mobile-calendar.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Inspect current cloud WebM
+        shell: bash
+        run: |
+          mkdir -p diagnostics
+          {
+            echo '=== SOURCE WEBM ==='
+            ffprobe -v error \
+              -show_entries stream=index,codec_name,codec_long_name,profile,pix_fmt,width,height,r_frame_rate \
+              -show_entries format=format_name,duration,size,bit_rate \
+              -of default=noprint_wrappers=1 \
+              calendar/cloud/1.webm
+          } | tee diagnostics/mobile-calendar.txt
+
+      - name: Build one Safari-safe MP4 test file
+        shell: bash
+        run: |
+          ffmpeg -y -i calendar/cloud/1.webm \
+            -map 0:v:0 -an \
+            -vf "scale='min(1280,iw)':-2:flags=lanczos" \
+            -c:v libx264 \
+            -profile:v main \
+            -level:v 3.1 \
+            -pix_fmt yuv420p \
+            -preset veryfast \
+            -crf 25 \
+            -movflags +faststart \
+            calendar/cloud/1.mp4
+
+      - name: Validate generated MP4 and decode a real frame
+        shell: bash
+        run: |
+          {
+            echo
+            echo '=== GENERATED MP4 ==='
+            ffprobe -v error \
+              -show_entries stream=index,codec_name,codec_long_name,profile,pix_fmt,width,height,r_frame_rate \
+              -show_entries format=format_name,duration,size,bit_rate \
+              -of default=noprint_wrappers=1 \
+              calendar/cloud/1.mp4
+            echo
+            echo '=== DECODE TEST ==='
+          } | tee -a diagnostics/mobile-calendar.txt
+
+          ffmpeg -v error -ss 1 -i calendar/cloud/1.mp4 -frames:v 1 -f null -
+          echo 'decoded_frame_at_1s=PASS' | tee -a diagnostics/mobile-calendar.txt
+
+          python - <<'PY' | tee -a diagnostics/mobile-calendar.txt
+          from pathlib import Path
+          p = Path('calendar/cloud/1.mp4').read_bytes()
+          moov = p.find(b'moov')
+          mdat = p.find(b'mdat')
+          print(f'moov_offset={moov}')
+          print(f'mdat_offset={mdat}')
+          print('faststart=' + ('PASS' if 0 <= moov < mdat else 'FAIL'))
+          PY
+
+      - name: Verify actual playback in WebKit with an iPhone viewport
+        shell: bash
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --silent playwright@1.55.0
+          npx playwright install --with-deps webkit >/dev/null
+
+          cat > diagnostics/mobile-video-test.html <<'HTML'
+          <!doctype html>
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <style>html,body,video{margin:0;width:100%;height:100%;background:#07101b}video{object-fit:cover}</style>
+          <video id="v" autoplay muted playsinline loop preload="auto" src="../calendar/cloud/1.mp4"></video>
+          HTML
+
+          python3 -m http.server 8000 >/tmp/mobile-video-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+
+          node <<'NODE' | tee -a diagnostics/mobile-calendar.txt
+          const { webkit, devices } = require('playwright');
+          (async () => {
+            const browser = await webkit.launch();
+            const context = await browser.newContext({ ...devices['iPhone 13'] });
+            const page = await context.newPage();
+            await page.goto('http://127.0.0.1:8000/diagnostics/mobile-video-test.html');
+            await page.waitForFunction(() => {
+              const v = document.querySelector('#v');
+              return v && v.readyState >= 2 && v.currentTime > 0.15 && !v.paused;
+            }, null, { timeout: 20000 });
+            const state = await page.$eval('#v', v => ({
+              readyState: v.readyState,
+              currentTime: v.currentTime,
+              paused: v.paused,
+              videoWidth: v.videoWidth,
+              videoHeight: v.videoHeight
+            }));
+            console.log('\n=== WEBKIT PLAYBACK TEST ===');
+            console.log(JSON.stringify(state));
+            console.log('webkit_mobile_playback=PASS');
+            await browser.close();
+          })().catch(err => {
+            console.error('\n=== WEBKIT PLAYBACK TEST ===');
+            console.error(err);
+            console.error('webkit_mobile_playback=FAIL');
+            process.exit(1);
+          });
+          NODE
+
+      - name: Commit diagnostic output only to diagnostic branch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add calendar/cloud/1.mp4 diagnostics/mobile-calendar.txt
+          git commit -m 'Diagnostic: verify Safari-safe cloud MP4 in WebKit'
+          git push
