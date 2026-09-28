@@ -1786,8 +1786,15 @@ body {
 }
 
 .room-view[data-room="seawater"] .room-scroll {
-  position: relative;
+  position: absolute;
+  inset: 54px 0 0;
   z-index: 3;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
   background: transparent;
 }
 
