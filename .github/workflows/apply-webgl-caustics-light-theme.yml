@@ -1,0 +1,46 @@
+name: Apply WebGL caustics light theme
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-webgl-caustics-light-theme.yml'
+      - 'tools/apply_webgl_caustics_light_theme.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply migration
+        run: python3 tools/apply_webgl_caustics_light_theme.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check script.js
+          grep -q 'powerPreference: "low-power"' script.js
+          grep -q 'getContext("webgl"' script.js
+          grep -q 'seawater-world-shadow' script.js
+          grep -q '180 - p \* 60' script.js
+          grep -q 'Site-wide light room theme' style.css
+          grep -q 'Seawater long-space — WebGL caustics' style.css
+          grep -q 'theme-color" content="#f4f3ee"' index.html
+          ! grep -q 'Site-wide dark room theme' style.css
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add script.js style.css index.html
+          git commit -m 'Use low-power WebGL caustics and restore light theme'
+          git push
