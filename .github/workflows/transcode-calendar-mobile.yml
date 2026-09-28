@@ -14,6 +14,7 @@ jobs:
   transcode:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,34 +24,48 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Create H.264 MP4 fallbacks
+      - name: Create Safari-safe H.264 MP4 fallbacks
         shell: bash
         run: |
           set -euo pipefail
           while IFS= read -r -d '' input; do
             output="${input%.webm}.mp4"
+
+            if [[ -f "$output" && "$output" -nt "$input" ]]; then
+              echo "Up to date: $output"
+              continue
+            fi
+
             echo "Transcoding $input -> $output"
-            ffmpeg -y -i "$input" \
-              -an \
+            ffmpeg -hide_banner -loglevel error -stats -y -i "$input" \
+              -map 0:v:0 -an \
+              -vf "scale='min(1280,iw)':-2:flags=lanczos" \
               -c:v libx264 \
               -profile:v main \
-              -level 4.0 \
+              -level:v 3.1 \
               -pix_fmt yuv420p \
-              -preset medium \
-              -crf 24 \
+              -preset veryfast \
+              -crf 25 \
               -movflags +faststart \
               "$output"
+
+            ffmpeg -v error -ss 1 -i "$output" -frames:v 1 -f null -
           done < <(find calendar -type f -name '*.webm' -print0)
 
       - name: Commit generated fallbacks
         shell: bash
         run: |
-          if git status --porcelain -- 'calendar/**/*.mp4' | grep -q .; then
+          if find calendar -type f -name '*.mp4' -print -quit | grep -q .; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add 'calendar/**/*.mp4'
-            git commit -m 'Generate H.264 calendar video fallbacks'
-            git push
+            git add calendar
+            if git diff --cached --quiet; then
+              echo 'No MP4 changes to commit.'
+            else
+              git commit -m 'Generate Safari-safe calendar video fallbacks'
+              git push
+            fi
           else
-            echo 'No MP4 changes to commit.'
+            echo 'No MP4 files were generated.'
+            exit 1
           fi
