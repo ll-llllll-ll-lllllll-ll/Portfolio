@@ -33,10 +33,9 @@ html:lang(zh-Hans) .calendar-current {
 /*
   Room image stages
   -----------------
-  Every work / collection image now sits inside the same quiet grey viewing field.
-  The photograph or painting keeps its original aspect ratio and is never cropped.
-  Portrait images use the same stage area as landscape images instead of expanding
-  to fill the whole screen.
+  Every work / collection image sits inside the same quiet grey viewing field.
+  The original aspect ratio is always preserved; portrait images use the same
+  stage area as landscape images rather than expanding to the full viewport.
 */
 
 .room-image {
@@ -81,33 +80,57 @@ html:lang(zh-Hans) .calendar-current {
 }
 
 /*
-  room by the lake
-  ----------------
-  The video remains the preferred source, but mobile Safari can suppress autoplay
-  (especially in Low Power Mode). A second, extremely soft CSS light field therefore
-  lives behind the video. It is almost invisible when the video plays, but prevents
-  the grey stage from becoming completely static when autoplay is refused.
+  Collection after-image field
+  ----------------------------
+  All collection image stages now carry a restrained moving black-and-white light
+  field. It should be perceptible after a moment, but never compete with the object.
+  This is CSS-only, so it still moves when mobile Safari refuses background video.
 */
-.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
-  background: #797976;
+.room-view[data-group="collection"] .room-image {
   isolation: isolate;
+  background: #858581;
 }
 
-.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination::before {
+.room-view[data-group="collection"] .room-image::before {
   position: absolute;
   z-index: 0;
-  inset: -30%;
+  inset: -34%;
   content: "";
-  opacity: 0.30;
-  transform: scale(1.1) translate3d(-2%, -1%, 0);
-  background:
-    radial-gradient(ellipse at 28% 46%, rgba(235, 235, 229, 0.34) 0 7%, transparent 24%),
-    radial-gradient(ellipse at 71% 53%, rgba(220, 220, 214, 0.24) 0 6%, transparent 22%),
-    radial-gradient(ellipse at 52% 68%, rgba(245, 245, 238, 0.15) 0 5%, transparent 20%),
-    linear-gradient(105deg, rgba(18, 18, 18, 0.92), rgba(74, 74, 72, 0.65) 48%, rgba(17, 17, 17, 0.92));
-  filter: grayscale(1) blur(38px);
-  animation: lake-afterimage 17s ease-in-out infinite alternate;
   pointer-events: none;
+  opacity: 0.44;
+  background:
+    radial-gradient(ellipse at 24% 42%, rgba(238, 238, 231, 0.48) 0 7%, transparent 25%),
+    radial-gradient(ellipse at 72% 50%, rgba(224, 224, 217, 0.34) 0 7%, transparent 24%),
+    radial-gradient(ellipse at 47% 73%, rgba(248, 248, 241, 0.22) 0 5%, transparent 22%),
+    linear-gradient(105deg, rgba(13, 13, 13, 0.94), rgba(82, 82, 78, 0.72) 48%, rgba(14, 14, 14, 0.94));
+  filter: grayscale(1) blur(32px);
+  transform: scale(1.12) translate3d(-3%, -1%, 0) rotate(-0.3deg);
+  animation: collection-afterimage 14s ease-in-out infinite alternate;
+}
+
+@keyframes collection-afterimage {
+  0% {
+    transform: scale(1.12) translate3d(-4%, -1.8%, 0) rotate(-0.45deg);
+    opacity: 0.34;
+  }
+  45% {
+    transform: scale(1.19) translate3d(1.2%, 1.1%, 0) rotate(0.18deg);
+    opacity: 0.50;
+  }
+  100% {
+    transform: scale(1.14) translate3d(4%, -0.4%, 0) rotate(0.42deg);
+    opacity: 0.39;
+  }
+}
+
+/*
+  room by the lake
+  ----------------
+  The real water video remains underneath the painting. It is intentionally
+  monochrome and strongly blurred, but is now a little more legible than before.
+*/
+.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
+  background: #777773;
 }
 
 .room-image-ripple,
@@ -122,37 +145,22 @@ html:lang(zh-Hans) .calendar-current {
   width: 136%;
   height: 136%;
   object-fit: cover;
-  opacity: 0.23;
+  opacity: 0.36;
   transform: scale(1.08);
-  filter: grayscale(1) saturate(0) contrast(0.82) brightness(0.16) blur(44px);
+  filter: grayscale(1) saturate(0) contrast(0.94) brightness(0.24) blur(30px);
 }
 
 .room-image-ripple-veil {
   z-index: 2;
   inset: 0;
   background:
-    radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.50), rgba(137, 137, 132, 0.69) 62%, rgba(104, 104, 101, 0.79) 100%),
-    rgba(137, 137, 133, 0.64);
+    radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.30), rgba(137, 137, 132, 0.50) 62%, rgba(101, 101, 98, 0.67) 100%),
+    rgba(128, 128, 124, 0.42);
   mix-blend-mode: normal;
 }
 
 .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination img {
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
-}
-
-@keyframes lake-afterimage {
-  0% {
-    transform: scale(1.10) translate3d(-3%, -1.5%, 0) rotate(-0.35deg);
-    opacity: 0.20;
-  }
-  45% {
-    transform: scale(1.16) translate3d(1.5%, 0.8%, 0) rotate(0.2deg);
-    opacity: 0.31;
-  }
-  100% {
-    transform: scale(1.12) translate3d(3%, -0.6%, 0) rotate(0.42deg);
-    opacity: 0.23;
-  }
 }
 
 @media (max-width: 760px) {
@@ -169,29 +177,36 @@ html:lang(zh-Hans) .calendar-current {
     max-height: calc(100% - 32px);
   }
 
-  .room-image-ripple {
-    inset: -30%;
-    width: 160%;
-    height: 160%;
-    opacity: 0.28;
-    filter: grayscale(1) saturate(0) contrast(0.82) brightness(0.20) blur(32px);
+  .room-view[data-group="collection"] .room-image::before {
+    inset: -42%;
+    opacity: 0.50;
+    filter: grayscale(1) blur(25px);
+    animation-duration: 12s;
   }
 
-  .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination::before {
-    inset: -36%;
-    opacity: 0.34;
-    filter: grayscale(1) blur(30px);
+  .room-image-ripple {
+    inset: -28%;
+    width: 156%;
+    height: 156%;
+    opacity: 0.44;
+    filter: grayscale(1) saturate(0) contrast(0.98) brightness(0.28) blur(24px);
+  }
+
+  .room-image-ripple-veil {
+    background:
+      radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.24), rgba(137, 137, 132, 0.43) 62%, rgba(98, 98, 95, 0.61) 100%),
+      rgba(124, 124, 120, 0.34);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination::before {
+  .room-view[data-group="collection"] .room-image::before {
     animation: none;
-    transform: scale(1.1);
-    opacity: 0.22;
+    transform: scale(1.14);
+    opacity: 0.38;
   }
 
-  /* Keep the first video frame visible rather than removing the background entirely. */
+  /* Keep the water frame visible rather than removing the background entirely. */
   .room-image-ripple {
     display: block;
   }
