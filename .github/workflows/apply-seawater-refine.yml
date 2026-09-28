@@ -1,0 +1,44 @@
+name: Apply seawater light-space refinement
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-seawater-refine.yml'
+      - 'tools/apply_seawater_refine.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply refinement
+        run: python3 tools/apply_seawater_refine.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check script.js
+          grep -q '180 + p \* 60' script.js
+          grep -q 'lowWidth = mobile ? 160 : 240' script.js
+          grep -q 'function subjectBounds' script.js
+          grep -q 'function fillHullBlur' script.js
+          grep -q 'ctx.globalAlpha = width <= 760 ? 0.58 : 0.54' script.js
+          grep -q 'Seawater light-space refinement v2' style.css
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add script.js style.css
+          git commit -m 'Refine seawater caustics and penumbra'
+          git push
