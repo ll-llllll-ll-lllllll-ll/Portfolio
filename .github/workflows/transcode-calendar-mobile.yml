@@ -10,11 +10,15 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: calendar-mobile-fallbacks
+  cancel-in-progress: true
+
 jobs:
   transcode:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,21 +35,21 @@ jobs:
           while IFS= read -r -d '' input; do
             output="${input%.webm}.mp4"
 
-            if [[ -f "$output" && "$output" -nt "$input" ]]; then
-              echo "Up to date: $output"
+            if [[ -f "$output" ]]; then
+              echo "Already present: $output"
               continue
             fi
 
             echo "Transcoding $input -> $output"
             ffmpeg -hide_banner -loglevel error -stats -y -i "$input" \
               -map 0:v:0 -an \
-              -vf "scale='min(1280,iw)':-2:flags=lanczos" \
+              -vf "scale='min(960,iw)':-2:flags=lanczos" \
               -c:v libx264 \
               -profile:v main \
               -level:v 3.1 \
               -pix_fmt yuv420p \
-              -preset veryfast \
-              -crf 25 \
+              -preset superfast \
+              -crf 26 \
               -movflags +faststart \
               "$output"
 
@@ -70,5 +74,4 @@ jobs:
             exit 1
           fi
 
-# This workflow intentionally creates MP4 only as a mobile compatibility layer;
-# the original WebM files remain untouched and continue to be used on desktop.
+# MP4 is only the iPhone/iPad compatibility layer. Original WebM files stay intact.
