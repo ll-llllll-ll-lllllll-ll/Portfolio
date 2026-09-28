@@ -1,0 +1,182 @@
+name: Reorganize repository
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/reorganize-repository.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize collection paths
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -d 'collection/room by the lake' ]]; then
+            mv 'collection/room by the lake' collection/room-by-the-lake
+          fi
+          if [[ -f 'collection/room-by-the-lake/room by the lake.JPG' ]]; then
+            mv 'collection/room-by-the-lake/room by the lake.JPG' collection/room-by-the-lake/room-by-the-lake.jpg
+          fi
+          if [[ -f 'collection/room-by-the-lake/painting on site.jpg' ]]; then
+            mv 'collection/room-by-the-lake/painting on site.jpg' collection/room-by-the-lake/painting-on-site.jpg
+          fi
+
+          if [[ -d 'collection/collection of all oceans & seas' ]]; then
+            mv 'collection/collection of all oceans & seas' collection/oceans-and-seas
+          fi
+
+      - name: Update asset paths before merging scripts
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              './collection/room%20by%20the%20lake/room%20by%20the%20lake.JPG': './collection/room-by-the-lake/room-by-the-lake.jpg',
+              './collection/room%20by%20the%20lake/painting%20on%20site.jpg': './collection/room-by-the-lake/painting-on-site.jpg',
+              './collection/collection%20of%20all%20oceans%20%26%20seas/': './collection/oceans-and-seas/',
+              './collection/room by the lake/room by the lake.JPG': './collection/room-by-the-lake/room-by-the-lake.jpg',
+              './collection/room by the lake/painting on site.jpg': './collection/room-by-the-lake/painting-on-site.jpg',
+              './collection/collection of all oceans & seas/': './collection/oceans-and-seas/',
+          }
+
+          for name in ['script.js', 'collection-pages.js', 'ambient-color.js', 'video-compat.js', 'site-patches.js']:
+              path = Path(name)
+              text = path.read_text(encoding='utf-8')
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Merge CSS layers into style.css
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            cat style.css
+            printf '\n\n/* ===== Collection gallery ===== */\n\n'
+            cat collection-pages.css
+            printf '\n\n/* ===== Ambient colour system ===== */\n\n'
+            cat ambient-color.css
+            printf '\n\n/* ===== Typography and room refinements ===== */\n\n'
+            cat site-patches.css
+          } > style.merged.css
+          mv style.merged.css style.css
+
+      - name: Merge runtime scripts into script.js
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            cat script.js
+            printf '\n\n/* ===== Collection pages ===== */\n\n'
+            cat collection-pages.js
+            printf '\n\n/* ===== Ambient colour hooks ===== */\n\n'
+            cat ambient-color.js
+            printf '\n\n/* ===== Mobile video compatibility ===== */\n\n'
+            cat video-compat.js
+            printf '\n\n/* ===== Site refinements ===== */\n\n'
+            cat site-patches.js
+          } > script.merged.js
+          mv script.merged.js script.js
+
+      - name: Move calendar library beside calendar media
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv ambient-library.js calendar/library.js
+
+      - name: Simplify index imports
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          remove = (
+              './collection-pages.css',
+              './ambient-color.css',
+              './site-patches.css',
+              './collection-pages.js',
+              './ambient-color.js',
+              './video-compat.js',
+              './site-patches.js',
+          )
+          cleaned = []
+          for line in lines:
+              if any(token in line for token in remove):
+                  continue
+              line = line.replace('./ambient-library.js', './calendar/library.js')
+              cleaned.append(line)
+          path.write_text('\n'.join(cleaned) + '\n', encoding='utf-8')
+          PY
+
+      - name: Remove merged and diagnostic files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f collection-pages.css collection-pages.js
+          rm -f ambient-color.css ambient-color.js
+          rm -f video-compat.js
+          rm -f site-patches.css site-patches.js
+          rm -f .github/workflows/diag-mobile-calendar.yml
+          rm -rf diagnostics
+
+      - name: Validate cleaned site
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check script.js
+
+          test -s index.html
+          test -s style.css
+          test -s script.js
+          test -s calendar/library.js
+          test -s .github/workflows/transcode-calendar-mobile.yml
+
+          test -f collection/room-by-the-lake/room-by-the-lake.jpg
+          test -f collection/room-by-the-lake/painting-on-site.jpg
+          test -f collection/oceans-and-seas/memory.jpeg
+          test -f collection/oceans-and-seas/totetank.jpg
+
+          ! grep -qE 'collection-pages|ambient-color|video-compat|site-patches|ambient-library\.js' index.html
+          grep -q './calendar/library.js' index.html
+          grep -q './style.css' index.html
+          grep -q './script.js' index.html
+
+          ! grep -q 'room%20by%20the%20lake' script.js
+          ! grep -q 'collection%20of%20all%20oceans' script.js
+
+          echo 'Repository cleanup validation: PASS'
+
+      - name: Commit cleaned structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'Nothing to reorganize.'
+          else
+            git commit -m 'Consolidate site files and clean repository structure'
+            git push
+          fi
