@@ -1443,10 +1443,10 @@ html:lang(zh-Hans) .calendar-current {
     radial-gradient(ellipse at 45% 82%, rgba(250, 250, 244, 0.38) 0 6%, rgba(188, 188, 182, 0.18) 18%, transparent 34%),
     radial-gradient(ellipse at 55% 18%, rgba(20, 20, 19, 0.76) 0 10%, rgba(45, 45, 43, 0.34) 26%, transparent 48%),
     linear-gradient(118deg, rgba(16, 16, 15, 0.96), rgba(102, 102, 97, 0.72) 43%, rgba(26, 26, 25, 0.92) 72%, rgba(9, 9, 9, 0.98));
-  filter: grayscale(1) blur(18px);
+  filter: grayscale(1) blur(24px);
   transform-origin: 50% 50%;
-  transform: scale(1.14) translate3d(-9%, -4%, 0) rotate(-1.2deg);
-  animation: collection-afterimage 9s cubic-bezier(.42, 0, .25, 1) infinite alternate;
+  transform: scale(1.22) rotate(0deg) translate3d(8%, 0, 0);
+  animation: collection-afterimage-orbit 32s linear infinite, collection-afterimage-breathe 16s ease-in-out infinite alternate;
   will-change: transform, opacity;
 }
 
@@ -1466,27 +1466,18 @@ html:lang(zh-Hans) .calendar-current {
   mix-blend-mode: soft-light;
 }
 
-@keyframes collection-afterimage {
-  0% {
-    transform: scale(1.14) translate3d(-11%, -5%, 0) rotate(-1.4deg);
-    opacity: 0.42;
+@keyframes collection-afterimage-orbit {
+  from {
+    transform: scale(1.22) rotate(0deg) translate3d(8%, 0, 0);
   }
-  25% {
-    transform: scale(1.23) translate3d(7%, -8%, 0) rotate(0.9deg);
-    opacity: 0.68;
+  to {
+    transform: scale(1.22) rotate(360deg) translate3d(8%, 0, 0);
   }
-  52% {
-    transform: scale(1.17) translate3d(11%, 7%, 0) rotate(1.6deg);
-    opacity: 0.50;
-  }
-  76% {
-    transform: scale(1.27) translate3d(-7%, 9%, 0) rotate(-0.7deg);
-    opacity: 0.72;
-  }
-  100% {
-    transform: scale(1.18) translate3d(-12%, 2%, 0) rotate(-1.8deg);
-    opacity: 0.48;
-  }
+}
+
+@keyframes collection-afterimage-breathe {
+  from { opacity: 0.48; }
+  to { opacity: 0.68; }
 }
 
 @media (max-width: 760px) {
@@ -1506,8 +1497,8 @@ html:lang(zh-Hans) .calendar-current {
   .room-view[data-group="collection"] .room-image::before {
     inset: -26%;
     opacity: 0.62;
-    filter: grayscale(1) blur(14px);
-    animation-duration: 8s;
+    filter: grayscale(1) blur(18px);
+    animation: collection-afterimage-orbit 27s linear infinite, collection-afterimage-breathe 14s ease-in-out infinite alternate;
   }
 
   .room-view[data-group="collection"] .room-image::after {
@@ -1526,6 +1517,62 @@ html:lang(zh-Hans) .calendar-current {
     background:
       radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.20), rgba(137, 137, 132, 0.38) 62%, rgba(98, 98, 95, 0.56) 100%),
       rgba(124, 124, 120, 0.28);
+  }
+}
+
+/* Seawater collection — very slow travelling sunlight. */
+.room-view[data-room="seawater"] .room-image::after {
+  z-index: 2;
+  inset: -10%;
+  opacity: 0.42;
+  background-image: radial-gradient(circle, rgba(255,255,248,.78) 0 5%, rgba(238,238,228,.46) 16%, rgba(207,207,198,.20) 31%, transparent 56%);
+  background-size: 50% 50%;
+  background-repeat: no-repeat;
+  background-position: 50% 0%;
+  mix-blend-mode: screen;
+  filter: grayscale(1) blur(26px);
+  animation: seawater-sun-orbit 88s linear infinite;
+  will-change: background-position;
+}
+
+.room-view[data-room="seawater"] .room-image img {
+  animation: seawater-cast-shadow 88s linear infinite;
+  will-change: box-shadow;
+}
+
+@keyframes seawater-sun-orbit {
+  0% { background-position: 50% 0%; }
+  12.5% { background-position: 82% 10%; }
+  25% { background-position: 100% 50%; }
+  37.5% { background-position: 82% 90%; }
+  50% { background-position: 50% 100%; }
+  62.5% { background-position: 18% 90%; }
+  75% { background-position: 0% 50%; }
+  87.5% { background-position: 18% 10%; }
+  100% { background-position: 50% 0%; }
+}
+
+@keyframes seawater-cast-shadow {
+  0% { box-shadow: 0 18px 28px 5px rgba(0,0,0,.16), 0 34px 60px 14px rgba(0,0,0,.085); }
+  12.5% { box-shadow: -13px 13px 30px 6px rgba(0,0,0,.16), -27px 27px 62px 15px rgba(0,0,0,.085); }
+  25% { box-shadow: -18px 0 28px 5px rgba(0,0,0,.16), -34px 0 60px 14px rgba(0,0,0,.085); }
+  37.5% { box-shadow: -13px -13px 30px 6px rgba(0,0,0,.16), -27px -27px 62px 15px rgba(0,0,0,.085); }
+  50% { box-shadow: 0 -18px 28px 5px rgba(0,0,0,.16), 0 -34px 60px 14px rgba(0,0,0,.085); }
+  62.5% { box-shadow: 13px -13px 30px 6px rgba(0,0,0,.16), 27px -27px 62px 15px rgba(0,0,0,.085); }
+  75% { box-shadow: 18px 0 28px 5px rgba(0,0,0,.16), 34px 0 60px 14px rgba(0,0,0,.085); }
+  87.5% { box-shadow: 13px 13px 30px 6px rgba(0,0,0,.16), 27px 27px 62px 15px rgba(0,0,0,.085); }
+  100% { box-shadow: 0 18px 28px 5px rgba(0,0,0,.16), 0 34px 60px 14px rgba(0,0,0,.085); }
+}
+
+@media (max-width: 760px) {
+  .room-view[data-room="seawater"] .room-image::after {
+    opacity: 0.46;
+    filter: grayscale(1) blur(22px);
+    animation-duration: 96s;
+  }
+
+  .room-view[data-room="seawater"] .room-image img {
+    animation-duration: 96s;
   }
 }
 
