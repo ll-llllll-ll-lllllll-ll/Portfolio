@@ -1,0 +1,41 @@
+name: Refine collection stage
+
+on:
+  push:
+    paths:
+      - '.github/workflows/refine-collection-stage.yml'
+      - 'tools/refine_collection_stage.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply refinement
+        run: python3 tools/refine_collection_stage.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'Collection editorial stage' style.css
+          grep -q 'width: min(72vw, 1120px)' style.css
+          grep -q 'height: min(64svh, 680px)' style.css
+          grep -q 'width: calc(100vw - 38px)' style.css
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add style.css
+          git commit -m 'Refine collection image stages with editorial spacing'
+          git push
