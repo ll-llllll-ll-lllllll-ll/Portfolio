@@ -1,0 +1,56 @@
+name: Build mobile calendar video fallbacks
+
+on:
+  push:
+    paths:
+      - 'calendar/**/*.webm'
+      - '.github/workflows/transcode-calendar-mobile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  transcode:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Create H.264 MP4 fallbacks
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' input; do
+            output="${input%.webm}.mp4"
+            echo "Transcoding $input -> $output"
+            ffmpeg -y -i "$input" \
+              -an \
+              -c:v libx264 \
+              -profile:v main \
+              -level 4.0 \
+              -pix_fmt yuv420p \
+              -preset medium \
+              -crf 24 \
+              -movflags +faststart \
+              "$output"
+          done < <(find calendar -type f -name '*.webm' -print0)
+
+      - name: Commit generated fallbacks
+        shell: bash
+        run: |
+          if git status --porcelain -- 'calendar/**/*.mp4' | grep -q .; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add 'calendar/**/*.mp4'
+            git commit -m 'Generate H.264 calendar video fallbacks'
+            git push
+          else
+            echo 'No MP4 changes to commit.'
+          fi
