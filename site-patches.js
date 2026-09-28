@@ -5,6 +5,7 @@
   - keeps works and collections in separate navigation loops
   - points the old root work images to their new /works/ folders
   - restores Fictional Topography as the third work
+  - repairs iOS calendar playback with Safari-safe H.264 MP4 fallbacks
   - adds the very soft ripple hallucination behind room by the lake
 */
 
@@ -92,6 +93,84 @@
     }
   }
 
+  function isIOSLike() {
+    var ua = navigator.userAgent || "";
+    var classicIOS = /iPad|iPhone|iPod/.test(ua);
+    var touchIPad = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    return classicIOS || touchIPad;
+  }
+
+  function tryPlayVideo(video) {
+    if (!video || !document.documentElement.contains(video)) return;
+    video.defaultMuted = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    video.loop = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+
+    var promise;
+    try {
+      promise = video.play();
+    } catch (_) {
+      return;
+    }
+    if (promise && typeof promise.catch === "function") {
+      promise.catch(function () {});
+    }
+  }
+
+  function repairAmbientCalendarVideo() {
+    var video = document.querySelector(".home-view .ambient-video");
+    if (!video) return;
+
+    var source = video.dataset.originalWebm || video.getAttribute("src") || "";
+    if (!source) return;
+
+    if (!video.dataset.originalWebm) video.dataset.originalWebm = source;
+
+    /*
+      Diagnostic result: the uploaded WebM is VP9 Profile 2, 10-bit yuv420p10le.
+      iPhone Safari can expose WebM support while still failing on this profile.
+      On iOS we therefore bypass WebM completely and request the matched H.264 MP4.
+    */
+    if (isIOSLike() && /\.webm(?:$|\?)/i.test(source)) {
+      var mp4 = source.replace(/\.webm(?:\?.*)?$/i, ".mp4");
+      if (video.dataset.mobileMp4 !== mp4) {
+        video.dataset.mobileMp4 = mp4;
+        video.pause();
+        video.removeAttribute("src");
+        video.src = mp4;
+        video.preload = "auto";
+        video.load();
+      }
+    }
+
+    if (video.dataset.playbackWired !== "1") {
+      video.dataset.playbackWired = "1";
+
+      video.addEventListener("loadeddata", function () {
+        video.classList.add("is-ready");
+        tryPlayVideo(video);
+      });
+      video.addEventListener("canplay", function () {
+        video.classList.add("is-ready");
+        tryPlayVideo(video);
+      });
+      video.addEventListener("playing", function () {
+        video.classList.add("is-playing");
+        document.documentElement.dataset.ambientVideo = "playing";
+      });
+      video.addEventListener("error", function () {
+        document.documentElement.dataset.ambientVideo = "error";
+      });
+    }
+
+    tryPlayVideo(video);
+  }
+
   function addRippleHallucination(item) {
     if (!item || item.slug !== "room-by-the-lake") return;
 
@@ -122,20 +201,16 @@
     video.setAttribute("aria-hidden", "true");
     video.setAttribute("tabindex", "-1");
 
-    /*
-      Pexels 5678004: dark ocean water with gentle ripples.
-      Try the smaller rendition first; UHD remains as a fallback source.
-    */
     var sources = [
       "https://videos.pexels.com/video-files/5678004/5678004-sd_640_360_30fps.mp4",
       "https://videos.pexels.com/video-files/5678004/5678004-uhd_4096_2160_30fps.mp4"
     ];
 
     sources.forEach(function (src) {
-      var source = document.createElement("source");
-      source.src = src;
-      source.type = "video/mp4";
-      video.appendChild(source);
+      var sourceNode = document.createElement("source");
+      sourceNode.src = src;
+      sourceNode.type = "video/mp4";
+      video.appendChild(sourceNode);
     });
 
     var veil = document.createElement("span");
@@ -191,20 +266,11 @@
     } else {
       tryPlay();
     }
-
-    /*
-      iOS may refuse autoplay while Low Power Mode is active. Any later user gesture
-      is a valid opportunity to retry, while the CSS light field stays visible before it.
-    */
-    function resumeAfterGesture() {
-      if (video.paused) tryPlay();
-    }
-
-    document.addEventListener("pointerdown", resumeAfterGesture, { once: true, passive: true, capture: true });
-    document.addEventListener("touchstart", resumeAfterGesture, { once: true, passive: true, capture: true });
   }
 
-  function refineCurrentRoom() {
+  function refineCurrentView() {
+    repairAmbientCalendarVideo();
+
     var item = parseRoute();
     var roomView = document.querySelector(".room-view");
     if (!item || !roomView) return;
@@ -223,12 +289,24 @@
       queued = true;
       requestAnimationFrame(function () {
         queued = false;
-        refineCurrentRoom();
+        refineCurrentView();
       });
     });
     observer.observe(appNode, { childList: true, subtree: true });
   }
 
+  function resumeMediaAfterGesture() {
+    repairAmbientCalendarVideo();
+    var rippleVideo = document.querySelector(".room-image-ripple");
+    if (rippleVideo) tryPlayVideo(rippleVideo);
+  }
+
+  document.addEventListener("pointerdown", resumeMediaAfterGesture, { passive: true, capture: true });
+  document.addEventListener("touchstart", resumeMediaAfterGesture, { passive: true, capture: true });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) repairAmbientCalendarVideo();
+  });
+
   render();
-  requestAnimationFrame(refineCurrentRoom);
+  requestAnimationFrame(refineCurrentView);
 })();
