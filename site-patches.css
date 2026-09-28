@@ -82,9 +82,8 @@ html:lang(zh-Hans) .calendar-current {
 /*
   Collection after-image field
   ----------------------------
-  All collection image stages carry a moving black-and-white light field. The
-  blur is deliberately lower now: the movement should read as soft wave-light,
-  not dissolve into a flat grey mist.
+  Raw-motion preview: blur is temporarily removed completely so the underlying
+  movement and light geometry can be judged before choosing a final blur radius.
 */
 .room-view[data-group="collection"] .room-image {
   isolation: isolate;
@@ -103,7 +102,7 @@ html:lang(zh-Hans) .calendar-current {
     radial-gradient(ellipse at 72% 50%, rgba(224, 224, 217, 0.38) 0 7%, transparent 24%),
     radial-gradient(ellipse at 47% 73%, rgba(248, 248, 241, 0.25) 0 5%, transparent 22%),
     linear-gradient(105deg, rgba(13, 13, 13, 0.94), rgba(82, 82, 78, 0.72) 48%, rgba(14, 14, 14, 0.94));
-  filter: grayscale(1) blur(16px);
+  filter: grayscale(1) blur(0);
   transform: scale(1.10) translate3d(-3%, -1%, 0) rotate(-0.3deg);
   animation: collection-afterimage 13s ease-in-out infinite alternate;
 }
@@ -126,8 +125,8 @@ html:lang(zh-Hans) .calendar-current {
 /*
   room by the lake
   ----------------
-  The real water video remains underneath the painting. It stays monochrome and
-  dark, but its wave-light is now more readable through a much smaller blur radius.
+  Raw-motion preview: keep the monochrome / dark treatment but remove blur so the
+  source water movement itself is visible clearly for evaluation.
 */
 .room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
   background: #777773;
@@ -147,7 +146,7 @@ html:lang(zh-Hans) .calendar-current {
   object-fit: cover;
   opacity: 0.40;
   transform: scale(1.05);
-  filter: grayscale(1) saturate(0) contrast(1.02) brightness(0.28) blur(12px);
+  filter: grayscale(1) saturate(0) contrast(1.02) brightness(0.28) blur(0);
 }
 
 .room-image-ripple-veil {
@@ -180,7 +179,7 @@ html:lang(zh-Hans) .calendar-current {
   .room-view[data-group="collection"] .room-image::before {
     inset: -34%;
     opacity: 0.56;
-    filter: grayscale(1) blur(13px);
+    filter: grayscale(1) blur(0);
     animation-duration: 11s;
   }
 
@@ -189,7 +188,7 @@ html:lang(zh-Hans) .calendar-current {
     width: 136%;
     height: 136%;
     opacity: 0.48;
-    filter: grayscale(1) saturate(0) contrast(1.04) brightness(0.32) blur(10px);
+    filter: grayscale(1) saturate(0) contrast(1.04) brightness(0.32) blur(0);
   }
 
   .room-image-ripple-veil {
