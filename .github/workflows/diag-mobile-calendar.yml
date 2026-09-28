@@ -79,11 +79,59 @@ jobs:
           print('faststart=' + ('PASS' if 0 <= moov < mdat else 'FAIL'))
           PY
 
+      - name: Verify actual playback in WebKit with an iPhone viewport
+        shell: bash
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --silent playwright@1.55.0
+          npx playwright install --with-deps webkit >/dev/null
+
+          cat > diagnostics/mobile-video-test.html <<'HTML'
+          <!doctype html>
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <style>html,body,video{margin:0;width:100%;height:100%;background:#07101b}video{object-fit:cover}</style>
+          <video id="v" autoplay muted playsinline loop preload="auto" src="../calendar/cloud/1.mp4"></video>
+          HTML
+
+          python3 -m http.server 8000 >/tmp/mobile-video-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+
+          node <<'NODE' | tee -a diagnostics/mobile-calendar.txt
+          const { webkit, devices } = require('playwright');
+          (async () => {
+            const browser = await webkit.launch();
+            const context = await browser.newContext({ ...devices['iPhone 13'] });
+            const page = await context.newPage();
+            await page.goto('http://127.0.0.1:8000/diagnostics/mobile-video-test.html');
+            await page.waitForFunction(() => {
+              const v = document.querySelector('#v');
+              return v && v.readyState >= 2 && v.currentTime > 0.15 && !v.paused;
+            }, null, { timeout: 20000 });
+            const state = await page.$eval('#v', v => ({
+              readyState: v.readyState,
+              currentTime: v.currentTime,
+              paused: v.paused,
+              videoWidth: v.videoWidth,
+              videoHeight: v.videoHeight
+            }));
+            console.log('\n=== WEBKIT PLAYBACK TEST ===');
+            console.log(JSON.stringify(state));
+            console.log('webkit_mobile_playback=PASS');
+            await browser.close();
+          })().catch(err => {
+            console.error('\n=== WEBKIT PLAYBACK TEST ===');
+            console.error(err);
+            console.error('webkit_mobile_playback=FAIL');
+            process.exit(1);
+          });
+          NODE
+
       - name: Commit diagnostic output only to diagnostic branch
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add calendar/cloud/1.mp4 diagnostics/mobile-calendar.txt
-          git commit -m 'Diagnostic: generate Safari-safe cloud MP4 and report'
+          git commit -m 'Diagnostic: verify Safari-safe cloud MP4 in WebKit'
           git push
