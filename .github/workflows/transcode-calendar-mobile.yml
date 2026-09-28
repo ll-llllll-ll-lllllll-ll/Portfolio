@@ -28,22 +28,24 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Create Safari-safe H.264 MP4 fallbacks
+      - name: Create Safari-safe H.264 MP4 fallbacks in parallel
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' input; do
+
+          transcode_one() {
+            input="$1"
             output="${input%.webm}.mp4"
 
             if [[ -f "$output" ]]; then
               echo "Already present: $output"
-              continue
+              return 0
             fi
 
             echo "Transcoding $input -> $output"
-            ffmpeg -hide_banner -loglevel error -stats -y -i "$input" \
+            ffmpeg -hide_banner -loglevel error -y -i "$input" \
               -map 0:v:0 -an \
-              -vf "scale='min(960,iw)':-2:flags=lanczos" \
+              -vf "scale='min(854,iw)':-2:flags=lanczos" \
               -c:v libx264 \
               -profile:v main \
               -level:v 3.1 \
@@ -54,24 +56,44 @@ jobs:
               "$output"
 
             ffmpeg -v error -ss 1 -i "$output" -frames:v 1 -f null -
+            echo "Validated: $output"
+          }
+          export -f transcode_one
+
+          find calendar -type f -name '*.webm' -print0 \
+            | xargs -0 -r -n 1 -P 3 bash -c 'transcode_one "$1"' _
+
+      - name: Verify every WebM has a decoded MP4 companion
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          while IFS= read -r -d '' input; do
+            output="${input%.webm}.mp4"
+            if [[ ! -s "$output" ]]; then
+              echo "MISSING: $output"
+              missing=1
+              continue
+            fi
+            ffprobe -v error \
+              -select_streams v:0 \
+              -show_entries stream=codec_name,profile,pix_fmt,width,height \
+              -of compact=p=0:nk=1 \
+              "$output"
           done < <(find calendar -type f -name '*.webm' -print0)
+          test "$missing" -eq 0
 
       - name: Commit generated fallbacks
         shell: bash
         run: |
-          if find calendar -type f -name '*.mp4' -print -quit | grep -q .; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add calendar
-            if git diff --cached --quiet; then
-              echo 'No MP4 changes to commit.'
-            else
-              git commit -m 'Generate Safari-safe calendar video fallbacks'
-              git push
-            fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add calendar
+          if git diff --cached --quiet; then
+            echo 'No MP4 changes to commit.'
           else
-            echo 'No MP4 files were generated.'
-            exit 1
+            git commit -m 'Generate Safari-safe calendar video fallbacks'
+            git push
           fi
 
 # MP4 is only the iPhone/iPad compatibility layer. Original WebM files stay intact.
