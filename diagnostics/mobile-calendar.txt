@@ -31,3 +31,7 @@ decoded_frame_at_1s=PASS
 moov_offset=36
 mdat_offset=15734
 faststart=PASS
+
+=== WEBKIT PLAYBACK TEST ===
+{"readyState":4,"currentTime":0.267691822,"paused":false,"videoWidth":1280,"videoHeight":720}
+webkit_mobile_playback=PASS
