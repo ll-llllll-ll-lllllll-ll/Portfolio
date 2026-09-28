@@ -1459,101 +1459,106 @@ render();
     tryPlayVideo(video);
   }
 
-  function addRippleHallucination(item) {
-    if (!item || item.slug !== "room-by-the-lake") return;
+  function mountSeawaterCaustics(item) {
+    if (!item || item.slug !== "seawater") return;
 
-    var firstFrame = document.querySelector(".room-image");
-    if (!firstFrame || firstFrame.querySelector(".room-image-ripple")) return;
-
-    firstFrame.classList.add("has-ripple-hallucination");
+    var frames = document.querySelectorAll('.room-view[data-room="seawater"] .room-image');
+    if (!frames.length) return;
 
     var reduceMotion = false;
     try {
       reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     } catch (_) {}
 
-    var video = document.createElement("video");
-    video.className = "room-image-ripple";
-    video.autoplay = !reduceMotion;
-    video.defaultMuted = true;
-    video.muted = true;
-    video.loop = true;
-    video.playsInline = true;
-    video.controls = false;
-    video.preload = "auto";
-    video.disablePictureInPicture = true;
-    video.setAttribute("muted", "");
-    video.setAttribute("playsinline", "");
-    video.setAttribute("webkit-playsinline", "");
-    video.setAttribute("disablepictureinpicture", "");
-    video.setAttribute("aria-hidden", "true");
-    video.setAttribute("tabindex", "-1");
+    frames.forEach(function (frame, frameIndex) {
+      if (frame.querySelector(".seawater-caustics")) return;
 
-    var sources = [
-      "https://videos.pexels.com/video-files/5678004/5678004-sd_640_360_30fps.mp4",
-      "https://videos.pexels.com/video-files/5678004/5678004-uhd_4096_2160_30fps.mp4"
-    ];
+      var canvas = document.createElement("canvas");
+      canvas.className = "seawater-caustics";
+      canvas.width = 112;
+      canvas.height = 84;
+      canvas.setAttribute("aria-hidden", "true");
+      frame.insertBefore(canvas, frame.firstChild);
 
-    sources.forEach(function (src) {
-      var sourceNode = document.createElement("source");
-      sourceNode.src = src;
-      sourceNode.type = "video/mp4";
-      video.appendChild(sourceNode);
-    });
+      var ctx = canvas.getContext("2d", { alpha: true });
+      if (!ctx) return;
 
-    var veil = document.createElement("span");
-    veil.className = "room-image-ripple-veil";
-    veil.setAttribute("aria-hidden", "true");
+      var image = ctx.createImageData(canvas.width, canvas.height);
+      var pixels = image.data;
+      var xs = new Float32Array(canvas.width);
+      var ys = new Float32Array(canvas.height);
+      var aspect = canvas.width / canvas.height;
+      var scale = 8.8;
+      var x, y;
 
-    firstFrame.insertBefore(video, firstFrame.firstChild);
-    firstFrame.insertBefore(veil, firstFrame.querySelector("img"));
-
-    function markPlaying() {
-      firstFrame.classList.add("is-ripple-playing");
-      firstFrame.classList.remove("is-ripple-blocked");
-    }
-
-    function markBlocked() {
-      if (!video.paused) return;
-      firstFrame.classList.add("is-ripple-blocked");
-    }
-
-    function tryPlay() {
-      if (reduceMotion || !document.documentElement.contains(video)) return;
-      video.muted = true;
-      var promise;
-      try {
-        promise = video.play();
-      } catch (_) {
-        markBlocked();
-        return;
+      for (x = 0; x < canvas.width; x += 1) {
+        xs[x] = (x / (canvas.width - 1) - 0.5) * aspect * scale;
       }
-      if (promise && typeof promise.catch === "function") {
-        promise.catch(markBlocked);
+      for (y = 0; y < canvas.height; y += 1) {
+        ys[y] = (y / (canvas.height - 1) - 0.5) * scale;
       }
-    }
 
-    video.addEventListener("playing", markPlaying);
-    video.addEventListener("loadeddata", function () {
-      if (!reduceMotion) tryPlay();
-    });
-    video.addEventListener("error", markBlocked);
-    video.addEventListener("stalled", markBlocked);
+      var visible = true;
+      var startTime = performance.now();
+      var lastDraw = 0;
+      var phase = frameIndex * 4.1;
 
-    if ("IntersectionObserver" in window) {
-      var visibilityObserver = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting && entry.intersectionRatio > 0.05) {
-            tryPlay();
-          } else if (!video.paused) {
-            video.pause();
+      if ("IntersectionObserver" in window) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            visible = entry.isIntersecting && entry.intersectionRatio > 0.02;
+          });
+        }, { threshold: [0, 0.02, 0.2] });
+        observer.observe(frame);
+      }
+
+      function renderCaustics(now) {
+        if (!canvas.isConnected) return;
+
+        if (visible && (reduceMotion || now - lastDraw >= 40)) {
+          lastDraw = now;
+          var t = phase + (now - startTime) * 0.00034;
+          var p = 0;
+
+          for (y = 0; y < canvas.height; y += 1) {
+            var v = ys[y];
+            for (x = 0; x < canvas.width; x += 1) {
+              var u = xs[x];
+              var qx = u + 0.32 * Math.sin(v * 1.25 + t * 0.42) + 0.16 * Math.sin(v * 2.15 - t * 0.26 + 1.1);
+              var qy = v + 0.32 * Math.cos(u * 1.18 - t * 0.35) + 0.16 * Math.cos(u * 2.05 + t * 0.24);
+              var a = Math.sin(qx * 1.95 + Math.sin(qy * 1.55 + t * 0.38));
+              var b = Math.cos(qy * 2.05 + Math.sin(qx * 1.35 - t * 0.31));
+              var c = Math.sin((qx + qy) * 1.25 + Math.cos((qx - qy) * 1.45 + t * 0.24));
+              var d = Math.cos((qx - qy) * 1.62 + Math.sin(qy * 1.0 - t * 0.20));
+              var f = (a + b + c + d) * 0.25;
+              var line = Math.max(0, 1 - Math.abs(f) * 1.52);
+              line = Math.pow(line, 6.2);
+
+              var f2 = Math.sin(qx * 1.37 + Math.sin(qy * 2.15 - t * 0.19)) * 0.55 +
+                Math.cos(qy * 1.42 + Math.sin(qx * 1.9 + t * 0.17)) * 0.45;
+              var line2 = Math.max(0, 1 - Math.abs(f2) * 1.20);
+              line2 = Math.pow(line2, 7.5) * 0.28;
+
+              var light = Math.min(1, line + line2);
+              var alpha = Math.round(light * 188);
+              pixels[p] = 255;
+              pixels[p + 1] = 255;
+              pixels[p + 2] = 248;
+              pixels[p + 3] = alpha;
+              p += 4;
+            }
           }
-        });
-      }, { threshold: [0, 0.05, 0.25] });
-      visibilityObserver.observe(firstFrame);
-    } else {
-      tryPlay();
-    }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.putImageData(image, 0, 0);
+          if (reduceMotion) return;
+        }
+
+        requestAnimationFrame(renderCaustics);
+      }
+
+      requestAnimationFrame(renderCaustics);
+    });
   }
 
   function refineCurrentView() {
@@ -1566,6 +1571,7 @@ render();
     roomView.dataset.room = item.slug;
     roomView.dataset.group = item.group;
     updateFooterNavigation(item);
+    mountSeawaterCaustics(item);
   }
 
   var appNode = document.querySelector("#app");
@@ -1584,8 +1590,6 @@ render();
 
   function resumeMediaAfterGesture() {
     repairAmbientCalendarVideo();
-    var rippleVideo = document.querySelector(".room-image-ripple");
-    if (rippleVideo) tryPlayVideo(rippleVideo);
   }
 
   document.addEventListener("pointerdown", resumeMediaAfterGesture, { passive: true, capture: true });
