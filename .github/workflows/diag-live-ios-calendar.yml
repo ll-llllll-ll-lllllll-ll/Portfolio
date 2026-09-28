@@ -1,0 +1,68 @@
+name: Test actual site calendar on iPhone WebKit
+
+on:
+  push:
+    branches:
+      - diag-live-ios-calendar
+    paths:
+      - '.github/workflows/diag-live-ios-calendar.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Playwright WebKit
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --silent playwright@1.55.0
+          npx playwright install --with-deps webkit >/dev/null
+
+      - name: Serve real site and verify calendar video playback
+        shell: bash
+        run: |
+          python3 -m http.server 8000 >/tmp/site-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+
+          node <<'NODE'
+          const { webkit, devices } = require('playwright');
+          (async () => {
+            const browser = await webkit.launch();
+            const context = await browser.newContext({ ...devices['iPhone 13'] });
+            const page = await context.newPage();
+            const consoleLines = [];
+            page.on('console', m => consoleLines.push(m.text()));
+            page.on('pageerror', e => consoleLines.push('PAGEERROR: ' + e.message));
+            await page.goto('http://127.0.0.1:8000/', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.home-view .ambient-video', { timeout: 15000 });
+            await page.waitForFunction(() => {
+              const v = document.querySelector('.home-view .ambient-video');
+              return v && /\.mp4(?:$|\?)/i.test(v.currentSrc || v.src) && v.readyState >= 2 && v.currentTime > 0.15 && !v.paused;
+            }, null, { timeout: 25000 });
+
+            const state = await page.$eval('.home-view .ambient-video', v => ({
+              attrSrc: v.getAttribute('src'),
+              currentSrc: v.currentSrc,
+              readyState: v.readyState,
+              currentTime: v.currentTime,
+              paused: v.paused,
+              videoWidth: v.videoWidth,
+              videoHeight: v.videoHeight,
+              classes: v.className,
+              htmlState: document.documentElement.dataset.ambientVideo || ''
+            }));
+
+            console.log('ACTUAL_SITE_IOS_WEBKIT_STATE=' + JSON.stringify(state));
+            console.log('ACTUAL_SITE_IOS_WEBKIT_PLAYBACK=PASS');
+            if (consoleLines.length) console.log('BROWSER_CONSOLE=' + JSON.stringify(consoleLines));
+            await browser.close();
+          })().catch(err => {
+            console.error(err);
+            console.error('ACTUAL_SITE_IOS_WEBKIT_PLAYBACK=FAIL');
+            process.exit(1);
+          });
+          NODE
