@@ -1522,7 +1522,9 @@ render();
       canvas.height = Math.max(1, Math.round(height * ratio));
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-      lowWidth = mobile ? 160 : 240;
+      lowWidth = mobile
+        ? Math.min(260, Math.max(220, Math.round(width * 0.58)))
+        : Math.min(560, Math.max(420, Math.round(width * 0.33)));
       lowHeight = Math.max(120, Math.round(lowWidth * height / width));
       low.width = lowWidth;
       low.height = lowHeight;
@@ -1609,7 +1611,7 @@ render();
       var ndy = dirY / dirLength;
 
       /* Much calmer internal motion; scroll is still the main driver. */
-      var phase = scroll.scrollTop * 0.00135 + (reduceMotion ? 0 : now * 0.00022);
+      var phase = scroll.scrollTop * 0.00135 + (reduceMotion ? 0 : now * 0.00125);
       var pointer = 0;
       var x, y;
 
@@ -1656,18 +1658,18 @@ render();
           var f = (a + b + c + d) * 0.25;
 
           var ridge = Math.max(0, 1 - Math.abs(f) * 1.62);
-          var core = Math.pow(ridge, 11.5);
-          var halo = Math.pow(Math.max(0, 1 - Math.abs(f) * 0.94), 2.25) * 0.31;
+          var core = Math.pow(ridge, 9.0) * 1.08;
+          var halo = Math.pow(Math.max(0, 1 - Math.abs(f) * 0.98), 2.45) * 0.16;
 
           var f2 = Math.sin(qx * 1.46 + Math.sin(qy * 2.12 + phase * 0.28)) * 0.55 +
             Math.cos(qy * 1.60 + Math.sin(qx * 1.82 - phase * 0.31)) * 0.45;
-          var crossing = Math.pow(Math.max(0, 1 - Math.abs(f2) * 1.34), 9.0) * 0.38;
+          var crossing = Math.pow(Math.max(0, 1 - Math.abs(f2) * 1.38), 8.0) * 0.30;
 
           /* Uneven shimmer keeps the network organic instead of uniformly luminous. */
-          var shimmer = 0.74 + 0.26 * (0.5 + 0.5 * Math.sin(qx * 0.72 - qy * 0.58 + phase * 0.92));
+          var shimmer = 0.82 + 0.18 * (0.5 + 0.5 * Math.sin(qx * 0.72 - qy * 0.58 + phase * 0.92));
           var falloff = 0.92 - 0.24 * clamp(distance / 1550, 0, 1);
           var value = clamp((core + halo + crossing) * shimmer * cone * corridorMask * falloff, 0, 1);
-          var alpha = Math.round(value * 220);
+          var alpha = Math.round(value * 238);
 
           pixels[pointer] = 242;
           pixels[pointer + 1] = 242;
@@ -1876,6 +1878,7 @@ render();
       ctx.globalCompositeOperation = "screen";
       ctx.globalAlpha = width <= 760 ? 0.58 : 0.54;
       ctx.imageSmoothingEnabled = true;
+      if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
       ctx.drawImage(low, 0, 0, width, height);
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
