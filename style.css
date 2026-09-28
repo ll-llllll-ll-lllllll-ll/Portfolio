@@ -1894,12 +1894,12 @@ body {
 
 /* ===== Seawater light-space refinement v2 ===== */
 .room-view[data-room="seawater"] .seawater-world-light {
-  filter: blur(2.5px);
+  filter: blur(1.25px);
   transform: translateZ(0);
 }
 
 @media (max-width: 760px) {
   .room-view[data-room="seawater"] .seawater-world-light {
-    filter: blur(2px);
+    filter: blur(1px);
   }
 }
