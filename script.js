@@ -1294,7 +1294,7 @@ render();
   - points the old root work images to their new /works/ folders
   - restores Fictional Topography as the third work
   - repairs iOS calendar playback with Safari-safe H.264 MP4 fallbacks
-  - adds the very soft ripple hallucination behind room by the lake
+  - keeps every collection on the same generated after-image field
 */
 
 (function () {
@@ -1566,7 +1566,6 @@ render();
     roomView.dataset.room = item.slug;
     roomView.dataset.group = item.group;
     updateFooterNavigation(item);
-    addRippleHallucination(item);
   }
 
   var appNode = document.querySelector("#app");
