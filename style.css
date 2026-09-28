@@ -914,3 +914,637 @@ a:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ===== Collection gallery ===== */
+
+/* Keep artwork / collection images in their original colour. */
+.room-image img,
+.room-image.is-contain img {
+  filter: none;
+}
+
+.fragrance-room .room-scroll {
+  background: var(--paper);
+}
+
+.fragrance-lead {
+  min-height: 64svh;
+  padding-bottom: 9vh;
+}
+
+.fragrance-gallery {
+  width: 100%;
+  margin: 0 0 12vh;
+  border-top: 1px solid var(--black-hairline);
+  border-bottom: 1px solid var(--black-hairline);
+  background: #e9e8e2;
+}
+
+/*
+  The theme switcher belongs to the gallery itself. It now scrolls away with the
+  photographs instead of sticking to the viewport while the images move beneath it.
+*/
+.fragrance-theme-nav {
+  position: relative;
+  top: auto;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-bottom: 1px solid var(--black-hairline);
+  background: #e9e8e2;
+}
+
+.fragrance-theme {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-right: 1px solid var(--black-hairline);
+  color: rgba(23, 24, 19, 0.46);
+  font-family: var(--serif);
+  font-size: 11px;
+  letter-spacing: 0.035em;
+  text-align: left;
+  transition: background 220ms ease, color 220ms ease;
+}
+
+.fragrance-theme:last-child {
+  border-right: 0;
+}
+
+.fragrance-theme:hover,
+.fragrance-theme.is-active {
+  background: rgba(255, 255, 255, 0.26);
+  color: rgba(23, 24, 19, 0.92);
+}
+
+.fragrance-theme-index,
+.fragrance-theme-count {
+  color: rgba(23, 24, 19, 0.28);
+  font-family: var(--sans);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.fragrance-stage {
+  display: grid;
+  grid-template-columns: minmax(42px, 6vw) minmax(0, 1fr) minmax(42px, 6vw);
+  align-items: center;
+  min-height: min(78svh, 860px);
+  padding: 4vh 0 2.5vh;
+}
+
+.fragrance-frame {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  min-width: 0;
+  height: min(70svh, 760px);
+  margin: 0;
+  animation: fragrance-image-in 260ms var(--ease) both;
+}
+
+.fragrance-frame img {
+  display: block;
+  max-width: min(82vw, 1180px);
+  max-height: calc(100% - 34px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: transparent;
+  filter: none;
+}
+
+.fragrance-frame figcaption {
+  display: flex;
+  justify-content: space-between;
+  width: min(82vw, 1180px);
+  margin-top: 12px;
+  color: rgba(23, 24, 19, 0.38);
+  font-size: 8px;
+  letter-spacing: 0.075em;
+  text-transform: lowercase;
+}
+
+.fragrance-arrow {
+  align-self: stretch;
+  color: rgba(23, 24, 19, 0.28);
+  font-family: var(--serif);
+  font-size: 18px;
+  transition: color 200ms ease, background 200ms ease;
+}
+
+.fragrance-arrow:hover {
+  color: rgba(23, 24, 19, 0.86);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.fragrance-filmstrip {
+  display: flex;
+  gap: 8px;
+  width: min(86vw, 1240px);
+  margin: 0 auto;
+  padding: 0 0 22px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.fragrance-filmstrip::-webkit-scrollbar {
+  display: none;
+}
+
+.fragrance-thumb {
+  flex: 0 0 auto;
+  width: 68px;
+  height: 50px;
+  padding: 3px;
+  border: 1px solid transparent;
+  opacity: 0.42;
+  transition: opacity 180ms ease, border-color 180ms ease;
+}
+
+.fragrance-thumb:hover {
+  opacity: 0.76;
+}
+
+.fragrance-thumb.is-active {
+  border-color: rgba(23, 24, 19, 0.38);
+  opacity: 1;
+}
+
+.fragrance-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: none;
+}
+
+@keyframes fragrance-image-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 760px) {
+  .fragrance-lead {
+    min-height: 58svh;
+  }
+
+  .fragrance-theme-nav {
+    position: relative;
+    top: auto;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .fragrance-theme-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fragrance-theme {
+    flex: 0 0 auto;
+    grid-template-columns: auto auto auto;
+    min-width: 132px;
+    min-height: 45px;
+    padding: 0 11px;
+  }
+
+  .fragrance-stage {
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    min-height: 66svh;
+    padding-top: 22px;
+  }
+
+  .fragrance-frame {
+    height: 58svh;
+  }
+
+  .fragrance-frame img,
+  .fragrance-frame figcaption {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .fragrance-frame img {
+    max-height: calc(100% - 36px);
+  }
+
+  .fragrance-filmstrip {
+    width: calc(100vw - 36px);
+    padding-bottom: 16px;
+  }
+
+  .fragrance-thumb {
+    width: 58px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fragrance-frame {
+    animation: none;
+  }
+}
+
+
+/* ===== Ambient colour system ===== */
+
+/*
+  Ambient colour system — filter-only edition
+  -------------------------------------------
+  The uploaded WebM files stay untouched. The homepage always plays the original
+  source video and applies a light, day-specific CSS grade in the browser.
+  No duplicated video layer, no baked LUT, no generated cyanotype asset.
+*/
+
+.home-view {
+  --ambient-saturation: 0.82;
+  --ambient-contrast: 1.03;
+  --ambient-brightness: 0.79;
+  --ambient-hue: -4deg;
+  --ambient-veil-top: rgba(4, 11, 20, 0.18);
+  --ambient-veil-bottom: rgba(2, 7, 14, 0.34);
+  --ambient-edge: rgba(2, 8, 17, 0.22);
+  --ambient-grain-opacity: 0.052;
+}
+
+/*
+  SEA / OCEAN
+  Deepest preset. Preserve real colour, but cool the mids and deepen the water.
+*/
+.home-view.ambient-day-sea {
+  --ambient-saturation: 0.90;
+  --ambient-contrast: 1.10;
+  --ambient-brightness: 0.71;
+  --ambient-hue: -7deg;
+  --ambient-veil-top: rgba(3, 13, 29, 0.18);
+  --ambient-veil-bottom: rgba(1, 8, 22, 0.40);
+  --ambient-edge: rgba(1, 8, 24, 0.27);
+  --ambient-grain-opacity: 0.055;
+}
+
+/*
+  LAKE
+  Softer and quieter. Keep some green / cyan in vegetation and water.
+*/
+.home-view.ambient-day-lake {
+  --ambient-saturation: 0.84;
+  --ambient-contrast: 1.00;
+  --ambient-brightness: 0.79;
+  --ambient-hue: -5deg;
+  --ambient-veil-top: rgba(5, 18, 24, 0.12);
+  --ambient-veil-bottom: rgba(3, 12, 18, 0.30);
+  --ambient-edge: rgba(3, 12, 18, 0.18);
+  --ambient-grain-opacity: 0.047;
+}
+
+/*
+  CLOUD
+  Palest treatment. Keep cloud highlights almost neutral and avoid dirty greys.
+*/
+.home-view.ambient-day-cloud {
+  --ambient-saturation: 0.72;
+  --ambient-contrast: 0.98;
+  --ambient-brightness: 0.87;
+  --ambient-hue: -2deg;
+  --ambient-veil-top: rgba(12, 20, 29, 0.08);
+  --ambient-veil-bottom: rgba(6, 12, 20, 0.23);
+  --ambient-edge: rgba(7, 14, 22, 0.14);
+  --ambient-grain-opacity: 0.040;
+}
+
+/*
+  SKY
+  Most faithful to the original source. Blues stay vivid, while sunset warmth is
+  still allowed to survive instead of being forced into monochrome cyan.
+*/
+.home-view.ambient-day-sky {
+  --ambient-saturation: 1.00;
+  --ambient-contrast: 1.04;
+  --ambient-brightness: 0.83;
+  --ambient-hue: -3deg;
+  --ambient-veil-top: rgba(5, 14, 29, 0.09);
+  --ambient-veil-bottom: rgba(3, 9, 20, 0.25);
+  --ambient-edge: rgba(3, 10, 23, 0.16);
+  --ambient-grain-opacity: 0.043;
+}
+
+.home-view .ambient-field {
+  isolation: isolate;
+  background: #07101b;
+}
+
+/* Original source video / still: browser-only colour grade, no grayscale. */
+.home-view .ambient-video,
+.home-view .ambient-still {
+  z-index: 0;
+  filter:
+    saturate(var(--ambient-saturation))
+    contrast(var(--ambient-contrast))
+    brightness(var(--ambient-brightness))
+    hue-rotate(var(--ambient-hue));
+}
+
+.home-view .ambient-still {
+  filter:
+    saturate(var(--ambient-saturation))
+    contrast(var(--ambient-contrast))
+    brightness(var(--ambient-brightness))
+    hue-rotate(var(--ambient-hue))
+    blur(0.35px);
+}
+
+/* Keep the fallback colour fields quiet, but do not simulate a fake photograph. */
+.home-view .ambient-empty {
+  z-index: 0;
+  background:
+    radial-gradient(circle at 54% 34%, rgba(122, 169, 195, 0.08), transparent 38%),
+    linear-gradient(180deg, #102131 0%, #07121d 64%, #040a10 100%);
+}
+
+.home-view.ambient-day-cloud .ambient-empty {
+  background:
+    radial-gradient(ellipse at 51% 30%, rgba(186, 204, 213, 0.12), transparent 40%),
+    linear-gradient(180deg, #17222d 0%, #0b141d 70%, #070d13 100%);
+}
+
+.home-view.ambient-day-lake .ambient-empty {
+  background:
+    linear-gradient(180deg, #10232a 0 47%, #09171c 50% 57%, #050d11 100%);
+}
+
+.home-view.ambient-day-sky .ambient-empty {
+  background:
+    radial-gradient(circle at 50% 15%, rgba(137, 183, 211, 0.11), transparent 44%),
+    linear-gradient(180deg, #13263a 0%, #071322 82%);
+}
+
+/*
+  A very faint blue-black veil keeps the page calm and the white interface legible.
+  This is deliberately weaker than the previous cyanotype bath: the source video's
+  own colour is now the main image.
+*/
+.home-view .ambient-veil {
+  z-index: 1;
+  mix-blend-mode: multiply;
+  background:
+    linear-gradient(
+      180deg,
+      var(--ambient-veil-top) 0%,
+      rgba(0, 0, 0, 0.02) 30%,
+      rgba(0, 0, 0, 0.01) 58%,
+      var(--ambient-veil-bottom) 100%
+    ),
+    radial-gradient(circle at 52% 43%, transparent 28%, var(--ambient-edge) 100%);
+}
+
+.home-view .ambient-grain {
+  z-index: 2;
+  opacity: var(--ambient-grain-opacity);
+  mix-blend-mode: soft-light;
+  background-image: radial-gradient(rgba(170, 194, 207, 0.36) 0.5px, transparent 0.72px);
+}
+
+.home-view .home-head,
+.home-view .index-toggle,
+.home-view .home-today {
+  text-shadow: 0 1px 12px rgba(0, 8, 18, 0.32);
+}
+
+@media (max-width: 760px) {
+  .home-view { --ambient-brightness-mobile: 0.84; }
+  .home-view.ambient-day-sea { --ambient-brightness-mobile: 0.76; }
+  .home-view.ambient-day-lake { --ambient-brightness-mobile: 0.82; }
+  .home-view.ambient-day-cloud { --ambient-brightness-mobile: 0.90; }
+  .home-view.ambient-day-sky { --ambient-brightness-mobile: 0.87; }
+
+  .home-view .ambient-video,
+  .home-view .ambient-still {
+    filter:
+      saturate(var(--ambient-saturation))
+      contrast(var(--ambient-contrast))
+      brightness(var(--ambient-brightness-mobile))
+      hue-rotate(var(--ambient-hue));
+  }
+}
+
+
+/* ===== Typography and room refinements ===== */
+
+/*
+  Simplified Chinese typography
+  -----------------------------
+  Keep the Latin old-style serif voice, but give Simplified Chinese a closer,
+  lighter Song / Mincho companion instead of falling back unpredictably.
+*/
+
+html:lang(zh-Hans) {
+  --serif: "Iowan Old Style", "Baskerville", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+}
+
+html:lang(ja) {
+  --serif: "Iowan Old Style", "Baskerville", "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+
+html:lang(zh-Hans) .room-intro,
+html:lang(zh-Hans) .room-note-body,
+html:lang(zh-Hans) .room-note-quote p,
+html:lang(zh-Hans) .calendar-intro p,
+html:lang(zh-Hans) .index-link,
+html:lang(zh-Hans) .calendar-day-name,
+html:lang(zh-Hans) .calendar-type,
+html:lang(zh-Hans) .ambient-caption,
+html:lang(zh-Hans) .fragrance-theme {
+  font-weight: 300;
+}
+
+html:lang(zh-Hans) .room-lead h1,
+html:lang(zh-Hans) .calendar-current {
+  font-weight: 400;
+}
+
+/*
+  Room image stages
+  -----------------
+  Every work / collection image sits inside the same quiet grey viewing field.
+  The original aspect ratio is always preserved; portrait images use the same
+  stage area as landscape images rather than expanding to the full viewport.
+*/
+
+.room-image {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  width: min(90vw, 1280px);
+  height: min(82svh, 880px);
+  min-height: 560px;
+  margin: 0 auto 16vh;
+  padding: clamp(28px, 4.8vw, 76px) clamp(24px, 5.4vw, 84px) clamp(20px, 3vw, 38px);
+  overflow: hidden;
+  background: #deddd7;
+}
+
+.room-image img,
+.room-image.is-contain img {
+  position: relative;
+  z-index: 3;
+  display: block;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: calc(100% - 34px);
+  padding: 0;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  filter: none;
+}
+
+.room-image figcaption {
+  position: relative;
+  z-index: 4;
+  justify-self: stretch;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/*
+  Collection after-image field
+  ----------------------------
+  Raw-motion preview: blur is temporarily removed completely so the underlying
+  movement and light geometry can be judged before choosing a final blur radius.
+*/
+.room-view[data-group="collection"] .room-image {
+  isolation: isolate;
+  background: #858581;
+}
+
+.room-view[data-group="collection"] .room-image::before {
+  position: absolute;
+  z-index: 0;
+  inset: -28%;
+  content: "";
+  pointer-events: none;
+  opacity: 0.48;
+  background:
+    radial-gradient(ellipse at 24% 42%, rgba(238, 238, 231, 0.50) 0 7%, transparent 25%),
+    radial-gradient(ellipse at 72% 50%, rgba(224, 224, 217, 0.38) 0 7%, transparent 24%),
+    radial-gradient(ellipse at 47% 73%, rgba(248, 248, 241, 0.25) 0 5%, transparent 22%),
+    linear-gradient(105deg, rgba(13, 13, 13, 0.94), rgba(82, 82, 78, 0.72) 48%, rgba(14, 14, 14, 0.94));
+  filter: grayscale(1) blur(0);
+  transform: scale(1.10) translate3d(-3%, -1%, 0) rotate(-0.3deg);
+  animation: collection-afterimage 13s ease-in-out infinite alternate;
+}
+
+@keyframes collection-afterimage {
+  0% {
+    transform: scale(1.10) translate3d(-4.5%, -1.8%, 0) rotate(-0.45deg);
+    opacity: 0.38;
+  }
+  45% {
+    transform: scale(1.16) translate3d(1.8%, 1.1%, 0) rotate(0.18deg);
+    opacity: 0.56;
+  }
+  100% {
+    transform: scale(1.12) translate3d(4.5%, -0.4%, 0) rotate(0.42deg);
+    opacity: 0.43;
+  }
+}
+
+/*
+  room by the lake
+  ----------------
+  Raw-motion preview: keep the monochrome / dark treatment but remove blur so the
+  source water movement itself is visible clearly for evaluation.
+*/
+.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination {
+  background: #777773;
+}
+
+.room-image-ripple,
+.room-image-ripple-veil {
+  position: absolute;
+  pointer-events: none;
+}
+
+.room-image-ripple {
+  z-index: 1;
+  inset: -14%;
+  width: 128%;
+  height: 128%;
+  object-fit: cover;
+  opacity: 0.40;
+  transform: scale(1.05);
+  filter: grayscale(1) saturate(0) contrast(1.02) brightness(0.28) blur(0);
+}
+
+.room-image-ripple-veil {
+  z-index: 2;
+  inset: 0;
+  background:
+    radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.27), rgba(137, 137, 132, 0.46) 62%, rgba(101, 101, 98, 0.63) 100%),
+    rgba(128, 128, 124, 0.36);
+  mix-blend-mode: normal;
+}
+
+.room-view[data-room="room-by-the-lake"] .room-image.has-ripple-hallucination img {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 760px) {
+  .room-image {
+    width: calc(100vw - 24px);
+    height: min(70svh, 620px);
+    min-height: 420px;
+    margin-bottom: 13vh;
+    padding: 22px 18px 18px;
+  }
+
+  .room-image img,
+  .room-image.is-contain img {
+    max-height: calc(100% - 32px);
+  }
+
+  .room-view[data-group="collection"] .room-image::before {
+    inset: -34%;
+    opacity: 0.56;
+    filter: grayscale(1) blur(0);
+    animation-duration: 11s;
+  }
+
+  .room-image-ripple {
+    inset: -18%;
+    width: 136%;
+    height: 136%;
+    opacity: 0.48;
+    filter: grayscale(1) saturate(0) contrast(1.04) brightness(0.32) blur(0);
+  }
+
+  .room-image-ripple-veil {
+    background:
+      radial-gradient(circle at 47% 44%, rgba(188, 188, 182, 0.20), rgba(137, 137, 132, 0.38) 62%, rgba(98, 98, 95, 0.56) 100%),
+      rgba(124, 124, 120, 0.28);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-view[data-group="collection"] .room-image::before {
+    animation: none;
+    transform: scale(1.12);
+    opacity: 0.40;
+  }
+
+  .room-image-ripple {
+    display: block;
+  }
+}
