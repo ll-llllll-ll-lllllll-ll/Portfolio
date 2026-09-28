@@ -1560,7 +1560,7 @@ render();
       "void main() {",
       "  gl_Position = vec4(a_position, 0.0, 1.0);",
       "}"
-    ].join("\\n");
+    ].join("\n");
 
     var fragmentSource = [
       "precision mediump float;",
@@ -1616,13 +1616,13 @@ render();
       "  float caustic = sat((core + halo + crossing) * shimmer * cone);",
       "  float field = corridor * (0.72 + 0.28 * cone);",
       "",
-      "  vec3 base = vec3(0.905, 0.905, 0.885);",
+      "  vec3 base = vec3(0.815, 0.815, 0.795);",
       "  vec3 highlight = vec3(1.0, 0.998, 0.985);",
       "  vec3 color = mix(base, highlight, sat(caustic * 1.08));",
-      "  float alpha = field * (0.54 + caustic * 0.34);",
+      "  float alpha = field * (0.58 + caustic * 0.36);",
       "  gl_FragColor = vec4(color, alpha);",
       "}"
-    ].join("\\n");
+    ].join("\n");
 
     var program;
     try {
@@ -1634,12 +1634,14 @@ render();
         throw new Error(gl.getProgramInfoLog(program) || "WebGL program link failed");
       }
     } catch (_) {
+      document.documentElement.dataset.seawaterRenderer = "shader-error";
       lightCanvas.remove();
       shadowCanvas.remove();
       return;
     }
 
     gl.useProgram(program);
+    document.documentElement.dataset.seawaterRenderer = "webgl";
 
     var positionLocation = gl.getAttribLocation(program, "a_position");
     var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
