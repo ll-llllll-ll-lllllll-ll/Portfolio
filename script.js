@@ -1561,6 +1561,79 @@ render();
     });
   }
 
+  var collectionStageResizeFrame = 0;
+
+  function sizeCollectionStages(item) {
+    if (!item || item.group !== "collection") return;
+
+    var stages = document.querySelectorAll('.room-view[data-group="collection"] .room-image');
+    if (!stages.length) return;
+
+    var viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    var viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    var mobile = viewportWidth <= 760;
+
+    stages.forEach(function (stage) {
+      var img = stage.querySelector("img");
+      if (!img) return;
+
+      function applyStageSize() {
+        if (!stage.isConnected || !img.naturalWidth || !img.naturalHeight) return;
+
+        var imageWidth = img.naturalWidth;
+        var imageHeight = img.naturalHeight;
+
+        /*
+          User-defined proportions:
+          - start with a field that is 150% of the artwork in both dimensions;
+          - then add another 10% of artwork width to both the left and right sides.
+          Result: field width = artwork × 1.70; field height = artwork × 1.50.
+        */
+        var stageWidthRatio = 1.70;
+        var stageHeightRatio = 1.50;
+
+        /* Viewport limits only scale the whole construction; they never change its ratio. */
+        var maxStageWidth = mobile
+          ? Math.max(260, viewportWidth - 30)
+          : Math.min(viewportWidth * 0.76, 1160);
+        var maxStageHeight = mobile
+          ? Math.min(viewportHeight * 0.62, 560)
+          : Math.min(viewportHeight * 0.72, 740);
+
+        var scale = Math.min(
+          maxStageWidth / (imageWidth * stageWidthRatio),
+          maxStageHeight / (imageHeight * stageHeightRatio)
+        );
+        scale = Math.max(scale, 0.01);
+
+        var displayedImageWidth = Math.round(imageWidth * scale * 10) / 10;
+        var displayedImageHeight = Math.round(imageHeight * scale * 10) / 10;
+        var stageWidth = Math.round(displayedImageWidth * stageWidthRatio * 10) / 10;
+        var stageHeight = Math.round(displayedImageHeight * stageHeightRatio * 10) / 10;
+
+        stage.style.setProperty("--image-width", displayedImageWidth + "px");
+        stage.style.setProperty("--image-height", displayedImageHeight + "px");
+        stage.style.setProperty("--stage-width", stageWidth + "px");
+        stage.style.setProperty("--stage-height", stageHeight + "px");
+      }
+
+      if (img.complete && img.naturalWidth) {
+        applyStageSize();
+      } else if (img.dataset.collectionStageSizingBound !== "true") {
+        img.dataset.collectionStageSizingBound = "true";
+        img.addEventListener("load", applyStageSize, { once: true });
+      }
+    });
+  }
+
+  function scheduleCollectionStageSizing() {
+    if (collectionStageResizeFrame) cancelAnimationFrame(collectionStageResizeFrame);
+    collectionStageResizeFrame = requestAnimationFrame(function () {
+      collectionStageResizeFrame = 0;
+      sizeCollectionStages(parseRoute());
+    });
+  }
+
   function refineCurrentView() {
     repairAmbientCalendarVideo();
 
@@ -1571,6 +1644,7 @@ render();
     roomView.dataset.room = item.slug;
     roomView.dataset.group = item.group;
     updateFooterNavigation(item);
+    sizeCollectionStages(item);
     mountSeawaterCaustics(item);
   }
 
@@ -1590,6 +1664,12 @@ render();
 
   function resumeMediaAfterGesture() {
     repairAmbientCalendarVideo();
+  }
+
+  window.addEventListener("resize", scheduleCollectionStageSizing, { passive: true });
+  window.addEventListener("orientationchange", scheduleCollectionStageSizing, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", scheduleCollectionStageSizing, { passive: true });
   }
 
   document.addEventListener("pointerdown", resumeMediaAfterGesture, { passive: true, capture: true });

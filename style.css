@@ -1561,64 +1561,68 @@ html:lang(zh-Hans) .calendar-current {
 }
 
 /*
-  Collection editorial stage
-  --------------------------
-  Treat each grey field like a plate mounted on the page rather than a second
-  viewport. Generous paper around the field gives the eye somewhere to rest and
-  keeps the moving light subordinate to the artwork.
+  Collection image-proportional stage
+  -----------------------------------
+  The grey field is derived from the displayed artwork rather than the viewport:
+  stage height = image height × 1.50;
+  stage width  = image width × 1.70 (150% base + an extra 10% on each side).
+  JS supplies the exact pixel values after each image has loaded.
 */
-@media (min-width: 761px) {
-  .room-view[data-group="collection"] .room-image {
-    width: min(72vw, 1120px);
-    height: min(64svh, 680px);
-    min-height: 480px;
-    margin: clamp(7vh, 9vh, 96px) auto clamp(18vh, 22vh, 220px);
-    padding: clamp(34px, 3.8vw, 56px) clamp(38px, 4.8vw, 68px) clamp(22px, 2.5vw, 32px);
-    box-shadow: 0 0 0 1px rgba(23, 24, 19, 0.075);
-  }
-
-  .room-view[data-group="collection"] .room-image img,
-  .room-view[data-group="collection"] .room-image.is-contain img {
-    max-width: 88%;
-    max-height: calc(100% - 38px);
-  }
-
-  .room-view[data-group="collection"] .room-image figcaption {
-    width: 88%;
-    justify-self: center;
-    margin-top: 13px;
-    color: rgba(23, 24, 19, 0.40);
-    font-size: 8px;
-    letter-spacing: 0.055em;
-  }
+.room-view[data-group="collection"] .room-image {
+  width: var(--stage-width, min(72vw, 1120px));
+  height: var(--stage-height, min(64svh, 680px));
+  min-height: 0;
+  margin: clamp(9vh, 11vh, 120px) auto clamp(18vh, 22vh, 220px);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 1px rgba(23, 24, 19, 0.075);
 }
 
-@media (min-width: 1400px) {
-  .room-view[data-group="collection"] .room-image {
-    width: min(68vw, 1140px);
-    height: min(62svh, 690px);
-  }
+.room-view[data-group="collection"] .room-image img,
+.room-view[data-group="collection"] .room-image.is-contain img {
+  width: var(--image-width, auto);
+  height: var(--image-height, auto);
+  max-width: none;
+  max-height: none;
+  flex: 0 0 auto;
+}
+
+.room-view[data-group="collection"] .room-image figcaption {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 14px;
+  width: var(--image-width, 88%);
+  margin: 0;
+  transform: translateX(-50%);
+  color: rgba(23, 24, 19, 0.40);
+  font-size: 8px;
+  letter-spacing: 0.055em;
 }
 
 @media (max-width: 760px) {
   .room-view[data-group="collection"] .room-image {
-    width: calc(100vw - 38px);
-    height: min(56svh, 520px);
-    min-height: 350px;
-    margin: 6vh auto 15vh;
-    padding: 18px 16px 16px;
+    width: var(--stage-width, calc(100vw - 30px));
+    height: var(--stage-height, min(58svh, 540px));
+    min-height: 0;
+    margin: 7vh auto 16vh;
+    padding: 0;
     box-shadow: 0 0 0 1px rgba(23, 24, 19, 0.07);
   }
 
   .room-view[data-group="collection"] .room-image img,
   .room-view[data-group="collection"] .room-image.is-contain img {
-    max-width: 92%;
-    max-height: calc(100% - 34px);
+    width: var(--image-width, auto);
+    height: var(--image-height, auto);
+    max-width: none;
+    max-height: none;
   }
 
   .room-view[data-group="collection"] .room-image figcaption {
-    width: 92%;
-    justify-self: center;
+    width: var(--image-width, 92%);
+    bottom: 10px;
   }
 }
 
