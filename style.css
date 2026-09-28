@@ -1890,3 +1890,16 @@ body {
       0 7px 18px rgba(0, 0, 0, 0.12);
   }
 }
+
+
+/* ===== Seawater light-space refinement v2 ===== */
+.room-view[data-room="seawater"] .seawater-world-light {
+  filter: blur(2.5px);
+  transform: translateZ(0);
+}
+
+@media (max-width: 760px) {
+  .room-view[data-room="seawater"] .seawater-world-light {
+    filter: blur(2px);
+  }
+}
