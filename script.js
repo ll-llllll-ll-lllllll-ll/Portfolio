@@ -1472,9 +1472,9 @@ render();
       Seawater optical space
       ----------------------
       One low-power WebGL canvas now handles both the ambient water caustics and
-      the refracted ripple trails behind the two artworks. There is no projected
+      the Water Caustics refracted behind the two artworks. There is no projected
       shadow layer: each artwork behaves like a transparent cuboid that bends the
-      travelling light field and leaves a widening ripple wake downstream.
+      travelling caustic field and leaves a refracted caustic zone downstream.
     */
     var lightCanvas = document.createElement("canvas");
     lightCanvas.className = "seawater-world-light";
@@ -1590,7 +1590,7 @@ render();
       "  return sat(core + halo + crossing);",
       "}",
       "",
-      "float refractedWake(vec2 uv, vec4 rect, vec2 light, float t, float aspect) {",
+      "float refractedCaustic(vec2 uv, vec4 rect, vec2 light, float t, float aspect) {",
       "  if (rect.z <= rect.x || rect.w <= rect.y) return 0.0;",
       "  vec2 center = (rect.xy + rect.zw) * 0.5;",
       "  vec2 halfSize = (rect.zw - rect.xy) * 0.5;",
@@ -1605,20 +1605,29 @@ render();
       "  float halfAlong = abs(dir.x) * halfSize.x * aspect + abs(dir.y) * halfSize.y;",
       "  float halfAcross = abs(perp.x) * halfSize.x * aspect + abs(perp.y) * halfSize.y;",
       "  float dist = along - halfAlong;",
-      "  float start = smoothstep(-0.010, 0.022, dist);",
-      "  float tail = 1.0 - smoothstep(0.03, 0.46, dist);",
-      "  float spread = halfAcross * 0.86 + max(dist, 0.0) * 0.31;",
-      "  float lateral = 1.0 - smoothstep(0.66, 1.05, abs(across) / max(spread, 0.001));",
-      "  float wakeMask = start * tail * lateral;",
-      "  float acrossN = across / max(spread, 0.001);",
-      "  float focus = mix(15.5, 8.8, smoothstep(0.0, 0.42, max(dist, 0.0)));",
-      "  float waveA = sin(acrossN * focus + dist * 31.0 - t * 3.25 + sin(dist * 17.0 + t * 1.25) * 0.82);",
-      "  float waveB = cos(acrossN * (focus * 0.72) - dist * 39.0 + t * 2.72 + sin(acrossN * 4.6 - t) * 0.54);",
-      "  float ridgeA = pow(max(0.0, 1.0 - abs(waveA) * 1.52), 7.5);",
-      "  float ridgeB = pow(max(0.0, 1.0 - abs(waveB) * 1.62), 8.0) * 0.58;",
-      "  float soft = pow(max(0.0, 1.0 - abs(waveA) * 0.92), 2.2) * 0.16;",
-      "  float shimmer = 0.86 + 0.14 * sin(dist * 22.0 - acrossN * 3.5 + t * 3.1);",
-      "  return sat((ridgeA + ridgeB + soft) * wakeMask * shimmer);",
+      "  float start = smoothstep(-0.012, 0.020, dist);",
+      "  float tail = 1.0 - smoothstep(0.10, 0.56, dist);",
+      "  float spread = halfAcross * 0.84 + max(dist, 0.0) * 0.24;",
+      "  float lateral = 1.0 - smoothstep(0.70, 1.05, abs(across) / max(spread, 0.001));",
+      "  float mask = start * tail * lateral;",
+      "",
+      "  float downstream = max(dist, 0.0);",
+      "  float decay = smoothstep(0.0, 0.52, downstream);",
+      "  float bendAmount = mix(0.030, 0.010, decay);",
+      "  vec2 bendA = perp * sin(downstream * 18.0 - t * 1.65 + across * 8.0) * bendAmount;",
+      "  vec2 bendB = perp * cos(downstream * 12.0 + t * 1.18 - across * 5.5) * bendAmount * 0.55;",
+      "  bendA.x /= max(aspect, 0.001);",
+      "  bendB.x /= max(aspect, 0.001);",
+      "",
+      "  vec2 sampleUV = uv - dir * downstream * 0.055 + bendA + bendB;",
+      "  vec2 lightShift = perp * 0.018;",
+      "  lightShift.x /= max(aspect, 0.001);",
+      "  float c1 = ambientCaustic(sampleUV, light + lightShift, t * 1.08 + 0.55, aspect);",
+      "  float c2 = ambientCaustic(sampleUV + bendA * 0.42, light - lightShift * 0.65, t * 0.94 + 1.75, aspect);",
+      "  float c3 = ambientCaustic(sampleUV - bendB * 0.55, light + lightShift * 0.28, t * 1.16 + 3.10, aspect);",
+      "  float focused = max(c1, max(c2 * 0.82, c3 * 0.68));",
+      "  float nearFocus = mix(1.28, 0.72, decay);",
+      "  return sat(focused * mask * nearFocus);",
       "}",
       "",
       "void main() {",
@@ -1636,17 +1645,16 @@ render();
       "  float cone = smoothstep(-0.08, 0.28, dot(normalize(fromLight + vec2(0.0001)), normalize(toCenter + vec2(0.0001))));",
       "  float t = u_time * 1.55;",
       "  float baseCaustic = ambientCaustic(uv, u_light, t, u_aspect) * cone;",
-      "  float wake = 0.0;",
-      "  if (u_rectCount > 0.5) wake = max(wake, refractedWake(uv, u_rect1, u_light, t, u_aspect));",
-      "  if (u_rectCount > 1.5) wake = max(wake, refractedWake(uv, u_rect2, u_light, t * 1.04 + 0.7, u_aspect));",
+      "  float refracted = 0.0;",
+      "  if (u_rectCount > 0.5) refracted = max(refracted, refractedCaustic(uv, u_rect1, u_light, t, u_aspect));",
+      "  if (u_rectCount > 1.5) refracted = max(refracted, refractedCaustic(uv, u_rect2, u_light, t * 1.04 + 0.7, u_aspect));",
       "  float field = corridor * (0.72 + 0.28 * cone);",
-      "  vec3 fieldGrey = vec3(0.895, 0.892, 0.872);",
-      "  vec3 warmWhite = vec3(1.0, 0.998, 0.986);",
-      "  float lightAmount = sat(baseCaustic * 0.88 + wake * 1.28);",
-      "  vec3 color = mix(fieldGrey, warmWhite, lightAmount);",
-      "  float alpha = field * (0.34 + baseCaustic * 0.26) + wake * 0.50;",
-      "  alpha = sat(alpha);",
-      "  gl_FragColor = vec4(color, alpha);",
+      "  float ambientLines = baseCaustic * field * 0.48;",
+      "  float refractedLines = refracted * 1.22;",
+      "  float lines = sat(max(ambientLines, refractedLines));",
+      "  vec3 causticInk = vec3(0.64, 0.665, 0.67);",
+      "  float alpha = sat(ambientLines * 0.18 + refractedLines * 0.42);",
+      "  gl_FragColor = vec4(causticInk, alpha);",
       "}"
     ].join("\n");
 
@@ -1666,7 +1674,7 @@ render();
     }
 
     gl.useProgram(program);
-    document.documentElement.dataset.seawaterRenderer = "webgl-refracted-ripples";
+    document.documentElement.dataset.seawaterRenderer = "webgl-water-caustics-refraction";
 
     var positionLocation = gl.getAttribLocation(program, "a_position");
     var resolutionLocation = gl.getUniformLocation(program, "u_resolution");

@@ -1945,3 +1945,22 @@ body {
     transition-duration: 300ms;
   }
 }
+
+
+/* ===== Seawater Water Caustics correction ===== */
+.room-view[data-room="seawater"] .seawater-world-light {
+  background: transparent !important;
+  filter: none !important;
+  mix-blend-mode: multiply;
+}
+
+.room-view[data-room="seawater"] .seawater-world-shadow {
+  display: none !important;
+}
+
+.room-view[data-room="seawater"] .room-image,
+.room-view[data-room="seawater"] .room-image.is-contain {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
