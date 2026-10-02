@@ -1539,6 +1539,48 @@ render();
       return clamp(scroll.scrollTop / maxScroll, 0, 1);
     }
 
+
+    /*
+      Seawater page background exposure curve
+      ---------------------------------------
+      From top to bottom the page follows the requested darkness sequence:
+      0 -> 20 -> 30 -> 40 -> 30 -> 20 -> 10 -> 0.
+      Level 0 is the site's warm paper (#f4f3ee); level 40 is sampled from the
+      user's ideal-effect reference (#928c80). Each interval uses smoothstep so
+      the change reads as a slow exposure shift rather than discrete bands.
+    */
+    var seawaterBackgroundLevels = [0, 20, 30, 40, 30, 20, 10, 0];
+    var seawaterPaperRgb = [244, 243, 238];
+    var seawaterDeepRgb = [146, 140, 128];
+    var lastSeawaterBackground = "";
+
+    function smoothstep01(value) {
+      var t = clamp(value, 0, 1);
+      return t * t * (3 - 2 * t);
+    }
+
+    function backgroundLevelForScroll(progress) {
+      var scaled = clamp(progress, 0, 1) * (seawaterBackgroundLevels.length - 1);
+      var index = Math.min(seawaterBackgroundLevels.length - 2, Math.floor(scaled));
+      var local = smoothstep01(scaled - index);
+      return lerp(seawaterBackgroundLevels[index], seawaterBackgroundLevels[index + 1], local);
+    }
+
+    function updateSeawaterBackground() {
+      var level = backgroundLevelForScroll(scrollProgress());
+      var mix = clamp(level / 40, 0, 1);
+      var r = Math.round(lerp(seawaterPaperRgb[0], seawaterDeepRgb[0], mix));
+      var g = Math.round(lerp(seawaterPaperRgb[1], seawaterDeepRgb[1], mix));
+      var b = Math.round(lerp(seawaterPaperRgb[2], seawaterDeepRgb[2], mix));
+      var value = "rgb(" + r + ", " + g + ", " + b + ")";
+      if (value !== lastSeawaterBackground) {
+        lastSeawaterBackground = value;
+        room.style.backgroundColor = value;
+        room.style.setProperty("--seawater-scroll-background", value);
+      }
+      document.documentElement.dataset.seawaterBackgroundLevel = String(Math.round(level));
+    }
+
     function localSunAngle() {
       /* Device-local time is available through Date(); browsers do not require a permission prompt for it. */
       var now = new Date();
@@ -1746,12 +1788,7 @@ render();
       var whole = volumeQuad(volume);
       var wholeBounds = boundsOf(volume.base.concat(volume.far));
 
-      /* Neutral optical density only; no colored blend modes or contrast filters. */
-      softCtx.save();
-      pathQuad(softCtx, whole);
-      softCtx.fillStyle = "rgba(126,126,126,0.085)";
-      softCtx.fill();
-      softCtx.restore();
+      /* Keep the projected volume fully transparent: only Water Caustics are rendered here. */
 
       var bands = mobile ? 7 : 9;
       for (var i = 0; i < bands; i += 1) {
@@ -1801,6 +1838,8 @@ render();
         softCtx.setTransform(1, 0, 0, 1, 0, 0);
         softCtx.clearRect(0, 0, width, height);
 
+        updateSeawaterBackground();
+
         var canvasRect = canvas.getBoundingClientRect();
         var images = Array.prototype.slice.call(scroll.querySelectorAll(".room-image img")).slice(0, 2);
         var light = lightForFrame();
@@ -1836,6 +1875,7 @@ render();
     });
 
     resizeWorld();
+    updateSeawaterBackground();
     requestAnimationFrame(render);
   }
 

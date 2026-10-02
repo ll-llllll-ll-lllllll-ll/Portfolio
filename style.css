@@ -2055,3 +2055,14 @@ body {
   filter: none !important;
   image-rendering: auto;
 }
+
+
+/* ===== Seawater scroll-linked background exposure ===== */
+.room-view[data-room="seawater"] {
+  background-color: var(--seawater-scroll-background, #f4f3ee);
+  transition: background-color 120ms linear;
+}
+
+.room-view[data-room="seawater"] .room-scroll {
+  background: transparent !important;
+}
