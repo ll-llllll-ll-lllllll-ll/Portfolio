@@ -1,0 +1,44 @@
+name: Apply caustic soft-shadow time
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-caustic-softshadow-time.yml'
+      - 'tools/apply_caustic_softshadow_time.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply migration
+        run: python3 tools/apply_caustic_softshadow_time.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check script.js
+          grep -q 'canvas2d-soft-projected-caustics' script.js
+          grep -q 'device-local-time' script.js
+          grep -q 'buildWeakProjectedVolume' script.js
+          grep -q 'Strict neutral grayscale' script.js
+          grep -q 'Seawater neutral soft projected caustics' style.css
+          grep -q 'script.js?v=20261003-0312' index.html
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add script.js style.css index.html
+          git commit -m 'Refine seawater projected caustics and time-based light'
+          git push
