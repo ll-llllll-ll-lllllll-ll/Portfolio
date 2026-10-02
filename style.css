@@ -1866,3 +1866,82 @@ body {
   }
 }
 
+
+
+/* ===== Seawater refracted-ripple renderer ===== */
+.room-view[data-room="seawater"] {
+  background: #f4f3ee;
+}
+
+.room-view[data-room="seawater"] .room-scroll {
+  position: absolute;
+  inset: 54px 0 0;
+  z-index: 3;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  background: transparent;
+}
+
+.room-view[data-room="seawater"] .seawater-world-light {
+  position: absolute;
+  top: 54px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: calc(100% - 54px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 420ms ease;
+  background: transparent;
+  image-rendering: auto;
+}
+
+.room-view[data-room="seawater"] .seawater-world-shadow {
+  display: none !important;
+}
+
+.room-view[data-room="seawater"] .room-image,
+.room-view[data-room="seawater"] .room-image.is-contain {
+  overflow: visible;
+  isolation: auto;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.room-view[data-room="seawater"] .room-image::before,
+.room-view[data-room="seawater"] .room-image::after,
+.room-view[data-room="seawater"] .seawater-caustics {
+  display: none !important;
+}
+
+.room-view[data-room="seawater"] .room-image img,
+.room-view[data-room="seawater"] .room-image.is-contain img {
+  z-index: 4;
+  background: transparent;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.room-view[data-room="seawater"] .room-image figcaption {
+  z-index: 5;
+  color: rgba(23, 24, 19, 0.42);
+  text-shadow: none;
+}
+
+.room-view[data-room="seawater"] .room-lead,
+.room-view[data-room="seawater"] .room-notes,
+.room-view[data-room="seawater"] .room-footer {
+  position: relative;
+  z-index: 4;
+}
+
+@media (max-width: 760px) {
+  .room-view[data-room="seawater"] .seawater-world-light {
+    transition-duration: 300ms;
+  }
+}
