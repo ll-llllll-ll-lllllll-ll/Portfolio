@@ -1,0 +1,44 @@
+name: Apply Safari caustic blur fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-safari-caustic-blur.yml'
+      - 'tools/apply_safari_caustic_blur.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply migration
+        run: python3 tools/apply_safari_caustic_blur.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check script.js
+          grep -q 'artworkMidpointTargetScroll' script.js
+          grep -q 'Cross-browser blur pyramid' script.js
+          grep -q 'drawCausticLayer' script.js
+          grep -q 'script.js?v=20261003-0400' index.html
+          ! grep -q 'ctx.filter = mobile ? "blur(1.55px)"' script.js
+          ! grep -q 'softCtx.filter = "blur(' script.js
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add script.js index.html
+          git commit -m 'Fix Safari caustic blur and center background exposure'
+          git push
