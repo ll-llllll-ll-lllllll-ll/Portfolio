@@ -2046,3 +2046,12 @@ body {
     transition-duration: 180ms;
   }
 }
+
+
+/* ===== Seawater neutral soft projected caustics ===== */
+.room-view[data-room="seawater"] .seawater-caustic-projection {
+  background: transparent !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  image-rendering: auto;
+}
