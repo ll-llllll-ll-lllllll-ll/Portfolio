@@ -1466,55 +1466,62 @@ render();
     if (!room) return;
 
     var scroll = room.querySelector(".room-scroll");
-    if (!scroll || room.querySelector(".seawater-world-light")) return;
+    if (!scroll || room.querySelector(".seawater-caustic-projection")) return;
 
-    /*
-      Seawater optical space
-      ----------------------
-      One low-power WebGL canvas now handles both the ambient water caustics and
-      the Water Caustics refracted behind the two artworks. There is no projected
-      shadow layer: each artwork behaves like a transparent cuboid that bends the
-      travelling caustic field and leaves a refracted caustic zone downstream.
-    */
-    var lightCanvas = document.createElement("canvas");
-    lightCanvas.className = "seawater-world-light";
-    lightCanvas.setAttribute("aria-hidden", "true");
-    room.insertBefore(lightCanvas, scroll);
-
-    var gl = lightCanvas.getContext("webgl", {
-      alpha: true,
-      antialias: false,
-      depth: false,
-      stencil: false,
-      preserveDrawingBuffer: false,
-      powerPreference: "low-power"
+    /* Remove legacy WebGL / shadow surfaces if a previous render path left them behind. */
+    room.querySelectorAll(".seawater-world-light, .seawater-world-shadow, .seawater-caustics").forEach(function (node) {
+      node.remove();
     });
 
-    if (!gl) {
-      lightCanvas.remove();
+    /*
+      Canvas2D projected Water Caustics
+      ---------------------------------
+      Each artwork is treated as a shallow rectangular solid at virtual height z.
+      Its four corners are projected from a 3D point light onto the page plane.
+      The convex hull of the original and projected rectangles is the optical
+      "shadow volume". Instead of filling that volume with black shadow, we fill
+      it with the same low-resolution Canvas2D interference field used for the
+      earlier Water Caustics experiments.
+    */
+    var canvas = document.createElement("canvas");
+    canvas.className = "seawater-caustic-projection";
+    canvas.setAttribute("aria-hidden", "true");
+    room.insertBefore(canvas, scroll);
+
+    var ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) {
+      canvas.remove();
       return;
     }
 
+    var low = document.createElement("canvas");
+    var lowCtx = low.getContext("2d", { alpha: true, willReadFrequently: false });
+    if (!lowCtx) {
+      canvas.remove();
+      return;
+    }
+
+    var width = 1;
+    var height = 1;
+    var pixelRatio = 1;
+    var lowWidth = 156;
+    var lowHeight = 156;
+    var lowImageData = null;
     var reduceMotion = false;
+    var lastFrame = 0;
+    var lastFieldFrame = -1;
+
     try {
       reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     } catch (_) {}
 
-    var width = 1;
-    var height = 1;
-    var lightScale = 0.78;
-    var active = false;
-    var sceneScheduled = false;
-    var lastLightFrame = 0;
-    var staticDrawn = false;
-    var cachedLight = { x: 0, y: 0, z: 760, progress: 0 };
-    var cachedBounds = { cx: 0.5, halfW: 0.28, top: 0.12, bottom: 0.88 };
-    var cachedRect1 = { left: 0, top: 0, right: 0, bottom: 0 };
-    var cachedRect2 = { left: 0, top: 0, right: 0, bottom: 0 };
-    var cachedRectCount = 0;
-
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
+    }
+
+    function smoothstep(edge0, edge1, x) {
+      var t = clamp((x - edge0) / Math.max(0.00001, edge1 - edge0), 0, 1);
+      return t * t * (3 - 2 * t);
     }
 
     function scrollProgress() {
@@ -1524,299 +1531,241 @@ render();
 
     function lightForScroll() {
       var p = scrollProgress();
-      /* 9 o'clock -> 7 o'clock: only a restrained counter-clockwise 60-degree arc. */
+      /* screen-space: 9 o'clock -> 7 o'clock, only a restrained 60-degree arc */
       var theta = (180 - p * 60) * Math.PI / 180;
       var radius = Math.min(width, height) * (width <= 760 ? 0.43 : 0.47);
       return {
         x: width * 0.5 + Math.cos(theta) * radius,
-        y: height * 0.54 + Math.sin(theta) * radius,
-        z: width <= 760 ? 620 : 760,
+        y: height * 0.52 + Math.sin(theta) * radius,
+        z: width <= 760 ? 560 : 660,
         progress: p
       };
     }
 
-    function compileShader(type, source) {
-      var shader = gl.createShader(type);
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        var message = gl.getShaderInfoLog(shader) || "WebGL shader compile failed";
-        gl.deleteShader(shader);
-        throw new Error(message);
-      }
-      return shader;
+    function cross(o, a, b) {
+      return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
     }
 
-    var vertexSource = [
-      "attribute vec2 a_position;",
-      "void main() {",
-      "  gl_Position = vec4(a_position, 0.0, 1.0);",
-      "}"
-    ].join("\n");
+    function convexHull(points) {
+      var pts = points.slice().sort(function (a, b) {
+        return a.x === b.x ? a.y - b.y : a.x - b.x;
+      });
+      if (pts.length <= 2) return pts;
 
-    var fragmentSource = [
-      "precision mediump float;",
-      "uniform vec2 u_resolution;",
-      "uniform float u_time;",
-      "uniform vec2 u_light;",
-      "uniform vec4 u_bounds;",
-      "uniform vec4 u_rect1;",
-      "uniform vec4 u_rect2;",
-      "uniform float u_rectCount;",
-      "uniform float u_aspect;",
-      "",
-      "float sat(float x) { return clamp(x, 0.0, 1.0); }",
-      "",
-      "float ambientCaustic(vec2 uv, vec2 light, float t, float aspect) {",
-      "  vec2 p = uv - light;",
-      "  p.x *= aspect;",
-      "  float dist = length(p);",
-      "  float perspective = 1.0 + dist * 0.72;",
-      "  p = p / perspective * 8.0;",
-      "  vec2 q = p;",
-      "  q.x += 0.34 * sin(p.y * 1.28 + t * 1.18) + 0.12 * sin(p.y * 2.35 - t * 0.84 + 1.4);",
-      "  q.y += 0.34 * cos(p.x * 1.16 - t * 1.02) + 0.12 * cos(p.x * 2.08 + t * 0.78);",
-      "  float a = sin(q.x * 2.05 + sin(q.y * 1.55 + t * 0.92));",
-      "  float b = cos(q.y * 2.02 + sin(q.x * 1.42 - t * 0.80));",
-      "  float c = sin((q.x + q.y) * 1.28 + cos((q.x - q.y) * 1.38 + t * 0.68));",
-      "  float d = cos((q.x - q.y) * 1.62 + sin(q.y * 1.10 - t * 0.72));",
-      "  float f = (a + b + c + d) * 0.25;",
-      "  float ridge = max(0.0, 1.0 - abs(f) * 1.62);",
-      "  float core = pow(ridge, 8.0) * 1.10;",
-      "  float halo = pow(max(0.0, 1.0 - abs(f) * 0.98), 2.7) * 0.12;",
-      "  float crossF = sin(q.x * 1.52 + sin(q.y * 2.08 + t * 0.70)) * 0.56 +",
-      "                 cos(q.y * 1.64 + sin(q.x * 1.86 - t * 0.76)) * 0.44;",
-      "  float crossing = pow(max(0.0, 1.0 - abs(crossF) * 1.40), 7.0) * 0.24;",
-      "  return sat(core + halo + crossing);",
-      "}",
-      "",
-      "float refractedCaustic(vec2 uv, vec4 rect, vec2 light, float t, float aspect) {",
-      "  if (rect.z <= rect.x || rect.w <= rect.y) return 0.0;",
-      "  vec2 center = (rect.xy + rect.zw) * 0.5;",
-      "  vec2 halfSize = (rect.zw - rect.xy) * 0.5;",
-      "  vec2 lightA = vec2(light.x * aspect, light.y);",
-      "  vec2 centerA = vec2(center.x * aspect, center.y);",
-      "  vec2 dir = normalize(centerA - lightA + vec2(0.0001));",
-      "  vec2 perp = vec2(-dir.y, dir.x);",
-      "  vec2 rel = uv - center;",
-      "  rel.x *= aspect;",
-      "  float along = dot(rel, dir);",
-      "  float across = dot(rel, perp);",
-      "  float halfAlong = abs(dir.x) * halfSize.x * aspect + abs(dir.y) * halfSize.y;",
-      "  float halfAcross = abs(perp.x) * halfSize.x * aspect + abs(perp.y) * halfSize.y;",
-      "  float dist = along - halfAlong;",
-      "  float start = smoothstep(-0.012, 0.020, dist);",
-      "  float tail = 1.0 - smoothstep(0.10, 0.56, dist);",
-      "  float spread = halfAcross * 0.84 + max(dist, 0.0) * 0.24;",
-      "  float lateral = 1.0 - smoothstep(0.70, 1.05, abs(across) / max(spread, 0.001));",
-      "  float mask = start * tail * lateral;",
-      "",
-      "  float downstream = max(dist, 0.0);",
-      "  float decay = smoothstep(0.0, 0.52, downstream);",
-      "  float bendAmount = mix(0.030, 0.010, decay);",
-      "  vec2 bendA = perp * sin(downstream * 18.0 - t * 1.65 + across * 8.0) * bendAmount;",
-      "  vec2 bendB = perp * cos(downstream * 12.0 + t * 1.18 - across * 5.5) * bendAmount * 0.55;",
-      "  bendA.x /= max(aspect, 0.001);",
-      "  bendB.x /= max(aspect, 0.001);",
-      "",
-      "  vec2 sampleUV = uv - dir * downstream * 0.055 + bendA + bendB;",
-      "  vec2 lightShift = perp * 0.018;",
-      "  lightShift.x /= max(aspect, 0.001);",
-      "  float c1 = ambientCaustic(sampleUV, light + lightShift, t * 1.08 + 0.55, aspect);",
-      "  float c2 = ambientCaustic(sampleUV + bendA * 0.42, light - lightShift * 0.65, t * 0.94 + 1.75, aspect);",
-      "  float c3 = ambientCaustic(sampleUV - bendB * 0.55, light + lightShift * 0.28, t * 1.16 + 3.10, aspect);",
-      "  float focused = max(c1, max(c2 * 0.82, c3 * 0.68));",
-      "  float nearFocus = mix(1.28, 0.72, decay);",
-      "  return sat(focused * mask * nearFocus);",
-      "}",
-      "",
-      "void main() {",
-      "  vec2 uv = vec2(gl_FragCoord.x / u_resolution.x, 1.0 - gl_FragCoord.y / u_resolution.y);",
-      "  float xNorm = abs((uv.x - u_bounds.x) / max(u_bounds.y, 0.001));",
-      "  float beamX = 1.0 - smoothstep(0.70, 1.06, xNorm);",
-      "  float above = max(0.0, (u_bounds.z - uv.y) / 0.18);",
-      "  float below = max(0.0, (uv.y - u_bounds.w) / 0.22);",
-      "  float beamY = 1.0 - smoothstep(0.0, 1.0, max(above, below));",
-      "  float corridor = beamX * beamY;",
-      "  vec2 toCenter = vec2(0.5, 0.52) - u_light;",
-      "  toCenter.x *= u_aspect;",
-      "  vec2 fromLight = uv - u_light;",
-      "  fromLight.x *= u_aspect;",
-      "  float cone = smoothstep(-0.08, 0.28, dot(normalize(fromLight + vec2(0.0001)), normalize(toCenter + vec2(0.0001))));",
-      "  float t = u_time * 1.55;",
-      "  float baseCaustic = ambientCaustic(uv, u_light, t, u_aspect) * cone;",
-      "  float refracted = 0.0;",
-      "  if (u_rectCount > 0.5) refracted = max(refracted, refractedCaustic(uv, u_rect1, u_light, t, u_aspect));",
-      "  if (u_rectCount > 1.5) refracted = max(refracted, refractedCaustic(uv, u_rect2, u_light, t * 1.04 + 0.7, u_aspect));",
-      "  float field = corridor * (0.72 + 0.28 * cone);",
-      "  float ambientLines = baseCaustic * field * 0.48;",
-      "  float refractedLines = refracted * 1.22;",
-      "  float lines = sat(max(ambientLines, refractedLines));",
-      "  vec3 causticInk = vec3(0.64, 0.665, 0.67);",
-      "  float alpha = sat(ambientLines * 0.18 + refractedLines * 0.42);",
-      "  gl_FragColor = vec4(causticInk, alpha);",
-      "}"
-    ].join("\n");
+      var lower = [];
+      pts.forEach(function (p) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+        lower.push(p);
+      });
 
-    var program;
-    try {
-      program = gl.createProgram();
-      gl.attachShader(program, compileShader(gl.VERTEX_SHADER, vertexSource));
-      gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fragmentSource));
-      gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        throw new Error(gl.getProgramInfoLog(program) || "WebGL program link failed");
+      var upper = [];
+      for (var i = pts.length - 1; i >= 0; i -= 1) {
+        var p = pts[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+        upper.push(p);
       }
-    } catch (_) {
-      document.documentElement.dataset.seawaterRenderer = "shader-error";
-      lightCanvas.remove();
-      return;
+
+      lower.pop();
+      upper.pop();
+      return lower.concat(upper);
     }
 
-    gl.useProgram(program);
-    document.documentElement.dataset.seawaterRenderer = "webgl-water-caustics-refraction";
+    function projectRect(rect, light, elevation, canvasRect) {
+      var left = rect.left - canvasRect.left;
+      var right = rect.right - canvasRect.left;
+      var top = rect.top - canvasRect.top;
+      var bottom = rect.bottom - canvasRect.top;
+      var base = [
+        { x: left, y: top },
+        { x: right, y: top },
+        { x: right, y: bottom },
+        { x: left, y: bottom }
+      ];
+      var projection = light.z / Math.max(1, light.z - elevation);
+      var projected = base.map(function (point) {
+        return {
+          x: light.x + (point.x - light.x) * projection,
+          y: light.y + (point.y - light.y) * projection
+        };
+      });
+      return { base: base, projected: projected };
+    }
 
-    var positionLocation = gl.getAttribLocation(program, "a_position");
-    var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
-    var timeLocation = gl.getUniformLocation(program, "u_time");
-    var lightLocation = gl.getUniformLocation(program, "u_light");
-    var boundsLocation = gl.getUniformLocation(program, "u_bounds");
-    var rect1Location = gl.getUniformLocation(program, "u_rect1");
-    var rect2Location = gl.getUniformLocation(program, "u_rect2");
-    var rectCountLocation = gl.getUniformLocation(program, "u_rectCount");
-    var aspectLocation = gl.getUniformLocation(program, "u_aspect");
-
-    var buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      -1, -1,
-       1, -1,
-      -1,  1,
-       1,  1
-    ]), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    function hullPath(hull) {
+      if (!hull.length) return;
+      ctx.beginPath();
+      ctx.moveTo(hull[0].x, hull[0].y);
+      for (var i = 1; i < hull.length; i += 1) ctx.lineTo(hull[i].x, hull[i].y);
+      ctx.closePath();
+    }
 
     function resizeWorld() {
-      var rect = lightCanvas.getBoundingClientRect();
+      var rect = canvas.getBoundingClientRect();
       width = Math.max(1, Math.round(rect.width));
       height = Math.max(1, Math.round(rect.height));
       var mobile = width <= 760;
-      lightScale = mobile ? 0.86 : 0.78;
-      lightCanvas.width = Math.max(1, Math.round(width * lightScale));
-      lightCanvas.height = Math.max(1, Math.round(height * lightScale));
-      gl.viewport(0, 0, lightCanvas.width, lightCanvas.height);
-      staticDrawn = false;
-      scheduleScene();
+
+      /* Keep the final surface crisp, but do the expensive optical field at low resolution. */
+      pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1.2 : 1.35);
+      canvas.width = Math.max(1, Math.round(width * pixelRatio));
+      canvas.height = Math.max(1, Math.round(height * pixelRatio));
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      lowWidth = mobile ? 126 : 168;
+      lowHeight = Math.round(lowWidth * Math.max(0.72, Math.min(1.15, height / Math.max(width, 1))));
+      low.width = lowWidth;
+      low.height = lowHeight;
+      lowCtx.imageSmoothingEnabled = true;
+      lowCtx.imageSmoothingQuality = "high";
+      lowImageData = lowCtx.createImageData(lowWidth, lowHeight);
+      lastFieldFrame = -1;
     }
 
-    function rectToUniform(rect, canvasRect) {
-      return {
-        left: (rect.left - canvasRect.left) / width,
-        top: (rect.top - canvasRect.top) / height,
-        right: (rect.right - canvasRect.left) / width,
-        bottom: (rect.bottom - canvasRect.top) / height
-      };
-    }
+    function renderLowField(timeSeconds) {
+      if (!lowImageData) return;
+      var data = lowImageData.data;
+      var time = reduceMotion ? 0 : timeSeconds;
+      var pointer = 0;
 
-    function measureScene() {
-      if (!lightCanvas.isConnected) return;
-      var images = Array.prototype.slice.call(scroll.querySelectorAll(".room-image img")).slice(0, 2);
-      if (!images.length) {
-        active = false;
-        lightCanvas.style.opacity = "0";
-        return;
+      for (var y = 0; y < lowHeight; y += 1) {
+        var ny = (y + 0.5) / lowHeight - 0.5;
+        for (var x = 0; x < lowWidth; x += 1) {
+          var nx = (x + 0.5) / lowWidth - 0.5;
+
+          /* Multi-field interference: irregular connected bright caustic ridges. */
+          var wx = nx + 0.085 * Math.sin(ny * 12.5 + time * 1.46) + 0.034 * Math.sin(ny * 25.0 - time * 1.08 + 0.7);
+          var wy = ny + 0.082 * Math.cos(nx * 11.2 - time * 1.28) + 0.030 * Math.cos(nx * 22.4 + time * 0.92 + 1.3);
+
+          var a = Math.sin(wx * 18.0 + Math.sin(wy * 10.5 + time * 1.18));
+          var b = Math.cos(wy * 17.0 + Math.sin(wx * 11.5 - time * 1.02));
+          var c = Math.sin((wx + wy) * 12.2 + Math.cos((wx - wy) * 9.7 + time * 0.84));
+          var d = Math.cos((wx - wy) * 14.3 + Math.sin(wy * 8.6 - time * 0.72));
+          var f = (a + b + c + d) * 0.25;
+
+          var ridge = Math.max(0, 1 - Math.abs(f) * 1.64);
+          var core = Math.pow(ridge, 8.5);
+          var halo = Math.pow(Math.max(0, 1 - Math.abs(f) * 1.02), 2.7) * 0.18;
+          var crossField = Math.sin(wx * 13.5 + Math.sin(wy * 18.0 + time * 0.82)) * 0.55 +
+            Math.cos(wy * 14.8 + Math.sin(wx * 16.0 - time * 0.88)) * 0.45;
+          var crossing = Math.pow(Math.max(0, 1 - Math.abs(crossField) * 1.48), 7.2) * 0.28;
+          var value = clamp(core * 1.08 + halo + crossing, 0, 1);
+
+          /* transparent background, warm-white caustic light only */
+          data[pointer] = 255;
+          data[pointer + 1] = 254;
+          data[pointer + 2] = 246;
+          data[pointer + 3] = Math.round(value * 235);
+          pointer += 4;
+        }
       }
 
-      var canvasRect = lightCanvas.getBoundingClientRect();
-      var first = images[0].getBoundingClientRect();
-      var last = images[images.length - 1].getBoundingClientRect();
-      var padding = height * 0.72;
-      active = first.top < canvasRect.bottom + padding && last.bottom > canvasRect.top - padding;
-      lightCanvas.style.opacity = active ? "1" : "0";
-      if (!active) return;
+      lowCtx.putImageData(lowImageData, 0, 0);
+    }
 
-      var minL = Infinity;
-      var maxR = -Infinity;
-      var minT = Infinity;
-      var maxB = -Infinity;
-      images.forEach(function (image) {
-        var rect = image.getBoundingClientRect();
-        minL = Math.min(minL, rect.left - canvasRect.left);
-        maxR = Math.max(maxR, rect.right - canvasRect.left);
-        minT = Math.min(minT, rect.top - canvasRect.top);
-        maxB = Math.max(maxB, rect.bottom - canvasRect.top);
+    function drawProjectedCaustic(rect, index, light, canvasRect) {
+      if (rect.width < 2 || rect.height < 2) return;
+
+      var mobile = width <= 760;
+      var elevation = clamp(
+        rect.width * (index === 0 ? 0.43 : 0.38),
+        mobile ? 86 : 118,
+        mobile ? 190 : 260
+      );
+      var geom = projectRect(rect, light, elevation, canvasRect);
+      var hull = convexHull(geom.base.concat(geom.projected));
+      if (hull.length < 3) return;
+
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      hull.forEach(function (p) {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
       });
 
-      cachedBounds = {
-        cx: ((minL + maxR) * 0.5) / width,
-        halfW: (((maxR - minL) * 0.5) + width * 0.12) / width,
-        top: (minT - height * 0.10) / height,
-        bottom: (maxB + height * 0.18) / height
+      var baseCenter = {
+        x: (geom.base[0].x + geom.base[2].x) * 0.5,
+        y: (geom.base[0].y + geom.base[2].y) * 0.5
+      };
+      var projectedCenter = {
+        x: (geom.projected[0].x + geom.projected[2].x) * 0.5,
+        y: (geom.projected[0].y + geom.projected[2].y) * 0.5
       };
 
-      cachedLight = lightForScroll();
-      cachedRect1 = rectToUniform(images[0].getBoundingClientRect(), canvasRect);
-      cachedRect2 = images[1]
-        ? rectToUniform(images[1].getBoundingClientRect(), canvasRect)
-        : { left: 0, top: 0, right: 0, bottom: 0 };
-      cachedRectCount = images.length;
-      staticDrawn = false;
+      ctx.save();
+      hullPath(hull);
+      ctx.clip();
+
+      /* A translucent optical volume makes white caustics legible on the warm-white page. */
+      var volume = ctx.createLinearGradient(baseCenter.x, baseCenter.y, projectedCenter.x, projectedCenter.y);
+      volume.addColorStop(0, "rgba(116, 114, 104, 0.16)");
+      volume.addColorStop(0.52, "rgba(126, 124, 114, 0.13)");
+      volume.addColorStop(1, "rgba(132, 130, 120, 0.07)");
+      ctx.fillStyle = volume;
+      ctx.fillRect(minX - 4, minY - 4, maxX - minX + 8, maxY - minY + 8);
+
+      /* Draw the low-res caustic field enlarged into the projected hull. */
+      ctx.globalAlpha = index === 0 ? 0.92 : 0.88;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.filter = mobile ? "blur(1.0px) contrast(1.22)" : "blur(1.25px) contrast(1.28)";
+      ctx.drawImage(low, minX - 18, minY - 18, (maxX - minX) + 36, (maxY - minY) + 36);
+
+      /* A softer second pass gives the bright cores a natural optical bloom. */
+      ctx.globalAlpha = 0.28;
+      ctx.filter = mobile ? "blur(3.4px)" : "blur(4.2px)";
+      ctx.drawImage(low, minX - 18, minY - 18, (maxX - minX) + 36, (maxY - minY) + 36);
+      ctx.restore();
     }
 
-    function scheduleScene() {
-      if (sceneScheduled) return;
-      sceneScheduled = true;
-      requestAnimationFrame(function () {
-        sceneScheduled = false;
-        measureScene();
-      });
-    }
+    function render(now) {
+      if (!canvas.isConnected) return;
+      var mobile = width <= 760;
+      var frameInterval = mobile ? 50 : 38; /* ~20fps mobile / ~26fps desktop */
 
-    function renderLight(now) {
-      if (!active) return;
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.useProgram(program);
-      gl.uniform2f(resolutionLocation, lightCanvas.width, lightCanvas.height);
-      gl.uniform1f(timeLocation, reduceMotion ? 0 : now * 0.001);
-      gl.uniform2f(lightLocation, cachedLight.x / width, cachedLight.y / height);
-      gl.uniform4f(boundsLocation, cachedBounds.cx, cachedBounds.halfW, cachedBounds.top, cachedBounds.bottom);
-      gl.uniform4f(rect1Location, cachedRect1.left, cachedRect1.top, cachedRect1.right, cachedRect1.bottom);
-      gl.uniform4f(rect2Location, cachedRect2.left, cachedRect2.top, cachedRect2.right, cachedRect2.bottom);
-      gl.uniform1f(rectCountLocation, cachedRectCount);
-      gl.uniform1f(aspectLocation, width / Math.max(1, height));
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    }
+      if (now - lastFrame >= frameInterval || reduceMotion && lastFieldFrame < 0) {
+        lastFrame = now;
+        var fieldFrame = Math.floor(now / frameInterval);
+        if (fieldFrame !== lastFieldFrame) {
+          renderLowField(now * 0.00135);
+          lastFieldFrame = fieldFrame;
+        }
 
-    function lightLoop(now) {
-      if (!lightCanvas.isConnected) return;
-      var frameInterval = width <= 760 ? 42 : 33;
-      if (active && (!reduceMotion || !staticDrawn) && now - lastLightFrame >= frameInterval) {
-        lastLightFrame = now;
-        renderLight(now);
-        staticDrawn = true;
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        var canvasRect = canvas.getBoundingClientRect();
+        var images = Array.prototype.slice.call(scroll.querySelectorAll(".room-image img")).slice(0, 2);
+        var light = lightForScroll();
+        var anyVisible = false;
+
+        images.forEach(function (image, index) {
+          var rect = image.getBoundingClientRect();
+          if (rect.bottom < canvasRect.top - height * 0.75 || rect.top > canvasRect.bottom + height * 0.75) return;
+          anyVisible = true;
+          drawProjectedCaustic(rect, index, light, canvasRect);
+        });
+
+        canvas.style.opacity = anyVisible ? "1" : "0";
+        document.documentElement.dataset.seawaterRenderer = "canvas2d-projected-caustics";
       }
-      requestAnimationFrame(lightLoop);
+
+      requestAnimationFrame(render);
     }
 
-    scroll.addEventListener("scroll", scheduleScene, { passive: true });
+    scroll.addEventListener("scroll", function () {}, { passive: true });
     window.addEventListener("resize", resizeWorld, { passive: true });
     window.addEventListener("orientationchange", resizeWorld, { passive: true });
-    document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) {
-        staticDrawn = false;
-        scheduleScene();
-      }
-    });
 
     scroll.querySelectorAll(".room-image img").forEach(function (image) {
-      if (!image.complete) image.addEventListener("load", scheduleScene, { once: true });
+      if (!image.complete) image.addEventListener("load", resizeWorld, { once: true });
     });
 
     resizeWorld();
-    requestAnimationFrame(lightLoop);
+    requestAnimationFrame(render);
   }
+
 
   var collectionStageResizeFrame = 0;
 
