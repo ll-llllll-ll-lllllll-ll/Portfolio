@@ -1522,8 +1522,7 @@ render();
     var reduceMotion = false;
     var lastFrame = 0;
     var lastFieldFrame = -1;
-    var currentLightAngle = null;
-    var fixedLightAngle = 145 * Math.PI / 180;
+    var currentSolarProgress = null;
 
     try {
       reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1619,23 +1618,53 @@ render();
 
     function lightForFrame() {
       /*
-        Fixed distant light. The source sits down-left of the artwork so the
-        projected caustic volume travels up-right, matching the chosen visual
-        composition. Scroll only adds a very small, slowly-eased +/-2.5deg nudge.
+        Scroll-driven 3D solar arc.
+        0.00 = low morning light from down-left
+        0.50 = high noon light from almost overhead / slightly left
+        1.00 = low evening light from up-left
+
+        The scroll target is eased so the light has inertia instead of sticking
+        directly to touch movement. Solar altitude follows sin(pi*p): high at
+        noon, low at both ends. That same altitude later compresses / expands
+        the projected caustic volume like a real morning-noon-evening shadow.
       */
-      var target = fixedLightAngle + (scrollProgress() - 0.5) * (5 * Math.PI / 180);
-      if (currentLightAngle == null) currentLightAngle = target;
+      var targetProgress = clamp(scrollProgress(), 0, 1);
+      if (currentSolarProgress == null) currentSolarProgress = targetProgress;
+      currentSolarProgress += (targetProgress - currentSolarProgress) * 0.014;
 
-      var diff = Math.atan2(Math.sin(target - currentLightAngle), Math.cos(target - currentLightAngle));
-      currentLightAngle += diff * 0.012;
+      var p = clamp(currentSolarProgress, 0, 1);
+      var altitude = Math.sin(Math.PI * p);
+      var altitudeEase = Math.pow(clamp(altitude, 0, 1), 0.88);
+      var mobile = width <= 760;
+      var distance = Math.max(width, height) * lerp(1.52, 1.18, altitudeEase);
 
-      var distance = Math.max(width, height) * 1.65;
-      document.documentElement.dataset.seawaterTimeSource = "fixed-angle";
+      /* Horizontal orbit: low sun sits farther left; noon comes closer to the
+         vertical axis while remaining slightly left of the artwork. */
+      var xOffset = lerp(0.72, 0.24, altitudeEase);
+
+      /* Screen-space vertical keyframes, matching the user's 3D sketch:
+         down-left -> overhead-left -> up-left. */
+      var yOffset;
+      if (p <= 0.5) {
+        yOffset = lerp(0.58, -0.92, smoothstep01(p / 0.5));
+      } else {
+        yOffset = lerp(-0.92, -0.52, smoothstep01((p - 0.5) / 0.5));
+      }
+
+      var lowZ = mobile ? 1850 : 2450;
+      var highZ = mobile ? 5200 : 6800;
+      var z = lerp(lowZ, highZ, altitudeEase);
+
+      document.documentElement.dataset.seawaterTimeSource = "scroll-solar-arc";
+      document.documentElement.dataset.seawaterSolarAltitude = altitude.toFixed(3);
+      document.documentElement.dataset.seawaterSolarProgress = p.toFixed(3);
+
       return {
-        x: width * 0.5 + Math.cos(currentLightAngle) * distance,
-        y: height * 0.50 + Math.sin(currentLightAngle) * distance,
-        z: width <= 760 ? 2600 : 3400,
-        angle: currentLightAngle
+        x: width * 0.5 - distance * xOffset,
+        y: height * 0.5 + distance * yOffset,
+        z: z,
+        altitude: altitude,
+        progress: p
       };
     }
 
@@ -1660,7 +1689,7 @@ render();
       return { base: base, projected: projected };
     }
 
-    function buildNearParallelProjectedVolume(rect, index, light, canvasRect) {
+    function buildSolarProjectedVolume(rect, index, light, canvasRect) {
       var mobile = width <= 760;
       var left = rect.left - canvasRect.left;
       var right = rect.right - canvasRect.left;
@@ -1683,27 +1712,37 @@ render();
       var ux = dx / len;
       var uy = dy / len;
 
-      /* Long enough to read as projection, but restrained relative to the page. */
-      var depth = clamp(
-        rect.width * (index === 0 ? 0.60 : 0.56),
-        mobile ? 150 : 210,
-        mobile ? 235 : 360
+      /* Height controls projection length. The noon volume becomes compact,
+         while low morning/evening light produces a long caustic space. */
+      var altitude = clamp(light.altitude == null ? 0.5 : light.altitude, 0, 1);
+      var heightEase = Math.pow(altitude, 0.82);
+      var longDepth = clamp(
+        rect.width * (index === 0 ? 0.76 : 0.70),
+        mobile ? 175 : 235,
+        mobile ? 290 : 420
       );
+      var noonDepth = clamp(
+        rect.width * (index === 0 ? 0.24 : 0.22),
+        mobile ? 68 : 92,
+        mobile ? 118 : 158
+      );
+      var depth = lerp(longDepth, noonDepth, heightEase);
       var farCenter = {
         x: baseCenter.x + ux * depth,
         y: baseCenter.y + uy * depth
       };
 
-      /* A distant single point still produces a tiny amount of divergence. */
+      /* Keep the single-point character extremely restrained. A higher noon
+         source reduces divergence further, so the volume feels almost parallel. */
       var elevation = clamp(
-        rect.width * (index === 0 ? 0.20 : 0.18),
-        mobile ? 48 : 66,
-        mobile ? 96 : 132
+        rect.width * (index === 0 ? 0.18 : 0.16),
+        mobile ? 44 : 60,
+        mobile ? 90 : 124
       );
       var perspectiveScale = clamp(
         light.z / Math.max(1, light.z - elevation),
-        1.010,
-        1.035
+        1.006,
+        1.028
       );
       var halfW = rect.width * perspectiveScale * 0.5;
       var halfH = rect.height * perspectiveScale * 0.5;
@@ -1718,7 +1757,9 @@ render();
         base: base,
         far: far,
         elevation: elevation,
-        direction: { x: ux, y: uy }
+        direction: { x: ux, y: uy },
+        altitude: altitude,
+        depth: depth
       };
     }
 
@@ -1968,8 +2009,8 @@ render();
       var axisLength = Math.sqrt(axisDx * axisDx + axisDy * axisDy) || 1;
       var dirX = axisDx / axisLength;
       var dirY = axisDy / axisLength;
-      var gateBack = Math.max(10, edgeBlur * 1.25);
-      var gateForward = Math.max(18, edgeBlur * 1.80);
+      var gateBack = Math.min(axisLength * 0.10, Math.max(6, edgeBlur * 0.48));
+      var gateForward = Math.min(axisLength * 0.24, Math.max(10, edgeBlur * 0.92));
       var gate = maskCtx.createLinearGradient(
         axis.near.x - dirX * gateBack,
         axis.near.y - dirY * gateBack,
@@ -2018,7 +2059,7 @@ render();
     function drawProjectedCaustic(rect, index, light, canvasRect) {
       if (rect.width < 2 || rect.height < 2) return;
       var mobile = width <= 760;
-      var volume = buildNearParallelProjectedVolume(rect, index, light, canvasRect);
+      var volume = buildSolarProjectedVolume(rect, index, light, canvasRect);
       var wholeBounds = boundsOf(volume.base.concat(volume.far));
       var baseAlpha = index === 0 ? 0.92 : 0.88;
 
@@ -2091,8 +2132,8 @@ render();
         ctx.drawImage(soft, 0, 0, width, height);
 
         canvas.style.opacity = anyVisible ? "1" : "0";
-        document.documentElement.dataset.seawaterRenderer = "canvas2d-parallel3d-soft-caustics";
-        document.documentElement.dataset.seawaterProjection = "fixed-near-parallel-single-point";
+        document.documentElement.dataset.seawaterRenderer = "canvas2d-scroll-solar3d-caustics";
+        document.documentElement.dataset.seawaterProjection = "scroll-solar-arc-3d";
       }
 
       requestAnimationFrame(render);
