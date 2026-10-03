@@ -1,0 +1,44 @@
+name: Apply seawater 3D solar arc
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-seawater-solar-arc-3d.yml'
+      - 'tools/apply_seawater_solar_arc_3d.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply migration
+        run: python3 tools/apply_seawater_solar_arc_3d.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check script.js
+          grep -q 'currentSolarProgress' script.js
+          grep -q 'buildSolarProjectedVolume' script.js
+          grep -q 'scroll-solar-arc-3d' script.js
+          grep -q 'seawaterSolarAltitude' script.js
+          grep -q 'script.js?v=20261004-0348' index.html
+          ! grep -q 'fixedLightAngle' script.js
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add script.js index.html
+          git commit -m 'Add scroll-driven 3D solar caustic arc'
+          git push
