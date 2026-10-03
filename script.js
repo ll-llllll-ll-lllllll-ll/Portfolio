@@ -1643,11 +1643,12 @@ render();
       var diff = Math.atan2(Math.sin(target - currentLightAngle), Math.cos(target - currentLightAngle));
       currentLightAngle += diff * 0.018;
 
-      var radius = Math.min(width, height) * (width <= 760 ? 0.41 : 0.44);
+      /* A distant point light gives an almost-parallel one-point projection. */
+      var radius = Math.min(width, height) * (width <= 760 ? 0.22 : 0.25);
       return {
         x: width * 0.5 + Math.cos(currentLightAngle) * radius,
         y: height * 0.50 + Math.sin(currentLightAngle) * radius,
-        z: width <= 760 ? 600 : 720,
+        z: width <= 760 ? 1500 : 1900,
         angle: currentLightAngle
       };
     }
@@ -1684,9 +1685,9 @@ render();
         instead of being replaced by an almost-parallel translated rectangle.
       */
       var elevation = clamp(
-        rect.width * (index === 0 ? 0.31 : 0.27),
-        mobile ? 66 : 88,
-        mobile ? 126 : 176
+        rect.width * (index === 0 ? 0.23 : 0.20),
+        mobile ? 54 : 72,
+        mobile ? 108 : 148
       );
       var physical = physicalProjectRect(rect, light, elevation, canvasRect);
 
@@ -1769,7 +1770,7 @@ render();
       height = Math.max(1, Math.round(rect.height));
       var mobile = width <= 760;
 
-      pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1.15 : 1.3);
+      pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1.35 : 1.5);
       canvas.width = Math.max(1, Math.round(width * pixelRatio));
       canvas.height = Math.max(1, Math.round(height * pixelRatio));
       ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -1782,7 +1783,7 @@ render();
       softCtx.imageSmoothingEnabled = true;
       softCtx.imageSmoothingQuality = "high";
 
-      lowWidth = mobile ? 132 : 178;
+      lowWidth = mobile ? 220 : 300;
       lowHeight = Math.round(lowWidth * Math.max(0.72, Math.min(1.08, height / Math.max(width, 1))));
       low.width = lowWidth;
       low.height = lowHeight;
@@ -1790,10 +1791,11 @@ render();
       lowCtx.imageSmoothingQuality = "high";
       lowImageData = lowCtx.createImageData(lowWidth, lowHeight);
 
-      mid.width = Math.max(48, Math.round(lowWidth * 0.56));
-      mid.height = Math.max(36, Math.round(lowHeight * 0.56));
-      far.width = Math.max(28, Math.round(lowWidth * 0.28));
-      far.height = Math.max(22, Math.round(lowHeight * 0.28));
+      /* Keep the blur pyramid dense enough that Safari never exposes pixel blocks. */
+      mid.width = Math.max(150, Math.round(lowWidth * 0.76));
+      mid.height = Math.max(108, Math.round(lowHeight * 0.76));
+      far.width = Math.max(108, Math.round(lowWidth * 0.52));
+      far.height = Math.max(82, Math.round(lowHeight * 0.52));
       midCtx.imageSmoothingEnabled = true;
       midCtx.imageSmoothingQuality = "high";
       farCtx.imageSmoothingEnabled = true;
@@ -1875,22 +1877,57 @@ render();
       };
     }
 
+    function polygonCenter(points) {
+      var sumX = 0;
+      var sumY = 0;
+      points.forEach(function (point) {
+        sumX += point.x;
+        sumY += point.y;
+      });
+      return {
+        x: sumX / Math.max(1, points.length),
+        y: sumY / Math.max(1, points.length)
+      };
+    }
+
+    function scalePolygon(points, center, scale) {
+      return points.map(function (point) {
+        return {
+          x: center.x + (point.x - center.x) * scale,
+          y: center.y + (point.y - center.y) * scale
+        };
+      });
+    }
+
     function buildLayerMask(volume, stops, edgeBlur) {
       var whole = volumeHull(volume);
       var axis = volumeAxis(volume);
+      var center = polygonCenter(whole);
+      var mobile = width <= 760;
+
       maskCtx.setTransform(1, 0, 0, 1, 0, 0);
       maskCtx.clearRect(0, 0, width, height);
       maskCtx.globalCompositeOperation = "source-over";
 
-      /* Safari supports shadowBlur consistently. It softens both long side edges
-         continuously from the image outward, unlike the old clipped bands. */
-      maskCtx.save();
-      maskCtx.shadowColor = "rgba(255,255,255,0.95)";
-      maskCtx.shadowBlur = edgeBlur;
-      maskCtx.fillStyle = "rgba(255,255,255,0.96)";
-      pathPolygon(maskCtx, whole);
-      maskCtx.fill();
-      maskCtx.restore();
+      /*
+        Safari-safe geometric feather:
+        many translucent hulls span from slightly outside the projected volume
+        to slightly inside it. The result is a real soft edge with no visible
+        straight clipping line, and the far optical layers request a wider feather.
+      */
+      var reference = Math.max(260, Math.min(width, height));
+      var feather = clamp(edgeBlur / reference * 0.46, 0.008, 0.070);
+      var steps = mobile ? 16 : 20;
+      var passAlpha = mobile ? 0.115 : 0.095;
+
+      for (var i = 0; i < steps; i += 1) {
+        var t = steps <= 1 ? 0.5 : i / (steps - 1);
+        var scale = 1 + feather - feather * 2 * t;
+        var feathered = scalePolygon(whole, center, scale);
+        maskCtx.fillStyle = "rgba(255,255,255," + passAlpha + ")";
+        pathPolygon(maskCtx, feathered);
+        maskCtx.fill();
+      }
 
       var gradient = maskCtx.createLinearGradient(axis.near.x, axis.near.y, axis.far.x, axis.far.y);
       stops.forEach(function (stop) {
@@ -1910,7 +1947,7 @@ render();
       layerCtx.imageSmoothingEnabled = true;
       layerCtx.imageSmoothingQuality = "high";
 
-      var pad = 42;
+      var pad = 76;
       layerCtx.drawImage(
         source,
         bounds.minX - pad,
@@ -1949,25 +1986,25 @@ render();
         low,
         volume,
         wholeBounds,
-        [[0, 1], [0.20, 0.94], [0.43, 0.70], [0.66, 0.10], [0.78, 0]],
-        mobile ? 5 : 6,
+        [[0, 1], [0.14, 0.96], [0.30, 0.66], [0.48, 0.16], [0.58, 0]],
+        mobile ? 7 : 8,
         baseAlpha
       );
       drawCausticLayer(
         mid,
         volume,
         wholeBounds,
-        [[0, 0.10], [0.22, 0.30], [0.48, 0.60], [0.72, 0.50], [0.90, 0.12], [1, 0]],
-        mobile ? 8 : 10,
-        baseAlpha * 0.92
+        [[0, 0.12], [0.18, 0.30], [0.42, 0.60], [0.68, 0.56], [0.88, 0.20], [1, 0]],
+        mobile ? 14 : 17,
+        baseAlpha * 0.90
       );
       drawCausticLayer(
         far,
         volume,
         wholeBounds,
-        [[0, 0], [0.30, 0.07], [0.54, 0.26], [0.76, 0.52], [1, 0.40]],
-        mobile ? 14 : 17,
-        baseAlpha * 0.84
+        [[0, 0], [0.28, 0.05], [0.50, 0.22], [0.72, 0.50], [0.90, 0.60], [1, 0.50]],
+        mobile ? 28 : 34,
+        baseAlpha * 0.78
       );
     }
 
@@ -2008,7 +2045,7 @@ render();
         ctx.drawImage(soft, 0, 0, width, height);
 
         canvas.style.opacity = anyVisible ? "1" : "0";
-        document.documentElement.dataset.seawaterRenderer = "canvas2d-physical3d-caustics";
+        document.documentElement.dataset.seawaterRenderer = "canvas2d-parallel3d-soft-caustics";
         document.documentElement.dataset.seawaterProjection = "point-light-xyz";
       }
 
