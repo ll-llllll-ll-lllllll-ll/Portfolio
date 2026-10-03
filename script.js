@@ -1673,58 +1673,28 @@ render();
       return { base: base, projected: projected };
     }
 
-    function buildWeakProjectedVolume(rect, index, light, canvasRect) {
+    function buildPhysicalProjectedVolume(rect, index, light, canvasRect) {
       var mobile = width <= 760;
+
+      /*
+        Restore the original 3D point-light construction:
+        each artwork is a rectangle lifted above the page by a virtual z height.
+        Every corner is projected through the point light onto the page plane.
+        The projected far face therefore grows / shifts naturally with the light,
+        instead of being replaced by an almost-parallel translated rectangle.
+      */
       var elevation = clamp(
-        rect.width * (index === 0 ? 0.37 : 0.34),
-        mobile ? 76 : 104,
-        mobile ? 165 : 220
+        rect.width * (index === 0 ? 0.31 : 0.27),
+        mobile ? 66 : 88,
+        mobile ? 126 : 176
       );
       var physical = physicalProjectRect(rect, light, elevation, canvasRect);
-      var base = physical.base;
-      var baseCenter = {
-        x: (base[0].x + base[2].x) * 0.5,
-        y: (base[0].y + base[2].y) * 0.5
+
+      return {
+        base: physical.base,
+        far: physical.projected,
+        elevation: elevation
       };
-      var projectedCenter = {
-        x: (physical.projected[0].x + physical.projected[2].x) * 0.5,
-        y: (physical.projected[0].y + physical.projected[2].y) * 0.5
-      };
-
-      var dx = projectedCenter.x - baseCenter.x;
-      var dy = projectedCenter.y - baseCenter.y;
-      var physicalDepth = Math.sqrt(dx * dx + dy * dy);
-      if (physicalDepth < 0.5) {
-        dx = baseCenter.x - light.x;
-        dy = baseCenter.y - light.y;
-        physicalDepth = Math.sqrt(dx * dx + dy * dy) || 1;
-      }
-      var ux = dx / physicalDepth;
-      var uy = dy / physicalDepth;
-
-      /* Keep the old physical projection length, but damp it into a quieter, almost parallel volume. */
-      var depth = clamp(
-        physicalDepth * 1.10,
-        mobile ? 120 : 165,
-        mobile ? 285 : 395
-      );
-      var farCenter = {
-        x: baseCenter.x + ux * depth,
-        y: baseCenter.y + uy * depth
-      };
-
-      /* Only 2.2% convergence: nearly parallel, with the rest of the taper supplied by blur / fade. */
-      var shrink = 0.022;
-      var halfW = rect.width * (1 - shrink) * 0.5;
-      var halfH = rect.height * (1 - shrink) * 0.5;
-      var far = [
-        { x: farCenter.x - halfW, y: farCenter.y - halfH },
-        { x: farCenter.x + halfW, y: farCenter.y - halfH },
-        { x: farCenter.x + halfW, y: farCenter.y + halfH },
-        { x: farCenter.x - halfW, y: farCenter.y + halfH }
-      ];
-
-      return { base: base, far: far };
     }
 
     function pathQuad(targetCtx, quad) {
@@ -1736,8 +1706,50 @@ render();
       targetCtx.closePath();
     }
 
-    function volumeQuad(volume) {
-      return [volume.base[0], volume.base[1], volume.far[2], volume.far[3]];
+    function cross(o, a, b) {
+      return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    }
+
+    function convexHull(points) {
+      var sorted = points.slice().sort(function (a, b) {
+        return a.x === b.x ? a.y - b.y : a.x - b.x;
+      });
+      if (sorted.length <= 2) return sorted;
+
+      var lower = [];
+      sorted.forEach(function (point) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+          lower.pop();
+        }
+        lower.push(point);
+      });
+
+      var upper = [];
+      for (var i = sorted.length - 1; i >= 0; i -= 1) {
+        var point = sorted[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+          upper.pop();
+        }
+        upper.push(point);
+      }
+
+      upper.pop();
+      lower.pop();
+      return lower.concat(upper);
+    }
+
+    function volumeHull(volume) {
+      return convexHull(volume.base.concat(volume.far));
+    }
+
+    function pathPolygon(targetCtx, points) {
+      if (!points || !points.length) return;
+      targetCtx.beginPath();
+      targetCtx.moveTo(points[0].x, points[0].y);
+      for (var i = 1; i < points.length; i += 1) {
+        targetCtx.lineTo(points[i].x, points[i].y);
+      }
+      targetCtx.closePath();
     }
 
     function boundsOf(points) {
@@ -1864,7 +1876,7 @@ render();
     }
 
     function buildLayerMask(volume, stops, edgeBlur) {
-      var whole = volumeQuad(volume);
+      var whole = volumeHull(volume);
       var axis = volumeAxis(volume);
       maskCtx.setTransform(1, 0, 0, 1, 0, 0);
       maskCtx.clearRect(0, 0, width, height);
@@ -1876,7 +1888,7 @@ render();
       maskCtx.shadowColor = "rgba(255,255,255,0.95)";
       maskCtx.shadowBlur = edgeBlur;
       maskCtx.fillStyle = "rgba(255,255,255,0.96)";
-      pathQuad(maskCtx, whole);
+      pathPolygon(maskCtx, whole);
       maskCtx.fill();
       maskCtx.restore();
 
@@ -1923,7 +1935,7 @@ render();
     function drawProjectedCaustic(rect, index, light, canvasRect) {
       if (rect.width < 2 || rect.height < 2) return;
       var mobile = width <= 760;
-      var volume = buildWeakProjectedVolume(rect, index, light, canvasRect);
+      var volume = buildPhysicalProjectedVolume(rect, index, light, canvasRect);
       var wholeBounds = boundsOf(volume.base.concat(volume.far));
       var baseAlpha = index === 0 ? 0.92 : 0.88;
 
@@ -1953,8 +1965,8 @@ render();
         far,
         volume,
         wholeBounds,
-        [[0, 0], [0.36, 0.08], [0.58, 0.28], [0.78, 0.50], [1, 0.34]],
-        mobile ? 12 : 15,
+        [[0, 0], [0.30, 0.07], [0.54, 0.26], [0.76, 0.52], [1, 0.40]],
+        mobile ? 14 : 17,
         baseAlpha * 0.84
       );
     }
@@ -1996,7 +2008,8 @@ render();
         ctx.drawImage(soft, 0, 0, width, height);
 
         canvas.style.opacity = anyVisible ? "1" : "0";
-        document.documentElement.dataset.seawaterRenderer = "canvas2d-soft-projected-caustics";
+        document.documentElement.dataset.seawaterRenderer = "canvas2d-physical3d-caustics";
+        document.documentElement.dataset.seawaterProjection = "point-light-xyz";
       }
 
       requestAnimationFrame(render);
