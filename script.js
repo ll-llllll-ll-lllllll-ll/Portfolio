@@ -1523,8 +1523,7 @@ render();
     var lastFrame = 0;
     var lastFieldFrame = -1;
     var currentLightAngle = null;
-    var cachedLocalMinute = -1;
-    var cachedSunAngle = Math.PI;
+    var fixedLightAngle = 145 * Math.PI / 180;
 
     try {
       reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1618,37 +1617,24 @@ render();
       document.documentElement.dataset.seawaterBackgroundLevel = String(Math.round(level));
     }
 
-    function localSunAngle() {
-      /* Device-local time is available through Date(); browsers do not require a permission prompt for it. */
-      var now = new Date();
-      var minuteKey = now.getHours() * 60 + now.getMinutes();
-      if (minuteKey === cachedLocalMinute) return cachedSunAngle;
-      cachedLocalMinute = minuteKey;
-
-      var dawn = 6 * 60;
-      var dusk = 18 * 60;
-      var dayProgress = clamp((minuteKey - dawn) / (dusk - dawn), 0, 1);
-
-      /* A restrained left-side solar arc: roughly 166deg at dawn -> 194deg at dusk. */
-      cachedSunAngle = (166 + dayProgress * 28) * Math.PI / 180;
-      document.documentElement.dataset.seawaterTimeSource = "device-local-time";
-      return cachedSunAngle;
-    }
-
     function lightForFrame() {
-      /* Scroll only nudges the time-derived angle by +/-4deg, then eases toward it slowly. */
-      var target = localSunAngle() + (scrollProgress() - 0.5) * (8 * Math.PI / 180);
+      /*
+        Fixed distant light. The source sits down-left of the artwork so the
+        projected caustic volume travels up-right, matching the chosen visual
+        composition. Scroll only adds a very small, slowly-eased +/-2.5deg nudge.
+      */
+      var target = fixedLightAngle + (scrollProgress() - 0.5) * (5 * Math.PI / 180);
       if (currentLightAngle == null) currentLightAngle = target;
 
       var diff = Math.atan2(Math.sin(target - currentLightAngle), Math.cos(target - currentLightAngle));
-      currentLightAngle += diff * 0.018;
+      currentLightAngle += diff * 0.012;
 
-      /* A distant point light gives an almost-parallel one-point projection. */
-      var radius = Math.min(width, height) * (width <= 760 ? 0.22 : 0.25);
+      var distance = Math.max(width, height) * 1.65;
+      document.documentElement.dataset.seawaterTimeSource = "fixed-angle";
       return {
-        x: width * 0.5 + Math.cos(currentLightAngle) * radius,
-        y: height * 0.50 + Math.sin(currentLightAngle) * radius,
-        z: width <= 760 ? 1500 : 1900,
+        x: width * 0.5 + Math.cos(currentLightAngle) * distance,
+        y: height * 0.50 + Math.sin(currentLightAngle) * distance,
+        z: width <= 760 ? 2600 : 3400,
         angle: currentLightAngle
       };
     }
@@ -1674,27 +1660,65 @@ render();
       return { base: base, projected: projected };
     }
 
-    function buildPhysicalProjectedVolume(rect, index, light, canvasRect) {
+    function buildNearParallelProjectedVolume(rect, index, light, canvasRect) {
       var mobile = width <= 760;
+      var left = rect.left - canvasRect.left;
+      var right = rect.right - canvasRect.left;
+      var top = rect.top - canvasRect.top;
+      var bottom = rect.bottom - canvasRect.top;
+      var base = [
+        { x: left, y: top },
+        { x: right, y: top },
+        { x: right, y: bottom },
+        { x: left, y: bottom }
+      ];
 
-      /*
-        Restore the original 3D point-light construction:
-        each artwork is a rectangle lifted above the page by a virtual z height.
-        Every corner is projected through the point light onto the page plane.
-        The projected far face therefore grows / shifts naturally with the light,
-        instead of being replaced by an almost-parallel translated rectangle.
-      */
-      var elevation = clamp(
-        rect.width * (index === 0 ? 0.23 : 0.20),
-        mobile ? 54 : 72,
-        mobile ? 108 : 148
+      var baseCenter = {
+        x: (left + right) * 0.5,
+        y: (top + bottom) * 0.5
+      };
+      var dx = baseCenter.x - light.x;
+      var dy = baseCenter.y - light.y;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len;
+      var uy = dy / len;
+
+      /* Long enough to read as projection, but restrained relative to the page. */
+      var depth = clamp(
+        rect.width * (index === 0 ? 0.60 : 0.56),
+        mobile ? 150 : 210,
+        mobile ? 235 : 360
       );
-      var physical = physicalProjectRect(rect, light, elevation, canvasRect);
+      var farCenter = {
+        x: baseCenter.x + ux * depth,
+        y: baseCenter.y + uy * depth
+      };
+
+      /* A distant single point still produces a tiny amount of divergence. */
+      var elevation = clamp(
+        rect.width * (index === 0 ? 0.20 : 0.18),
+        mobile ? 48 : 66,
+        mobile ? 96 : 132
+      );
+      var perspectiveScale = clamp(
+        light.z / Math.max(1, light.z - elevation),
+        1.010,
+        1.035
+      );
+      var halfW = rect.width * perspectiveScale * 0.5;
+      var halfH = rect.height * perspectiveScale * 0.5;
+      var far = [
+        { x: farCenter.x - halfW, y: farCenter.y - halfH },
+        { x: farCenter.x + halfW, y: farCenter.y - halfH },
+        { x: farCenter.x + halfW, y: farCenter.y + halfH },
+        { x: farCenter.x - halfW, y: farCenter.y + halfH }
+      ];
 
       return {
-        base: physical.base,
-        far: physical.projected,
-        elevation: elevation
+        base: base,
+        far: far,
+        elevation: elevation,
+        direction: { x: ux, y: uy }
       };
     }
 
@@ -1936,6 +1960,28 @@ render();
       maskCtx.globalCompositeOperation = "destination-in";
       maskCtx.fillStyle = gradient;
       maskCtx.fillRect(0, 0, width, height);
+
+      /* Directional front gate: no caustic halo may wrap around the light-facing
+         sides of the image. This is the key fix for the extra two/three edges. */
+      var axisDx = axis.far.x - axis.near.x;
+      var axisDy = axis.far.y - axis.near.y;
+      var axisLength = Math.sqrt(axisDx * axisDx + axisDy * axisDy) || 1;
+      var dirX = axisDx / axisLength;
+      var dirY = axisDy / axisLength;
+      var gateBack = Math.max(10, edgeBlur * 1.25);
+      var gateForward = Math.max(18, edgeBlur * 1.80);
+      var gate = maskCtx.createLinearGradient(
+        axis.near.x - dirX * gateBack,
+        axis.near.y - dirY * gateBack,
+        axis.near.x + dirX * gateForward,
+        axis.near.y + dirY * gateForward
+      );
+      gate.addColorStop(0, "rgba(255,255,255,0)");
+      gate.addColorStop(0.38, "rgba(255,255,255,0)");
+      gate.addColorStop(0.72, "rgba(255,255,255,0.82)");
+      gate.addColorStop(1, "rgba(255,255,255,1)");
+      maskCtx.fillStyle = gate;
+      maskCtx.fillRect(0, 0, width, height);
       maskCtx.globalCompositeOperation = "source-over";
     }
 
@@ -1972,7 +2018,7 @@ render();
     function drawProjectedCaustic(rect, index, light, canvasRect) {
       if (rect.width < 2 || rect.height < 2) return;
       var mobile = width <= 760;
-      var volume = buildPhysicalProjectedVolume(rect, index, light, canvasRect);
+      var volume = buildNearParallelProjectedVolume(rect, index, light, canvasRect);
       var wholeBounds = boundsOf(volume.base.concat(volume.far));
       var baseAlpha = index === 0 ? 0.92 : 0.88;
 
@@ -2046,7 +2092,7 @@ render();
 
         canvas.style.opacity = anyVisible ? "1" : "0";
         document.documentElement.dataset.seawaterRenderer = "canvas2d-parallel3d-soft-caustics";
-        document.documentElement.dataset.seawaterProjection = "point-light-xyz";
+        document.documentElement.dataset.seawaterProjection = "fixed-near-parallel-single-point";
       }
 
       requestAnimationFrame(render);
