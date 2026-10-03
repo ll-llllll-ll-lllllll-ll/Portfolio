@@ -1,0 +1,44 @@
+name: Apply seawater fixed parallel projection
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-seawater-fixed-parallel-projection.yml'
+      - 'tools/apply_seawater_fixed_parallel_projection.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply migration
+        run: python3 tools/apply_seawater_fixed_parallel_projection.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check script.js
+          grep -q 'fixedLightAngle = 145' script.js
+          grep -q 'buildNearParallelProjectedVolume' script.js
+          grep -q 'fixed-near-parallel-single-point' script.js
+          grep -q 'Directional front gate' script.js
+          grep -q 'script.js?v=20261003-2005' index.html
+          ! grep -q 'function localSunAngle' script.js
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add script.js index.html
+          git commit -m 'Fix seawater projection depth and direction'
+          git push
