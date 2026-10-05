@@ -1,7 +1,7 @@
-/* ===== Ruin Archive miniature detail pass v4 ===== */
+/* ===== Ruin Archive miniature detail pass v4.2 ===== */
 
-/* 1. Reading environment: keep the five eclipse symbols only, move them below
-   the miniature frame, and remove all Leaflet/control chrome. */
+/* Five reading-environment symbols only; the module lives below the miniature,
+   outside the map and without Leaflet chrome. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell > .ruin-mini-tone-control.ruin-mini-tone-detached {
   position: absolute !important;
   z-index: 920 !important;
@@ -43,57 +43,42 @@
   transform: none !important;
 }
 
-/* Reserve a quiet line below the frame for the detached symbols; the update
-   date remains at the lower right underneath them. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-updated {
   margin-top: 38px !important;
 }
 
-/* 2. No bottom labels inside the miniature Index Drawer. */
+/* No miniature bottom labels. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-index-labels {
   display: none !important;
 }
 
-/* 3. Generated fractured-stele / rubbing surface, directly derived from the
-   production Index Drawer logic: translucent stone faces, tiny face-to-face
-   opacity variation, opened seams and a masked frosted union. */
+/* Restore the original compact frosted trapezoid. The previous v4 stone-cell
+   overlay is explicitly retired so no large V / X partition can survive cache. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer {
   isolation: isolate;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-index-fill {
-  opacity: 0 !important;
+  opacity: 1 !important;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-stele-layer {
+  display: none !important;
+}
+
+/* Direct adaptation of the production mobile Index Drawer v374.5 fracture
+   treatment: the existing slab stays intact, with only 1–3 restrained rubbing
+   traces clipped inside the short trapezoid. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-mobile-stele-layer {
   position: absolute;
-  inset: 0;
-  z-index: 2;
+  left: 0;
+  right: 0;
+  z-index: 7;
   overflow: visible;
   pointer-events: none;
-  isolation: isolate;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-stele-frost {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: color-mix(in srgb, var(--ruin-mini-paper, #fffffb) 70%, transparent);
-  backdrop-filter: blur(4.2px) saturate(.90) brightness(1.02);
-  -webkit-backdrop-filter: blur(4.2px) saturate(.90) brightness(1.02);
-  mask-size: 100% 100%;
-  -webkit-mask-size: 100% 100%;
-  mask-position: 0 0;
-  -webkit-mask-position: 0 0;
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-stele-svg {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+.room-view[data-room="ruin-atlas"] .ruin-mini-mobile-stele-svg {
   display: block;
   width: 100%;
   height: 100%;
@@ -102,35 +87,14 @@
   shape-rendering: geometricPrecision;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-stele-fragment {
-  fill: color-mix(in srgb, var(--ruin-mini-paper, #fffffb) 18%, transparent);
-  fill-opacity: var(--stone-alpha, .88);
-  stroke: var(--ruin-mini-line-strong, rgb(102,102,96));
-  stroke-width: var(--stone-stroke-width, .82px);
-  stroke-opacity: var(--stone-stroke-alpha, .78);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* A pale opening under each seam exposes the map like a rubbed fracture gap;
-   the narrow dark trace above it prevents the split from looking like a clean
-   vector cut. */
-.room-view[data-room="ruin-atlas"] .ruin-mini-stele-gap {
+.room-view[data-room="ruin-atlas"] .ruin-mini-mobile-stele-fracture-line {
   fill: none;
-  stroke: var(--ruin-mini-paper, #fffffb);
-  stroke-width: 2.35px;
-  stroke-opacity: .72;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-stele-seam {
-  fill: none;
-  stroke: var(--ruin-mini-line-strong, rgb(102,102,96));
-  stroke-width: .72px;
-  stroke-opacity: .72;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
+  stroke-width: 1px;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+  opacity: .62;
 }
 
 @media (max-width: 760px) {
@@ -147,9 +111,10 @@
   .room-view[data-room="ruin-atlas"] .ruin-mini-updated {
     margin-top: 36px !important;
   }
+}
 
-  .room-view[data-room="ruin-atlas"] .ruin-mini-stele-frost {
-    backdrop-filter: blur(3.2px) saturate(.92) brightness(1.01);
-    -webkit-backdrop-filter: blur(3.2px) saturate(.92) brightness(1.01);
+@media (prefers-reduced-motion: reduce) {
+  .room-view[data-room="ruin-atlas"] .ruin-mini-tone-button {
+    transition: none !important;
   }
 }
