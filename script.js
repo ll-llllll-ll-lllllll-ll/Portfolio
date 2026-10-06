@@ -1564,6 +1564,7 @@ render();
   var ruinMiniMapInstance = null;
   var ruinMiniMountToken = 0;
   var ruinMiniParallaxCleanup = null;
+  var ruinMiniIndexFilterCleanup = null;
 
   var RUIN_MINI_TONE_STEPS = [0, 22, 45, 60, 100];
   var RUIN_MINI_TONE_KEY = "ruin-reader-tone";
@@ -1753,7 +1754,23 @@ render();
     shell.style.setProperty("--ruin-mini-muted", ruinMiniRgb(muted));
     shell.style.setProperty("--ruin-mini-line", ruinMiniRgb(line));
     shell.style.setProperty("--ruin-mini-line-strong", ruinMiniRgb(lineStrong));
-    shell.style.setProperty("--ruin-mini-marker", ruinMiniRgb(marker));
+    var markerRgb = ruinMiniRgb(marker);
+    shell.style.setProperty("--ruin-mini-marker", markerRgb);
+    shell.style.setProperty(
+      "--ruin-mini-marker-shadow",
+      tone >= 60 ? "rgba(255,255,255,.16)" : "rgba(0,0,0,.25)"
+    );
+
+    /* Marker dots live in their own unfiltered Leaflet pane. Re-assert the
+       resolved colour on every tone change as well: tiny 5–6px divIcons can
+       otherwise be lost by mobile Safari during compositing changes. */
+    shell.querySelectorAll(".ruin-mini-marker-icon .garden-dot, .ruin-mini-marker-icon .record-dot")
+      .forEach(function(dot) {
+        dot.style.setProperty("background-color", markerRgb, "important");
+        dot.style.setProperty("opacity", "1", "important");
+        dot.style.setProperty("filter", "none", "important");
+        dot.style.setProperty("mix-blend-mode", "normal", "important");
+      });
 
     if (map && map.getContainer()) map.getContainer().style.background = ruinMiniRgb(paper);
     if (map && worldPane) {
@@ -1929,6 +1946,10 @@ render();
       ruinMiniParallaxCleanup();
       ruinMiniParallaxCleanup = null;
     }
+    if (ruinMiniIndexFilterCleanup) {
+      ruinMiniIndexFilterCleanup();
+      ruinMiniIndexFilterCleanup = null;
+    }
     if (ruinMiniMapInstance) {
       try { ruinMiniMapInstance.remove(); } catch (_) {}
       ruinMiniMapInstance = null;
@@ -1978,28 +1999,82 @@ render();
       worldPane.style.zIndex = "210";
       worldPane.style.pointerEvents = "none";
 
+      /* Match ruin-archive.site: markers are plain solid divIcon dots, never
+         outlined rings. Keep them on a dedicated pane so reader-tone filters
+         apply to the SVG atlas only, not to the markers. */
+      map.createPane("ruinMiniMarkerPane");
+      var markerPane = map.getPane("ruinMiniMarkerPane");
+      markerPane.style.zIndex = "650";
+      markerPane.style.pointerEvents = "auto";
+      markerPane.style.setProperty("filter", "none", "important");
+      markerPane.style.setProperty("opacity", "1", "important");
+      markerPane.style.setProperty("mix-blend-mode", "normal", "important");
+
       L.imageOverlay(
         "https://ruin-archive.site/assets/ruin-map.svg?v=20261003",
         bounds,
         { pane: "ruinMiniWorldPane", interactive: false }
       ).addTo(map);
 
+      var miniMarkerEntries = [];
+
       sites.forEach(function(site) {
         if (!site || !Number.isFinite(Number(site.lat)) || !Number.isFinite(Number(site.lng))) return;
+
         var isGarden = site.type === "garden";
+        var size = isGarden ? 10 : 6;
+        var dotClass = isGarden ? "garden-dot" : "record-dot";
         var icon = L.divIcon({
-          className: "ruin-mini-marker-icon " + (isGarden ? "is-garden" : "is-record"),
-          html: '<span class="ruin-mini-marker-dot"></span>',
-          iconSize: isGarden ? [10, 10] : [7, 7],
-          iconAnchor: isGarden ? [5, 5] : [3.5, 3.5]
+          className: "ruin-mini-marker-icon ruin-marker" + (isGarden ? "" : " ruin-marker-record"),
+          html: '<span class="' + dotClass + '"></span>',
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
         });
-        var marker = L.marker(ruinMiniGeoToSvg(site.lat, site.lng), { icon: icon, keyboard: false }).addTo(map);
+
+        var marker = L.marker(
+          ruinMiniGeoToSvg(site.lat, site.lng),
+          {
+            icon: icon,
+            keyboard: false,
+            pane: "ruinMiniMarkerPane"
+          }
+        ).addTo(map);
+
         marker.bindTooltip(
           '<span class="ruin-mini-tooltip-name">' + ruinMiniEscape(site.name) + '</span>' +
           (site.archiveDate ? '<span class="ruin-mini-tooltip-date">' + ruinMiniEscape(site.archiveDate) + '</span>' : ''),
           { direction: "top", offset: [0, -7], opacity: 1, className: "ruin-mini-tooltip" }
         );
+
+        var tags = String(
+          window.siteTagsMapping && window.siteTagsMapping[site.name] || ""
+        ).split(",").map(function(tag) { return tag.trim(); }).filter(Boolean);
+
+        miniMarkerEntries.push({ marker: marker, site: site, tags: tags });
       });
+
+      function applyMiniIndexFilter(event) {
+        var activeTags = Array.isArray(event && event.detail && event.detail.tags)
+          ? event.detail.tags.map(String).map(function(tag) { return tag.trim(); }).filter(Boolean)
+          : [];
+
+        miniMarkerEntries.forEach(function(entry) {
+          var visible = activeTags.length === 0 ||
+            activeTags.every(function(tag) { return entry.tags.indexOf(tag) !== -1; });
+
+          entry.marker.setOpacity(visible ? 1 : 0);
+          var markerEl = entry.marker.getElement();
+          if (markerEl) {
+            markerEl.style.display = visible ? "" : "none";
+            markerEl.style.pointerEvents = visible ? "" : "none";
+          }
+        });
+      }
+
+      shell.addEventListener("ruin-mini-index-filter", applyMiniIndexFilter);
+      ruinMiniIndexFilterCleanup = function() {
+        shell.removeEventListener("ruin-mini-index-filter", applyMiniIndexFilter);
+      };
 
       var initialTone = readRuinMiniTone();
       makeRuinMiniToneControl(L, shell, map, worldPane);
