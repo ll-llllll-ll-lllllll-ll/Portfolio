@@ -2012,6 +2012,11 @@ render();
       map.on("moveend", function() { shell.classList.remove("is-navigating"); });
 
       map.fitBounds(bounds, { padding: [20, 20], animate: false });
+
+      /* Begin two Leaflet zoom levels closer than the fitted world view. */
+      var fittedZoom = map.getZoom();
+      map.setZoom(Math.min(map.getMaxZoom(), fittedZoom + 2), { animate: false });
+
       map.setMaxBounds([[-520, -800], [3520, 4800]]);
       applyRuinMiniTone(shell, map, worldPane, initialTone, false);
 
@@ -2033,7 +2038,9 @@ render();
         var scrollRect = roomScroll.getBoundingClientRect();
         var contentCenter = shellRect.top - scrollRect.top + roomScroll.scrollTop + shellRect.height * 0.5;
         var centerScroll = contentCenter - roomScroll.clientHeight * 0.5;
-        var target = ruinMiniClamp((roomScroll.scrollTop - centerScroll) * 0.038, -24, 24);
+        /* Stronger reverse-scroll parallax: the near frame follows the page,
+           while the map drifts against it like a distant landscape. */
+        var target = ruinMiniClamp((roomScroll.scrollTop - centerScroll) * 0.14, -120, 120);
         var delta = target - parallaxApplied;
 
         if (Math.abs(delta) > 0.02) {
