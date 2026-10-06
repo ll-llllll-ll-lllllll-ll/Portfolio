@@ -1563,6 +1563,7 @@ render();
   var ruinMiniSitesPromise = null;
   var ruinMiniMapInstance = null;
   var ruinMiniMountToken = 0;
+  var ruinMiniParallaxCleanup = null;
 
   var RUIN_MINI_TONE_STEPS = [0, 22, 45, 60, 100];
   var RUIN_MINI_TONE_KEY = "ruin-reader-tone";
@@ -1924,6 +1925,10 @@ render();
 
   function destroyRuinAtlasMiniMap() {
     ruinMiniMountToken += 1;
+    if (ruinMiniParallaxCleanup) {
+      ruinMiniParallaxCleanup();
+      ruinMiniParallaxCleanup = null;
+    }
     if (ruinMiniMapInstance) {
       try { ruinMiniMapInstance.remove(); } catch (_) {}
       ruinMiniMapInstance = null;
@@ -1961,6 +1966,7 @@ render();
         zoomSnap: 0.25,
         zoomDelta: 0.5,
         wheelPxPerZoomLevel: 90,
+        scrollWheelZoom: false,
         inertia: true,
         maxBoundsViscosity: 0.54
       });
@@ -2008,6 +2014,48 @@ render();
       map.fitBounds(bounds, { padding: [20, 20], animate: false });
       map.setMaxBounds([[-520, -800], [3520, 4800]]);
       applyRuinMiniTone(shell, map, worldPane, initialTone, false);
+
+      if (ruinMiniParallaxCleanup) {
+        ruinMiniParallaxCleanup();
+        ruinMiniParallaxCleanup = null;
+      }
+
+      var roomScroll = shell.closest(".room-scroll");
+      var parallaxRaf = 0;
+      var parallaxApplied = 0;
+      var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      function applyRuinMiniParallax() {
+        parallaxRaf = 0;
+        if (!roomScroll || !shell.isConnected || token !== ruinMiniMountToken) return;
+
+        var shellRect = shell.getBoundingClientRect();
+        var scrollRect = roomScroll.getBoundingClientRect();
+        var contentCenter = shellRect.top - scrollRect.top + roomScroll.scrollTop + shellRect.height * 0.5;
+        var centerScroll = contentCenter - roomScroll.clientHeight * 0.5;
+        var target = ruinMiniClamp((roomScroll.scrollTop - centerScroll) * 0.055, -34, 34);
+        var delta = target - parallaxApplied;
+
+        if (Math.abs(delta) > 0.02) {
+          map.panBy([0, -delta], { animate: false });
+          parallaxApplied = target;
+        }
+      }
+
+      function scheduleRuinMiniParallax() {
+        if (parallaxRaf) return;
+        parallaxRaf = requestAnimationFrame(applyRuinMiniParallax);
+      }
+
+      if (roomScroll && !reducedMotion) {
+        roomScroll.addEventListener("scroll", scheduleRuinMiniParallax, { passive: true });
+        ruinMiniParallaxCleanup = function() {
+          roomScroll.removeEventListener("scroll", scheduleRuinMiniParallax);
+          if (parallaxRaf) cancelAnimationFrame(parallaxRaf);
+          parallaxRaf = 0;
+        };
+        requestAnimationFrame(applyRuinMiniParallax);
+      }
 
       requestAnimationFrame(function() {
         if (!container.isConnected) return;
