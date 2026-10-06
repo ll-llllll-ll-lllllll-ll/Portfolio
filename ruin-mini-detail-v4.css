@@ -1,7 +1,7 @@
-/* ===== Ruin Archive miniature detail pass v4.2 ===== */
+/* ===== Ruin Archive miniature detail pass v4.3 ===== */
+/* The index drawer has been removed completely. This file now only keeps the
+   five reading-environment controls detached beneath the miniature. */
 
-/* Five reading-environment symbols only; the module lives below the miniature,
-   outside the map and without Leaflet chrome. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell > .ruin-mini-tone-control.ruin-mini-tone-detached {
   position: absolute !important;
   z-index: 920 !important;
@@ -45,56 +45,6 @@
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-updated {
   margin-top: 38px !important;
-}
-
-/* No miniature bottom labels. */
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-labels {
-  display: none !important;
-}
-
-/* Restore the original compact frosted trapezoid. The previous v4 stone-cell
-   overlay is explicitly retired so no large V / X partition can survive cache. */
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer {
-  isolation: isolate;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-fill {
-  opacity: 1 !important;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-stele-layer {
-  display: none !important;
-}
-
-/* Direct adaptation of the production mobile Index Drawer v374.5 fracture
-   treatment: the existing slab stays intact, with only 1–3 restrained rubbing
-   traces clipped inside the short trapezoid. */
-.room-view[data-room="ruin-atlas"] .ruin-mini-mobile-stele-layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: 7;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-mobile-stele-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  shape-rendering: geometricPrecision;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-mobile-stele-fracture-line {
-  fill: none;
-  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
-  stroke-width: 1px;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
-  vector-effect: non-scaling-stroke;
-  opacity: .62;
 }
 
 @media (max-width: 760px) {
