@@ -1,9 +1,10 @@
 "use strict";
 
-/* Ruin Archive miniature frame v3.3
-   No index drawer. Restores the earlier, more expressive fracture language:
-   larger stone bites, branching cracks and a transferred corner fracture.
-   The frame depth is controlled by CSS and is now about 60% of the original. */
+/* Ruin Archive miniature frame v3.4
+   No index drawer. Fractures now follow a material logic: small chipped pits
+   live on the four perspective bevels, while cracks cross the frame thickness
+   from one boundary to another instead of stopping midway or escaping outside.
+   The two right-side ports remain, each with a complete connecting fracture. */
 (function () {
   var NS = "http://www.w3.org/2000/svg";
   var resizeRaf = 0;
@@ -117,6 +118,130 @@
     pts.push(b);
     poly(svg, pts, cls, opacity);
     return pts;
+  }
+
+
+  function throughCrack(svg, a, b, rng, opacity, amplitude, segments) {
+    var v = vector(a, b);
+    var n = { x: -v.uy, y: v.ux };
+    var pts = [a];
+    var drift = 0;
+    segments = Math.max(4, segments || 6);
+    amplitude = amplitude == null ? 5 : amplitude;
+
+    for (var i = 1; i < segments; i += 1) {
+      var t = i / segments;
+      var base = pt(a, b, t);
+      var weight = Math.sin(Math.PI * t);
+      drift = drift * 0.30 + (rng() - 0.5) * amplitude * 0.75;
+      pts.push({
+        x: clamp(base.x + n.x * drift * weight, 0.75, svg.viewBox.baseVal.width - 0.75),
+        y: clamp(base.y + n.y * drift * weight, 0.75, svg.viewBox.baseVal.height - 0.75)
+      });
+    }
+
+    pts.push(b);
+    poly(
+      svg,
+      pts,
+      "ruin-fracture-crack ruin-fracture-through",
+      opacity == null ? 0.52 : opacity
+    );
+    return pts;
+  }
+
+  function inwardNormal(a, b, center) {
+    var n = normal(a, b);
+    var mid = pt(a, b, 0.5);
+    var plus = { x: mid.x + n.x * 5, y: mid.y + n.y * 5 };
+    var minus = { x: mid.x - n.x * 5, y: mid.y - n.y * 5 };
+
+    function dist2(p) {
+      var dx = p.x - center.x;
+      var dy = p.y - center.y;
+      return dx * dx + dy * dy;
+    }
+
+    return dist2(plus) < dist2(minus) ? n : { x: -n.x, y: -n.y };
+  }
+
+  function damagedBevel(svg, a, b, rng, center, count, label) {
+    count = Math.max(0, count || 0);
+    if (!count) {
+      poly(svg, [a, b], "ruin-fracture-border ruin-fracture-rail", 0.88);
+      return [];
+    }
+
+    var v = vector(a, b);
+    var inward = inwardNormal(a, b, center);
+    var slots = [];
+    var anchors = [];
+
+    for (var i = 0; i < count; i += 1) {
+      var baseT = (i + 1) / (count + 1);
+      var t = clamp(baseT + (rng() - 0.5) * 0.13, 0.16, 0.84);
+      var half = (5 + rng() * 6) / Math.max(v.len, 1);
+      slots.push({
+        t0: clamp(t - half, 0.08, 0.90),
+        t1: clamp(t + half, 0.10, 0.92),
+        depth: 2.1 + rng() * 3.8
+      });
+    }
+
+    slots.sort(function(x, y) { return x.t0 - y.t0; });
+
+    var pts = [a];
+    slots.forEach(function(slot) {
+      var p0 = pt(a, b, slot.t0);
+      var p1 = pt(a, b, slot.t1);
+      var mid = pt(a, b, (slot.t0 + slot.t1) * 0.5);
+      var tangent = { x: v.ux, y: v.uy };
+      var d = slot.depth;
+
+      var f1 = {
+        x: mid.x - tangent.x * 2.4 + inward.x * d * 0.60,
+        y: mid.y - tangent.y * 2.4 + inward.y * d * 0.60
+      };
+      var deepest = {
+        x: mid.x + inward.x * d,
+        y: mid.y + inward.y * d
+      };
+      var f2 = {
+        x: mid.x + tangent.x * 2.1 + inward.x * d * 0.55,
+        y: mid.y + tangent.y * 2.1 + inward.y * d * 0.55
+      };
+
+      pts.push(p0, f1, deepest, f2, p1);
+      anchors.push(deepest);
+    });
+
+    pts.push(b);
+    poly(
+      svg,
+      pts,
+      "ruin-fracture-border ruin-fracture-rail ruin-fracture-damaged-bevel",
+      0.91
+    );
+
+    // A short secondary facet line inside some pits gives the chipped ceramic /
+    // glass edge a layered break without creating floating decorative cracks.
+    anchors.forEach(function(anchor, i) {
+      if (rng() < 0.62) {
+        var along = 3.5 + rng() * 3.5;
+        poly(
+          svg,
+          [
+            { x: anchor.x - v.ux * along, y: anchor.y - v.uy * along },
+            anchor,
+            { x: anchor.x + v.ux * along * 0.72, y: anchor.y + v.uy * along * 0.72 }
+          ],
+          "ruin-fracture-crack ruin-fracture-spall-seam",
+          0.54
+        );
+      }
+    });
+
+    return anchors;
   }
 
   function naturalChip(svg, a, b, rng, opts) {
@@ -242,22 +367,6 @@
       0.76
     );
 
-    var titleCrackRng = rngFor(shell, "main-frame-top-notch-crack-v132-" + titleSide);
-    var titleDir = titleSide === "left" ? -1 : 1;
-    organicCrack(
-      main,
-      root,
-      {
-        x: root.x + titleDir * (17 + titleCrackRng() * 21),
-        y: Math.max(2, root.y - (29 + titleCrackRng() * 27))
-      },
-      titleCrackRng,
-      "ruin-fracture-crack",
-      0.70,
-      4.2,
-      5
-    );
-
     /* Right upper attached bite. */
     var upperRng = rngFor(shell, "main-frame-right-upper-v132");
     var uy = it + (ib - it) * (0.14 + upperRng() * 0.10);
@@ -336,114 +445,214 @@
     ], "ruin-fracture-border", 0.92);
     poly(main, [pTop, tl], "ruin-fracture-border", 0.90);
 
-    /* Outward crack tree from the lower-right damage. */
-    var outRng = rngFor(shell, "main-frame-right-outward-tree-v132");
-    var junction = {
-      x: loRoot.x + 47 + outRng() * 23,
-      y: loRoot.y + 8 + outRng() * 11
-    };
+    /* ---------------------------------------------------------------
+       Material fracture system v3.4
+       ---------------------------------------------------------------
+       1) The four perspective bevels carry chipped pits.
+       2) The upper-left bevel always keeps several pits; the others appear
+          probabilistically so the frame changes without becoming noisy.
+       3) Every crack crosses a complete strip of frame material: inner edge to
+          outer edge, or port to outer edge. No suspended half-cracks.
+       4) The two right-side ports keep their current geometry and now each
+          terminate in a complete connector fracture.
+    --------------------------------------------------------------- */
 
-    organicCrack(
-      main, loRoot, junction, outRng,
-      "ruin-fracture-crack ruin-fracture-outward-stem", 0.62, 2.6, 5
+    var outerTL = { x: 0.5, y: 0.5 };
+    var outerTR = { x: w - 0.5, y: 0.5 };
+    var outerBR = { x: w - 0.5, y: h - 0.5 };
+    var outerBL = { x: 0.5, y: h - 0.5 };
+    var frameCenter = { x: w * 0.5, y: h * 0.5 };
+
+    var tlBevelRng = rngFor(shell, "bevel-pits-tl-v134");
+    var trBevelRng = rngFor(shell, "bevel-pits-tr-v134");
+    var blBevelRng = rngFor(shell, "bevel-pits-bl-v134");
+    var brBevelRng = rngFor(shell, "bevel-pits-br-v134");
+
+    var tlAnchors = damagedBevel(
+      perspective,
+      outerTL,
+      tl,
+      tlBevelRng,
+      frameCenter,
+      2 + (tlBevelRng() < 0.52 ? 1 : 0),
+      "tl"
     );
 
-    organicCrack(
+    var trAnchors = damagedBevel(
+      perspective,
+      outerTR,
+      tr,
+      trBevelRng,
+      frameCenter,
+      trBevelRng() < 0.66 ? 1 + (trBevelRng() < 0.28 ? 1 : 0) : 0,
+      "tr"
+    );
+
+    var blAnchors = damagedBevel(
+      perspective,
+      outerBL,
+      bl,
+      blBevelRng,
+      frameCenter,
+      blBevelRng() < 0.60 ? 1 + (blBevelRng() < 0.24 ? 1 : 0) : 0,
+      "bl"
+    );
+
+    var brAnchors = damagedBevel(
+      perspective,
+      outerBR,
+      br,
+      brBevelRng,
+      frameCenter,
+      brBevelRng() < 0.62 ? 1 + (brBevelRng() < 0.26 ? 1 : 0) : 0,
+      "br"
+    );
+
+    /* Keep the two right ports, but make their connectors complete:
+       port tip -> outer right boundary. */
+    var upperPortTip = {
+      x: ir + ud,
+      y: uy + uh * 0.10
+    };
+    var upperConnectorRng = rngFor(shell, "right-upper-connector-v134");
+    throughCrack(
       main,
-      junction,
-      { x: Math.min(w - 4, junction.x + 105), y: junction.y - (5 + outRng() * 10) },
-      outRng,
-      "ruin-fracture-crack ruin-fracture-outward-branch",
-      0.55,
-      2.6,
-      5
+      upperPortTip,
+      {
+        x: w - 0.75,
+        y: clamp(upperPortTip.y + (upperConnectorRng() - 0.5) * 22, 2, h - 2)
+      },
+      upperConnectorRng,
+      0.58,
+      5.6,
+      6
     );
 
-    var downEnd = {
-      x: Math.min(w - 5, junction.x + 86),
-      y: junction.y + 54 + outRng() * 23
-    };
-
-    organicCrack(
-      main, junction, downEnd, outRng,
-      "ruin-fracture-crack ruin-fracture-outward-branch", 0.52, 3, 5
+    var lowerConnectorRng = rngFor(shell, "right-lower-connector-v134");
+    throughCrack(
+      main,
+      loRoot,
+      {
+        x: w - 0.75,
+        y: clamp(loRoot.y + (lowerConnectorRng() - 0.5) * 30, 2, h - 2)
+      },
+      lowerConnectorRng,
+      0.62,
+      6.4,
+      6
     );
 
-    if (outRng() < 0.76) {
-      organicCrack(
+    /* Additional through-fractures across the frame bands.
+       Their endpoints always touch two real boundaries of the material. */
+    var topThroughRng = rngFor(shell, "top-through-v134");
+    if (topThroughRng() < 0.72) {
+      var topX = lerp(il, ir, 0.22 + topThroughRng() * 0.56);
+      throughCrack(
         main,
-        pt(junction, downEnd, 0.44),
-        { x: Math.min(w - 5, junction.x + 72), y: junction.y + 74 },
-        outRng,
-        "ruin-fracture-crack ruin-fracture-outward-branch",
-        0.40,
-        2.0,
+        { x: topX, y: it },
+        {
+          x: clamp(topX + (topThroughRng() - 0.5) * 34, 2, w - 2),
+          y: 0.75
+        },
+        topThroughRng,
+        0.48,
+        4.6,
+        5
+      );
+    }
+
+    var leftThroughRng = rngFor(shell, "left-through-v134");
+    if (leftThroughRng() < 0.64) {
+      var leftY = lerp(it, ib, 0.22 + leftThroughRng() * 0.56);
+      throughCrack(
+        main,
+        { x: il, y: leftY },
+        {
+          x: 0.75,
+          y: clamp(leftY + (leftThroughRng() - 0.5) * 30, 2, h - 2)
+        },
+        leftThroughRng,
+        0.46,
+        4.8,
+        5
+      );
+    }
+
+    var bottomThroughRng = rngFor(shell, "bottom-through-v134");
+    if (bottomThroughRng() < 0.68) {
+      var bottomX = lerp(il, ir, 0.20 + bottomThroughRng() * 0.60);
+      throughCrack(
+        main,
+        { x: bottomX, y: ib },
+        {
+          x: clamp(bottomX + (bottomThroughRng() - 0.5) * 38, 2, w - 2),
+          y: h - 0.75
+        },
+        bottomThroughRng,
+        0.45,
+        5.0,
+        5
+      );
+    }
+
+    /* If a chipped bevel exists near a through-fracture, connect one chip back
+       to the nearest frame boundary. These are short, complete material cracks,
+       never floating branches. */
+    if (tlAnchors.length) {
+      var aTL = tlAnchors[0];
+      var tlLinkRng = rngFor(shell, "tl-chip-through-v134");
+      throughCrack(
+        perspective,
+        aTL,
+        aTL.x < aTL.y ? { x: 0.75, y: aTL.y } : { x: aTL.x, y: 0.75 },
+        tlLinkRng,
+        0.38,
+        2.8,
         4
       );
     }
 
-    /* Outer top-left spall and transferred fracture, restored from the older
-       frame system. It makes the break read as material failure rather than
-       a decorative line laid over the map. */
-    var outerTL = { x: 0.5, y: 0.5 };
-    var innerTL = { x: il, y: it };
-    var prng = rngFor(shell, "perspective-top-left-v132");
+    if (trAnchors.length) {
+      var aTR = trAnchors[0];
+      var trLinkRng = rngFor(shell, "tr-chip-through-v134");
+      throughCrack(
+        perspective,
+        aTR,
+        (w - aTR.x) < aTR.y ? { x: w - 0.75, y: aTR.y } : { x: aTR.x, y: 0.75 },
+        trLinkRng,
+        0.34,
+        2.6,
+        4
+      );
+    }
 
-    var chip = naturalChip(perspective, outerTL, innerTL, prng, {
-      width: 42 + prng() * 18,
-      depth: 4.0 + prng() * 2.8,
-      normalSign: 1,
-      t: 0.48 + prng() * 0.20,
-      opacity: 0.90,
-      returnInset: 1,
-      className: "ruin-fracture-border ruin-fracture-spall-major",
-      returnClassName: "ruin-fracture-crack ruin-fracture-spall-seam",
-      returnOpacity: 0.76
-    });
+    if (blAnchors.length) {
+      var aBL = blAnchors[0];
+      var blLinkRng = rngFor(shell, "bl-chip-through-v134");
+      throughCrack(
+        perspective,
+        aBL,
+        aBL.x < (h - aBL.y) ? { x: 0.75, y: aBL.y } : { x: aBL.x, y: h - 0.75 },
+        blLinkRng,
+        0.34,
+        2.6,
+        4
+      );
+    }
 
-    poly(perspective, [{ x: w - 0.5, y: 0.5 }, tr], "ruin-fracture-border", 0.86);
-
-    /* Lower perspective rails: outer bottom corners return to the two inner
-       bottom corners, matching the broken picture-frame construction. */
-    poly(
-      perspective,
-      [{ x: 0.5, y: h - 0.5 }, bl],
-      "ruin-fracture-border ruin-fracture-rail",
-      0.90
-    );
-    poly(
-      perspective,
-      [{ x: w - 0.5, y: h - 0.5 }, br],
-      "ruin-fracture-border ruin-fracture-rail",
-      0.90
-    );
-
-    var transfer = rngFor(shell, "perspective-transfer-v132");
-    var attachA = chip.facets[Math.max(0, Math.floor(chip.facets.length * 0.55))] || pt(outerTL, innerTL, 0.62);
-    var attachB = pt(chip.p2, innerTL, 0.44);
-    var leftEdge = { x: 0.5, y: h * (0.27 + transfer() * 0.20) };
-    var mid = { x: (attachA.x + attachB.x) * 0.5, y: (attachA.y + attachB.y) * 0.5 };
-    var fork = pt(leftEdge, mid, 0.76);
-    var s1 = pt(leftEdge, fork, 0.38);
-    var s2 = pt(leftEdge, fork, 0.73);
-
-    organicCrack(perspective, leftEdge, s1, transfer, "ruin-fracture-crack ruin-fracture-corner-stem", 0.49, 5.2, 5);
-    organicCrack(perspective, s1, s2, transfer, "ruin-fracture-crack ruin-fracture-corner-stem", 0.53, 4.8, 4);
-    organicCrack(perspective, s2, fork, transfer, "ruin-fracture-crack ruin-fracture-corner-stem", 0.57, 5.0, 5);
-    organicCrack(perspective, fork, attachA, transfer, "ruin-fracture-crack ruin-fracture-corner-branch", 0.49, 3.4, 4);
-    organicCrack(perspective, fork, attachB, transfer, "ruin-fracture-crack ruin-fracture-corner-branch", 0.45, 3.1, 4);
-
-    naturalChip(perspective, pt(outerTL, innerTL, 0.18), pt(outerTL, innerTL, 0.38), transfer, {
-      width: 15 + transfer() * 9,
-      depth: 1.8 + transfer() * 1.7,
-      normalSign: 1,
-      t: 0.5,
-      opacity: 0.88,
-      returnInset: 0.92,
-      className: "ruin-fracture-border ruin-fracture-spall-secondary",
-      returnClassName: "ruin-fracture-crack ruin-fracture-spall-seam",
-      returnOpacity: 0.70
-    });
+    if (brAnchors.length) {
+      var aBR = brAnchors[0];
+      var brLinkRng = rngFor(shell, "br-chip-through-v134");
+      throughCrack(
+        perspective,
+        aBR,
+        (w - aBR.x) < (h - aBR.y) ? { x: w - 0.75, y: aBR.y } : { x: aBR.x, y: h - 0.75 },
+        brLinkRng,
+        0.34,
+        2.6,
+        4
+      );
+    }
 
     host.appendChild(perspective);
     host.appendChild(main);
@@ -454,8 +663,8 @@
     var shell = document.querySelector('.room-view[data-room="ruin-atlas"] .ruin-mini-shell');
     if (!shell) return;
     architecture(shell);
-    if (shell.dataset.faithfulFrameV32 !== "1") {
-      shell.dataset.faithfulFrameV32 = "1";
+    if (shell.dataset.faithfulFrameV34 !== "1") {
+      shell.dataset.faithfulFrameV34 = "1";
       requestAnimationFrame(function () { render(shell); });
     }
   }
