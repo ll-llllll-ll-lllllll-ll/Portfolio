@@ -1,4 +1,4 @@
-/* ===== Ruin Archive miniature frame v3.3 ===== */
+/* ===== Ruin Archive miniature frame v4.0 — clean transparent frame ===== */
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-section {
   width: min(43.2vw, 588px);
@@ -7,8 +7,8 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-  /* Frame depth reduced to about 60% of the original version. The map viewport
-     itself remains unchanged. */
+  /* Clean rebuild: the frame is only a transparent outlined construction.
+     No cracks, chips, filled material or random fracture geometry. */
   --ruin-mini-frame-top: 3.6%;
   --ruin-mini-frame-bottom: 6.24%;
   --ruin-mini-frame-side: 6.9%;
@@ -20,7 +20,7 @@
   isolation: isolate;
   background: transparent;
   border: 0;
-  box-shadow: inset 0 0 0 1px var(--ruin-mini-line-strong, rgba(102,102,96,.70));
+  box-shadow: none;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-map {
@@ -59,7 +59,7 @@
   white-space: nowrap;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures {
+.room-view[data-room="ruin-atlas"] .ruin-mini-clean-frame {
   position: absolute;
   inset: 0;
   z-index: 12;
@@ -67,7 +67,7 @@
   pointer-events: none;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-svg {
+.room-view[data-room="ruin-atlas"] .ruin-mini-frame-svg {
   position: absolute;
   inset: 0;
   display: block;
@@ -78,62 +78,19 @@
   shape-rendering: geometricPrecision;
 }
 
-/* The older generic fracture renderer remains in script.js for compatibility,
-   but its visual layer is retired in favour of the calmer authored frame. */
-.room-view[data-room="ruin-atlas"] .ruin-mini-fracture-host {
-  display: none !important;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-border,
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-crack {
+.room-view[data-room="ruin-atlas"] .ruin-mini-frame-line {
   fill: none;
-  stroke: var(--ruin-mini-line-strong, rgb(102,102,96));
-  vector-effect: non-scaling-stroke;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: stroke 260ms ease, opacity 260ms ease;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-border {
-  stroke-width: .98px;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-crack {
-  stroke-width: .92px;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-rail {
+  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
   stroke-width: .9px;
-  stroke-linecap: butt;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
 }
 
-/* Richer fracture hierarchy restored from the earlier frame treatment. */
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-corner-stem {
-  stroke-width: 1.08px;
-  stroke-linecap: butt;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-corner-branch {
-  stroke-width: .94px;
-  stroke-linecap: butt;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-major {
-  stroke-width: 1.08px;
-  opacity: .92;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-secondary {
-  stroke-width: 1px;
-  opacity: .86;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-seam,
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-notch-return {
-  stroke-width: .96px;
-  opacity: .72;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-outward-stem {
-  stroke-width: 1.02px;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-outward-branch {
-  stroke-width: .98px;
+/* Retire every older fracture renderer. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-fracture-host,
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures {
+  display: none !important;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell .leaflet-pane,
@@ -191,7 +148,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures * {
+  .room-view[data-room="ruin-atlas"] .ruin-mini-frame-line {
     transition: none !important;
   }
 }
