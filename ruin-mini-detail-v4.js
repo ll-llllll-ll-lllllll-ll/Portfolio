@@ -1,7 +1,8 @@
 "use strict";
 
-/* Ruin Archive miniature detail pass v4.3
-   Index drawer removed. Keep only the detached reading-environment controls. */
+/* Ruin Archive miniature detail pass v4.4
+   The index drawer is gone. This module only detaches the five
+   reading-environment controls beneath the miniature map. */
 (function () {
   var mutationRaf = 0;
 
@@ -14,17 +15,9 @@
     tone.style.removeProperty("margin");
   }
 
-  function cleanDrawerRemnants(shell) {
-    shell.querySelectorAll(
-      ".ruin-mini-index-drawer, .ruin-mini-index-fill, .ruin-mini-index-labels, " +
-      ".ruin-mini-mobile-stele-layer, .ruin-mini-stele-layer"
-    ).forEach(function (node) { node.remove(); });
-  }
-
   function scan() {
     var shell = document.querySelector('.room-view[data-room="ruin-atlas"] .ruin-mini-shell');
     if (!shell) return;
-    cleanDrawerRemnants(shell);
     detachTone(shell);
   }
 
