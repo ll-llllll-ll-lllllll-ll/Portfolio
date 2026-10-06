@@ -1,4 +1,4 @@
-/* ===== Ruin Archive v2 · faithful main-site frame miniature ===== */
+/* ===== Ruin Archive miniature frame v3.1 ===== */
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-section {
   width: min(72vw, 980px);
@@ -7,9 +7,11 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-  --ruin-mini-frame-top: 6%;
-  --ruin-mini-frame-bottom: 10.4%;
-  --ruin-mini-frame-side: 11.5%;
+  /* Frame depth reduced to about 70% of the previous version. The map viewport
+     itself remains unchanged. */
+  --ruin-mini-frame-top: 4.2%;
+  --ruin-mini-frame-bottom: 7.3%;
+  --ruin-mini-frame-side: 8.05%;
   position: relative;
   width: 100%;
   height: auto;
@@ -33,92 +35,28 @@
   outline: 0;
 }
 
-/* The map now sits below the complete frame architecture, as it does on the
-   full Ruin Archive. The inner frame is no longer a container around an image. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-chassis {
   position: absolute;
   inset: 0;
   z-index: 840;
-  pointer-events: none;
   overflow: visible;
+  pointer-events: none;
   color: var(--ruin-mini-line-strong, rgb(102,102,96));
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-inner-frame {
-  position: absolute;
-  left: var(--ruin-mini-frame-side);
-  right: var(--ruin-mini-frame-side);
-  top: var(--ruin-mini-frame-top);
-  bottom: var(--ruin-mini-frame-bottom);
-  border: 1px solid var(--ruin-mini-line-strong, rgba(102,102,96,.78));
-  opacity: .88;
-  box-sizing: border-box;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-coords {
   position: absolute;
   left: 50%;
-  top: calc(var(--ruin-mini-frame-top) + 8px);
-  transform: translateX(-50%);
+  top: calc(var(--ruin-mini-frame-top) + 6px);
   z-index: 6;
+  transform: translateX(-50%);
   color: var(--ruin-mini-muted, rgba(103,103,97,.68));
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: clamp(6px, .58vw, 8px);
   font-weight: 300;
   letter-spacing: .12em;
-  opacity: .58;
+  opacity: .56;
   white-space: nowrap;
-}
-
-/* Collapsed Index Drawer. This is the same shell logic as the production
-   index-drawer: a transparent frosted slab whose upper boundary rises from the
-   viewport corners and whose clip-path is procedurally bitten by shell pits. */
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--ruin-mini-paper, #fffffb) 78%, transparent);
-  backdrop-filter: blur(3px) saturate(.96);
-  -webkit-backdrop-filter: blur(3px) saturate(.96);
-  transition: background 260ms ease;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-fill {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--ruin-mini-frame-bottom);
-  background: color-mix(in srgb, var(--ruin-mini-paper, #fffffb) 62%, transparent);
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-labels {
-  position: absolute;
-  left: calc(var(--ruin-mini-frame-side) + 18px);
-  right: calc(var(--ruin-mini-frame-side) + 18px);
-  bottom: 12px;
-  z-index: 6;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 14px;
-  color: var(--ruin-mini-muted, rgba(103,103,97,.72));
-  font-size: clamp(6px, .62vw, 8px);
-  font-weight: 300;
-  letter-spacing: .08em;
-  opacity: .72;
-  white-space: nowrap;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-labels > :last-child {
-  text-align: right;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-index-center {
-  color: var(--ruin-mini-text, rgba(28,28,26,.82));
-  opacity: .80;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures {
@@ -140,88 +78,35 @@
   shape-rendering: geometricPrecision;
 }
 
-/* Hide the first-generation generic frame. The new overlay below contains the
-   authored main-frame, perspective-transfer and drawer fracture groups. */
+/* The older generic fracture renderer remains in script.js for compatibility,
+   but its visual layer is retired in favour of the calmer authored frame. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-fracture-host {
   display: none !important;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-border,
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-crack,
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-branch {
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-crack {
   fill: none;
   stroke: var(--ruin-mini-line-strong, rgb(102,102,96));
   vector-effect: non-scaling-stroke;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: stroke 260ms ease;
+  transition: stroke 260ms ease, opacity 260ms ease;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-border { stroke-width: .98px; }
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-crack { stroke-width: .96px; }
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-branch { stroke-width: .92px; }
-
-/* exact named visual families retained from the production system */
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-corner-stem {
-  stroke-width: 1.08px;
-  stroke-linecap: butt;
-  stroke-linejoin: round;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-corner-branch {
-  stroke-width: .94px;
-  stroke-linecap: butt;
-  stroke-linejoin: round;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-title-notch-return {
-  stroke-width: 1.08px;
-  opacity: .78;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-title-notch-crack {
-  stroke-width: 1.02px;
-  opacity: .66;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-major {
-  stroke-width: 1.08px;
-  opacity: .90;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-secondary {
-  stroke-width: 1px;
-  opacity: .86;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-seam {
-  stroke-width: .96px;
-  opacity: .72;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-outward-stem {
-  stroke-width: 1.02px;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-outward-branch {
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-border {
   stroke-width: .98px;
 }
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-outward-branch-minor {
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-crack {
   stroke-width: .92px;
 }
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-upper-attached-pit {
-  stroke-width: .98px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-upper-attached-return,
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-lower-right-return {
-  stroke-width: .96px;
-  opacity: .70;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-left-pit,
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-damaged {
-  stroke-linejoin: round;
-}
-.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-mini-index-outline {
-  stroke-width: .98px;
-  opacity: .88;
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-rail {
+  stroke-width: .9px;
+  stroke-linecap: butt;
 }
 
-/* Leaflet lives below the frame, while markers remain clearly legible through
-   the frosted drawer and all generated frame apertures. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell .leaflet-pane,
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell .leaflet-control-container {
   z-index: auto;
@@ -233,7 +118,7 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-tone-control.leaflet-bar {
-  margin: calc(var(--ruin-mini-frame-top) + 9px) calc(var(--ruin-mini-frame-side) + 9px) 0 0 !important;
+  margin: calc(var(--ruin-mini-frame-top) + 7px) calc(var(--ruin-mini-frame-side) + 7px) 0 0 !important;
   transform: scale(.88);
   transform-origin: top right;
 }
@@ -259,34 +144,25 @@
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-    --ruin-mini-frame-top: 6.5%;
-    --ruin-mini-frame-bottom: 10.5%;
-    --ruin-mini-frame-side: 8.5%;
+    --ruin-mini-frame-top: 4.55%;
+    --ruin-mini-frame-bottom: 7.35%;
+    --ruin-mini-frame-side: 5.95%;
     aspect-ratio: 1.06 / 1;
   }
 
-  .room-view[data-room="ruin-atlas"] .ruin-mini-index-labels {
-    left: calc(var(--ruin-mini-frame-side) + 8px);
-    right: calc(var(--ruin-mini-frame-side) + 8px);
-    bottom: 8px;
-    gap: 8px;
-    font-size: 6px;
-  }
-
   .room-view[data-room="ruin-atlas"] .ruin-mini-coords {
-    top: calc(var(--ruin-mini-frame-top) + 5px);
+    top: calc(var(--ruin-mini-frame-top) + 4px);
     font-size: 5.5px;
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-tone-control.leaflet-bar {
-    margin: calc(var(--ruin-mini-frame-top) + 5px) calc(var(--ruin-mini-frame-side) + 5px) 0 0 !important;
+    margin: calc(var(--ruin-mini-frame-top) + 4px) calc(var(--ruin-mini-frame-side) + 4px) 0 0 !important;
     transform: scale(.72);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures *,
-  .room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer {
+  .room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures * {
     transition: none !important;
   }
 }
