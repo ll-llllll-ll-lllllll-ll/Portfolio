@@ -141,7 +141,7 @@
     var br = { x: ir, y: ib };
     var bl = { x: il, y: ib };
 
-    var rng = rngFor(shell, "restrained-frame-v311");
+    var rng = rngFor(shell, "restrained-frame-v312");
     var svg = svgFor(w, h);
 
     poly(svg, [{x:0.5,y:0.5}, tl], "ruin-fracture-border ruin-fracture-rail", 0.52);
@@ -165,11 +165,22 @@
     ], "ruin-fracture-border", 0.90);
 
     var gapCenter = lerp(it, ib, 0.34 + rng() * 0.38);
-    var gapH = 12 + rng() * 16;
+    var gapH = 13 + rng() * 18;
+    var gapD = 3.5 + rng() * 5.5;
     var ga = gapCenter - gapH * 0.5;
     var gb = gapCenter + gapH * 0.5;
-    poly(svg, [tr, {x:ir,y:ga}], "ruin-fracture-border", 0.90);
-    poly(svg, [{x:ir,y:gb}, br], "ruin-fracture-border", 0.90);
+    poly(svg, [
+      tr,
+      {x:ir,y:ga},
+      {x:ir-gapD*.35,y:ga+gapH*.17},
+      {x:ir-gapD,y:ga+gapH*.43}
+    ], "ruin-fracture-border", 0.90);
+    poly(svg, [
+      {x:ir-gapD*.78,y:ga+gapH*.62},
+      {x:ir-gapD*.28,y:ga+gapH*.82},
+      {x:ir,y:gb},
+      br
+    ], "ruin-fracture-border", 0.90);
 
     var bottomCenter = lerp(il, ir, 0.18 + rng() * 0.62);
     var bottomW = 16 + rng() * 22;
@@ -186,7 +197,18 @@
       bl
     ], "ruin-fracture-border", 0.86);
 
-    poly(svg, [bl, tl], "ruin-fracture-border", 0.88);
+    var leftChipCenter = lerp(it, ib, 0.58 + rng() * 0.20);
+    var leftChipH = 10 + rng() * 11;
+    var leftChipD = 2.8 + rng() * 3.6;
+    poly(svg, [
+      bl,
+      {x:il,y:leftChipCenter + leftChipH*.50},
+      {x:il+leftChipD*.38,y:leftChipCenter + leftChipH*.18},
+      {x:il+leftChipD,y:leftChipCenter - leftChipH*.06},
+      {x:il+leftChipD*.30,y:leftChipCenter - leftChipH*.31},
+      {x:il,y:leftChipCenter - leftChipH*.50},
+      tl
+    ], "ruin-fracture-border", 0.84);
 
     var topRoot = {x:ta + topWidth*.43, y:it + topDepth*.90};
     var topDir = topCenter < w * 0.5 ? -1 : 1;
@@ -197,9 +219,17 @@
 
     var rightRoot = {x:ir, y:gb};
     hairline(svg, rightRoot, {
-      x: rightRoot.x - (28 + rng() * 34),
-      y: rightRoot.y + (18 + rng() * 30)
-    }, rng, 0.54, rng() < 0.48);
+      x: rightRoot.x - (24 + rng() * 30),
+      y: rightRoot.y + (15 + rng() * 25)
+    }, rng, 0.50, rng() < 0.34);
+
+    if (rng() < 0.56) {
+      var lowerRoot = {x:bottomCenter - bottomW*.05, y:ib - bottomD};
+      hairline(svg, lowerRoot, {
+        x: lowerRoot.x + (rng() < .5 ? -1 : 1) * (16 + rng() * 18),
+        y: lowerRoot.y - (14 + rng() * 18)
+      }, rng, 0.42, false);
+    }
 
     host.appendChild(svg);
     shell.dataset.fractureReady = "true";
