@@ -1,7 +1,7 @@
-/* ===== Ruin Archive miniature frame v3.2 ===== */
+/* ===== Ruin Archive miniature frame v3.3 ===== */
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-section {
-  width: min(72vw, 980px);
+  width: min(43.2vw, 588px);
   margin: 0 auto clamp(92px, 13vh, 150px);
   padding: 0;
 }
@@ -162,13 +162,13 @@
 
 @media (max-width: 900px) {
   .room-view[data-room="ruin-atlas"] .ruin-mini-section {
-    width: min(86vw, 760px);
+    width: min(51.6vw, 456px);
   }
 }
 
 @media (max-width: 760px) {
   .room-view[data-room="ruin-atlas"] .ruin-mini-section {
-    width: calc(100vw - 24px);
+    width: calc(60vw - 14.4px);
     margin-bottom: 90px;
   }
 
