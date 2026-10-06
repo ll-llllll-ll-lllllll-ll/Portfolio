@@ -1,6 +1,6 @@
 "use strict";
 
-/* Ruin Archive miniature frame v3.2
+/* Ruin Archive miniature frame v3.3
    No index drawer. Restores the earlier, more expressive fracture language:
    larger stone bites, branching cracks and a transferred corner fracture.
    The frame depth is controlled by CSS and is now about 60% of the original. */
@@ -402,6 +402,21 @@
     });
 
     poly(perspective, [{ x: w - 0.5, y: 0.5 }, tr], "ruin-fracture-border", 0.86);
+
+    /* Lower perspective rails: outer bottom corners return to the two inner
+       bottom corners, matching the broken picture-frame construction. */
+    poly(
+      perspective,
+      [{ x: 0.5, y: h - 0.5 }, bl],
+      "ruin-fracture-border ruin-fracture-rail",
+      0.90
+    );
+    poly(
+      perspective,
+      [{ x: w - 0.5, y: h - 0.5 }, br],
+      "ruin-fracture-border ruin-fracture-rail",
+      0.90
+    );
 
     var transfer = rngFor(shell, "perspective-transfer-v132");
     var attachA = chip.facets[Math.max(0, Math.floor(chip.facets.length * 0.55))] || pt(outerTL, innerTL, 0.62);
