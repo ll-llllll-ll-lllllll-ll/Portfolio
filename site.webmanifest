@@ -1,0 +1,21 @@
+{
+  "name": "sky-sea-lake-cloud",
+  "short_name": "sky-sea-lake-cloud",
+  "icons": [
+    {
+      "src": "./android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#f4f3ee",
+  "background_color": "#f4f3ee",
+  "display": "standalone"
+}
