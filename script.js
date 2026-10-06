@@ -2012,11 +2012,6 @@ render();
       map.on("moveend", function() { shell.classList.remove("is-navigating"); });
 
       map.fitBounds(bounds, { padding: [20, 20], animate: false });
-
-      /* Begin two Leaflet zoom levels closer than the fitted world view. */
-      var fittedZoom = map.getZoom();
-      map.setZoom(Math.min(map.getMaxZoom(), fittedZoom + 2), { animate: false });
-
       map.setMaxBounds([[-520, -800], [3520, 4800]]);
       applyRuinMiniTone(shell, map, worldPane, initialTone, false);
 
@@ -2028,19 +2023,22 @@ render();
       var roomScroll = shell.closest(".room-scroll");
       var parallaxRaf = 0;
       var parallaxApplied = 0;
+      var startupFlyActive = false;
       var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       function applyRuinMiniParallax() {
         parallaxRaf = 0;
-        if (!roomScroll || !shell.isConnected || token !== ruinMiniMountToken) return;
+        if (!roomScroll || !shell.isConnected || token !== ruinMiniMountToken || startupFlyActive) return;
 
         var shellRect = shell.getBoundingClientRect();
         var scrollRect = roomScroll.getBoundingClientRect();
         var contentCenter = shellRect.top - scrollRect.top + roomScroll.scrollTop + shellRect.height * 0.5;
         var centerScroll = contentCenter - roomScroll.clientHeight * 0.5;
-        /* Stronger reverse-scroll parallax: the near frame follows the page,
-           while the map drifts against it like a distant landscape. */
-        var target = ruinMiniClamp((roomScroll.scrollTop - centerScroll) * 0.14, -120, 120);
+
+        /* The map behaves like a distant landscape behind the moving frame.
+           This is deliberately stronger than the earlier pass so the reverse
+           drift remains legible even after the miniature itself is reduced. */
+        var target = ruinMiniClamp((roomScroll.scrollTop - centerScroll) * 0.22, -155, 155);
         var delta = target - parallaxApplied;
 
         if (Math.abs(delta) > 0.02) {
@@ -2061,7 +2059,50 @@ render();
           if (parallaxRaf) cancelAnimationFrame(parallaxRaf);
           parallaxRaf = 0;
         };
-        requestAnimationFrame(applyRuinMiniParallax);
+      }
+
+      /* Port the authored startup movement from ruin-archive.site:
+         fit the complete 4000×3000 atlas first, then fly 377 units upward and
+         410 units left, adding only +0.65 zoom on desktop (+0.35 compact)
+         over five seconds. This replaces the previous static +2 zoom. */
+      var startupCenter = map.getCenter();
+      var startupZoomDelta = window.innerWidth <= 760 ? 0.35 : 0.65;
+      var startupTarget = [
+        startupCenter.lat + 377,
+        startupCenter.lng - 410
+      ];
+      var startupTargetZoom = Math.min(map.getMaxZoom(), map.getZoom() + startupZoomDelta);
+
+      if (reducedMotion) {
+        map.setView(startupTarget, startupTargetZoom, { animate: false });
+      } else {
+        startupFlyActive = true;
+        var startupFlyFinished = false;
+
+        function finishStartupFly() {
+          if (startupFlyFinished) return;
+          startupFlyFinished = true;
+          startupFlyActive = false;
+          try { map.off("moveend", finishStartupFly); } catch (_) {}
+          parallaxApplied = 0;
+          requestAnimationFrame(applyRuinMiniParallax);
+        }
+
+        map.on("moveend", finishStartupFly);
+        requestAnimationFrame(function() {
+          if (!shell.isConnected || token !== ruinMiniMountToken) return;
+          map.flyTo(startupTarget, startupTargetZoom, {
+            animate: true,
+            duration: 5
+          });
+        });
+        window.setTimeout(finishStartupFly, 5400);
+      }
+
+      if (roomScroll && !reducedMotion) {
+        requestAnimationFrame(function() {
+          if (!startupFlyActive) applyRuinMiniParallax();
+        });
       }
 
       requestAnimationFrame(function() {
