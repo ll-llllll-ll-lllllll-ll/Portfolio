@@ -1,4 +1,4 @@
-/* ===== Ruin Archive miniature frame v3.1 ===== */
+/* ===== Ruin Archive miniature frame v3.2 ===== */
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-section {
   width: min(72vw, 980px);
@@ -7,11 +7,11 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-  /* Frame depth reduced to about 70% of the previous version. The map viewport
+  /* Frame depth reduced to about 60% of the original version. The map viewport
      itself remains unchanged. */
-  --ruin-mini-frame-top: 4.2%;
-  --ruin-mini-frame-bottom: 7.3%;
-  --ruin-mini-frame-side: 8.05%;
+  --ruin-mini-frame-top: 3.6%;
+  --ruin-mini-frame-bottom: 6.24%;
+  --ruin-mini-frame-side: 6.9%;
   position: relative;
   width: 100%;
   height: auto;
@@ -107,6 +107,35 @@
   stroke-linecap: butt;
 }
 
+/* Richer fracture hierarchy restored from the earlier frame treatment. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-corner-stem {
+  stroke-width: 1.08px;
+  stroke-linecap: butt;
+}
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-corner-branch {
+  stroke-width: .94px;
+  stroke-linecap: butt;
+}
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-major {
+  stroke-width: 1.08px;
+  opacity: .92;
+}
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-secondary {
+  stroke-width: 1px;
+  opacity: .86;
+}
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-spall-seam,
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-notch-return {
+  stroke-width: .96px;
+  opacity: .72;
+}
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-outward-stem {
+  stroke-width: 1.02px;
+}
+.room-view[data-room="ruin-atlas"] .ruin-mini-authored-fractures .ruin-fracture-outward-branch {
+  stroke-width: .98px;
+}
+
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell .leaflet-pane,
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell .leaflet-control-container {
   z-index: auto;
@@ -144,9 +173,9 @@
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-    --ruin-mini-frame-top: 4.55%;
-    --ruin-mini-frame-bottom: 7.35%;
-    --ruin-mini-frame-side: 5.95%;
+    --ruin-mini-frame-top: 3.9%;
+    --ruin-mini-frame-bottom: 6.3%;
+    --ruin-mini-frame-side: 5.1%;
     aspect-ratio: 1.06 / 1;
   }
 
