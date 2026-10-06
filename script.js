@@ -2033,7 +2033,7 @@ render();
         var scrollRect = roomScroll.getBoundingClientRect();
         var contentCenter = shellRect.top - scrollRect.top + roomScroll.scrollTop + shellRect.height * 0.5;
         var centerScroll = contentCenter - roomScroll.clientHeight * 0.5;
-        var target = ruinMiniClamp((roomScroll.scrollTop - centerScroll) * 0.055, -34, 34);
+        var target = ruinMiniClamp((roomScroll.scrollTop - centerScroll) * 0.038, -24, 24);
         var delta = target - parallaxApplied;
 
         if (Math.abs(delta) > 0.02) {
