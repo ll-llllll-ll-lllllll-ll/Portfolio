@@ -1,4 +1,4 @@
-/* ===== Ruin Archive miniature frame v4.0 — clean transparent frame ===== */
+/* ===== Ruin Archive miniature frame v4.1 — clean transparent frame ===== */
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-section {
   width: min(43.2vw, 588px);
@@ -125,8 +125,8 @@
 
 @media (max-width: 760px) {
   .room-view[data-room="ruin-atlas"] .ruin-mini-section {
-    width: calc(60vw - 14.4px);
-    margin-bottom: 90px;
+    width: min(calc(100vw - 28px), 560px);
+    margin-bottom: 104px;
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
