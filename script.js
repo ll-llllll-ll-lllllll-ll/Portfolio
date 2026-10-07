@@ -759,17 +759,28 @@ function renderRuinAtlasPreview() {
     en: "sites updated [2026 10 3]",
     ja: "地点更新 [2026 10 3]"
   };
+  var sourceCopy = {
+    zh: { before: "地图取自 ", label: "《墟域图·遗构馆》", after: " 网站。" },
+    en: { before: "Map from ", label: "Ruin Archive", after: "." },
+    ja: { before: "地図は ", label: "『墟域図・遺構館』", after: " より。" }
+  };
   var ariaCopy = {
     zh: "墟域图·遗构馆 互动地图",
     en: "Ruin Archive interactive map",
     ja: "墟域図・遺構館 インタラクティブ地図"
   };
+  var source = sourceCopy[state.lang] || sourceCopy.en;
 
   return '<section class="ruin-mini-section">' +
     '<div class="ruin-mini-shell" data-tone="22">' +
       '<div id="ruin-mini-map" class="ruin-mini-map" role="region" aria-label="' + escapeHtml(ariaCopy[state.lang] || ariaCopy.en) + '"></div>' +
       '<div class="ruin-mini-fracture-host" aria-hidden="true"></div>' +
     '</div>' +
+    '<p class="ruin-mini-source">' +
+      escapeHtml(source.before) +
+      '<a href="https://ruin-archive.site/" target="_blank" rel="noreferrer">' + escapeHtml(source.label) + '</a>' +
+      escapeHtml(source.after) +
+    '</p>' +
     '<p class="ruin-mini-updated">' + escapeHtml(updatedCopy[state.lang] || updatedCopy.en) + '</p>' +
   '</section>';
 }
@@ -2161,6 +2172,45 @@ render();
       ruinMiniIndexFilterCleanup = function() {
         shell.removeEventListener("ruin-mini-index-filter", applyMiniIndexFilter);
       };
+
+      /* Mirror ruin-archive.site exactly: once zoom passes 0, all markers
+         progressively fade as the view magnifies, reaching 30% opacity at
+         maxZoom 3. This is applied to Leaflet's native markerPane so every
+         marker fades together without changing its individual position or
+         index-filter state. */
+      var markerOpacityRaf = 0;
+
+      function updateRuinMiniMarkerOpacity() {
+        if (markerOpacityRaf) return;
+
+        markerOpacityRaf = requestAnimationFrame(function() {
+          markerOpacityRaf = 0;
+          if (!shell.isConnected || token !== ruinMiniMountToken) return;
+
+          var currentZoom = map.getZoom();
+          var triggerZoom = 0;
+          var maxZoom = 3;
+          var targetOpacity = 1;
+
+          if (currentZoom > triggerZoom) {
+            var ratio = (currentZoom - triggerZoom) / (maxZoom - triggerZoom);
+            targetOpacity = 1 - (ratio * 0.7);
+          }
+
+          targetOpacity = Math.max(0.3, targetOpacity);
+
+          var markerPane = map.getPane("markerPane");
+          if (markerPane) {
+            var nextOpacity = String(targetOpacity);
+            if (markerPane.style.opacity !== nextOpacity) {
+              markerPane.style.opacity = nextOpacity;
+            }
+          }
+        });
+      }
+
+      map.on("zoom", updateRuinMiniMarkerOpacity);
+      updateRuinMiniMarkerOpacity();
 
       var initialTone = readRuinMiniTone();
       makeRuinMiniToneControl(L, shell, map, worldPane);
