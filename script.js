@@ -141,7 +141,11 @@ const collections = [
     images: [],
     notes: [
       {
-        title: { zh: "文明墨迹图", en: "civilisation ink map", ja: "文明の墨跡図" },
+        titleHtml: {
+          zh: "<strong>墟域图·</strong>——文明墨迹图",
+          en: "<strong>Ruin Atlas ·</strong>—Civilisation Ink Map",
+          ja: "<strong>墟域図·</strong>——文明の墨跡図"
+        },
         bodyHtml: {
           zh: [
             "地图上的黑点来自真实世界中的都市区域。我参考了 <a href='https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-urban-area/' target='_blank' rel='noreferrer'>Natural Earth 的 Urban Areas 数据</a>，将原本精确的城市轮廓大幅简化，再根据它们各自的面积估算成大小不同的点状物，最终以近似“墨斑”的样貌，沾染在一张经过修改的地形地图之上。地图的底图同样来自 <a href='https://www.naturalearthdata.com/downloads/50m-raster-data/50m-gray-earth/' target='_blank' rel='noreferrer'>Natural Earth 的 Gray Earth 数据</a>。",
@@ -161,18 +165,22 @@ const collections = [
         }
       },
       {
-        title: { zh: "残破画框", en: "the broken frame", ja: "壊れた額縁" },
+        titleHtml: {
+          zh: "<strong>·遗构馆</strong>——残破画框",
+          en: "<strong>· Archive</strong>—The Broken Frame",
+          ja: "<strong>·遺構館</strong>——壊れた額縁"
+        },
         bodyHtml: {
           zh: [
-            "整个网站的界面被处理得像一副残破的画框。这个设计借用了<a href='https://ruin-archive.site/manifesto.html#section-02' target='_blank' rel='noreferrer'>《墟构师宣言》中关于“残破画框”的理解</a>：透过那些断裂的边缘，我们不再只把注意力放在框中的景象上，框架自身留下的碎片，也开始成为可以被读取的残片。",
+            "整个网站的界面被处理得像一副残破的画框。这个设计借用了<a href='https://ruin-archive.site/manifesto.html#section-02' target='_blank' rel='noreferrer'>《墟构师宣言》中关于“残破画框”的理解</a>：透过那些断裂的边缘，我们不再只把注意力放在框中的景象上，框架自身留下的碎片，也开始成为可以被读取的残片。我把废墟地点的记录放进这些断裂的角落；随着记录逐渐积累，残片不断堆叠，这个集合也慢慢成为了“遗构馆”。",
             "框中的景象与框架的残片彼此对照，一边仍指向我们正在观看的世界，一边暴露出原本支撑这种观看的结构。两者重新拼接在一起，也逐渐形成另一种理解世界的方法。"
           ],
           en: [
-            "The whole site interface is treated like a damaged picture frame. The design draws on <a href='https://ruin-archive.site/manifesto.html#section-02' target='_blank' rel='noreferrer'>the idea of the “broken frame” in the Manifesto of the Ruinwright</a>: through those fractured edges, attention no longer rests only on the scene within the frame; the fragments left by the frame itself also begin to become remnants that can be read.",
+            "The whole site interface is treated like a damaged picture frame. The design draws on <a href='https://ruin-archive.site/manifesto.html#section-02' target='_blank' rel='noreferrer'>the idea of the “broken frame” in the Manifesto of the Ruinwright</a>: through those fractured edges, attention no longer rests only on the scene within the frame; the fragments left by the frame itself also begin to become remnants that can be read. I place records of ruined sites into these broken corners; as the records accumulate, the fragments gather into a layered collection that gradually becomes the “Archive”.",
             "The scene inside the frame and the fragments of the frame are set against one another. One still points toward the world being seen; the other exposes the structure that had supported that act of seeing. Rejoined, the two gradually form another way of understanding the world."
           ],
           ja: [
-            "サイト全体の界面は、一枚の壊れた額縁のように扱われている。このデザインは、<a href='https://ruin-archive.site/manifesto.html#section-02' target='_blank' rel='noreferrer'>『墟構師宣言』における「破碎画框」の理解</a>を借りている。断裂した縁を通して、私たちは額の内側の景色だけに目を向けるのではなく、枠そのものが残した断片も、読み取ることのできる残片として見始める。",
+            "サイト全体の界面は、一枚の壊れた額縁のように扱われている。このデザインは、<a href='https://ruin-archive.site/manifesto.html#section-02' target='_blank' rel='noreferrer'>『墟構師宣言』における「破碎画框」の理解</a>を借りている。断裂した縁を通して、私たちは額の内側の景色だけに目を向けるのではなく、枠そのものが残した断片も、読み取ることのできる残片として見始める。私はその断裂した角へ廃墟地点の記録を置いていく。記録が少しずつ積み重なるにつれ、残片の集積はやがてひとつの「遺構館」になっていく。",
             "額の内側の景色と、枠から残された断片は互いに照らし合う。一方はなお私たちが見ている世界を指し、もう一方はその見方を支えていた構造を露わにする。二つを再びつなぎ合わせることで、そこから別の世界理解の方法が少しずつ組み上がっていく。"
           ]
         }
@@ -852,8 +860,12 @@ function renderRoom(item) {
         "</blockquote>";
       }
 
+      var noteTitleHtml = note.titleHtml
+        ? localised(note.titleHtml)
+        : escapeHtml(localised(note.title));
+
       html += '<article class="room-note">' +
-        '<p class="room-note-title">' + escapeHtml(localised(note.title)) + "</p>" +
+        '<p class="room-note-title">' + noteTitleHtml + "</p>" +
         '<div class="room-note-copy">' + bodyHtml + quoteHtml + "</div>" +
       "</article>";
     });
