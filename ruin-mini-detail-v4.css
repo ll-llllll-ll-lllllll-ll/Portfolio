@@ -51,28 +51,20 @@
    No hairline ring. Garden = 6px solid dot; record = 5px solid dot.
    -------------------------------------------------------------------------- */
 .room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon {
-  /* Leaflet positions every DivIcon with absolute positioning + an inline
-     translate3d. Never change this wrapper to relative: doing so makes icons
-     participate in normal flow and visibly drifts them away from their LatLng. */
-  position: absolute !important;
-  display: block !important;
-  margin: 0;
   border: 0 !important;
   background: transparent !important;
   filter: none !important;
   mix-blend-mode: normal !important;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon .garden-dot,
-.room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon .record-dot {
-  position: absolute;
-  left: 50%;
-  top: 50%;
+/* Exact Ruin Archive dot geometry. Do not absolutely centre these children:
+   the original site's divIcon/iconAnchor pair owns that tiny visual offset. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon .garden-dot {
   display: block;
+  width: 6px;
+  height: 6px;
   border: 0;
   border-radius: 50%;
-  outline: 0;
-  transform: translate(-50%, -50%);
   background: var(--ruin-mini-marker, #111);
   box-shadow: 0 0 2.5px var(--ruin-mini-marker-shadow, rgba(0,0,0,.25));
   opacity: 1;
@@ -80,14 +72,17 @@
   mix-blend-mode: normal;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon .garden-dot {
-  width: 6px;
-  height: 6px;
-}
-
 .room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon .record-dot {
+  display: block;
   width: 5px;
   height: 5px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ruin-mini-marker, #111);
+  box-shadow: 0 0 2.5px var(--ruin-mini-marker-shadow, rgba(0,0,0,.25));
+  opacity: 1;
+  filter: none;
+  mix-blend-mode: normal;
 }
 
 /* --------------------------------------------------------------------------
