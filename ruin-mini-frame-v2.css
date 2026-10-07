@@ -371,7 +371,7 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta {
-  margin: calc(var(--mini-archive-pad, 8px) * -.66) 0 calc(var(--mini-archive-pad, 8px) * 3.8);
+  margin: var(--mini-meta-top, -5px) 0 var(--mini-block-gap, 30px);
   color: var(--ruin-mini-muted, rgba(23,24,19,.50));
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: var(--mini-archive-meta-font, 7px);
@@ -382,7 +382,7 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-doc-title {
-  margin: calc(var(--mini-archive-pad, 8px) * -.25) 0 calc(var(--mini-archive-pad, 8px) * 3.8);
+  margin: var(--mini-title-top, -2px) 0 var(--mini-block-gap, 30px);
   font-family: var(--serif);
   font-size: var(--mini-archive-title-font, 10px);
   font-weight: 400;
@@ -391,18 +391,18 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-doc-identity {
-  margin-top: calc(var(--mini-archive-pad, 8px) * 1.1);
-  margin-bottom: calc(var(--mini-archive-pad, 8px) * 1.1);
+  margin-top: var(--mini-identity-gap, 9px);
+  margin-bottom: var(--mini-identity-gap, 9px);
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-doc-coordinate {
-  margin: 0 0 calc(var(--mini-archive-pad, 8px) * .65);
+  margin: 0 0 var(--mini-coordinate-gap, 5px);
   white-space: normal;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-doc-nav {
   display: inline-block;
-  padding: max(2px, calc(var(--mini-archive-pad, 8px) * .33)) max(4px, calc(var(--mini-archive-pad, 8px) * .66));
+  padding: var(--mini-nav-pad-y, 3px) var(--mini-nav-pad-x, 5px);
   border: 1px solid var(--ruin-mini-line-strong, rgba(23,24,19,.58));
   color: inherit;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -425,8 +425,8 @@
   width: var(--mini-thumb-size, 82px);
   height: var(--mini-thumb-size, 82px);
   box-sizing: content-box;
-  margin: 0 0 calc(var(--mini-archive-pad, 8px) * 1.6);
-  padding: max(2px, calc(var(--mini-archive-pad, 8px) * .4));
+  margin: 0 0 var(--mini-thumb-gap, 13px);
+  padding: var(--mini-thumb-pad, 3px);
   border: 1px solid color-mix(in srgb, var(--ruin-mini-text, #1c1c1a) 28%, transparent);
   overflow: hidden;
   background: color-mix(in srgb, var(--ruin-mini-paper, #f4f3ee) 72%, transparent);
