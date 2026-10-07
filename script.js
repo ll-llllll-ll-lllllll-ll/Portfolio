@@ -969,14 +969,14 @@ function renderRuinArchiveCabinetPreview() {
         '<svg viewBox="0 0 1000 820" preserveAspectRatio="none">' +
           '<g class="ruin-mini-cabinet-frame-lines">' +
             '<path d="M1 1H999V819H1Z"/>' +
-            '<path d="M150 64H850V725H150Z"/>' +
-            '<path d="M1 1L150 64 M999 1L850 64 M999 819L850 725 M1 819L150 725"/>' +
+            '<path d="M195 64H885V725H195Z"/>' +
+            '<path d="M1 1L195 64 M999 1L885 64 M999 819L885 725 M1 819L195 725"/>' +
           '</g>' +
         '</svg>' +
       '</div>' +
       '<div id="ruin-mini-index-drawer" class="ruin-mini-index-drawer">' +
+        '<div id="ruin-mini-index-stone-layer" class="ruin-mini-index-stone-layer" aria-hidden="true"></div>' +
         '<div class="ruin-mini-index-handle">' +
-          '<div class="ruin-mini-index-frosted-shape" aria-hidden="true"></div>' +
           '<button type="button" class="ruin-mini-index-surface-trigger" aria-expanded="false" aria-label="' + escapeHtml(drawer.center) + '"></button>' +
           '<div class="ruin-mini-index-bottom-labels" aria-hidden="true">' +
             '<span>' + escapeHtml(drawer.record) + '</span>' +
@@ -2765,18 +2765,24 @@ render();
 
       function setGeometryVariables() {
         scale = currentScale();
+        var systemWidth = Math.max(1, system.clientWidth);
+        var leftRailWidth = systemWidth * 0.195;
+        var rightRailWidth = systemWidth * 0.115;
+
         system.style.setProperty("--mini-archive-scale", scale.toFixed(4));
-        system.style.setProperty("--mini-archive-doc-w", (240 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-doc-w", Math.max(42, leftRailWidth * 0.96).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-doc-w", Math.max(36, rightRailWidth * 0.97).toFixed(2) + "px");
         system.style.setProperty("--mini-record-doc-h", (640 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-garden-doc-h", (505 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-record-stack-w", (270 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-record-left", (-34 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-right", (-86 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-bottom", (112 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-record-extract-x", (205 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-extract-x", (-220 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-extract-top", (-310 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-record-extract-top", (238 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-stack-w", leftRailWidth.toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-stack-w", rightRailWidth.toFixed(2) + "px");
+        system.style.setProperty("--mini-record-left", "0px");
+        system.style.setProperty("--mini-garden-right", "0px");
+        system.style.setProperty("--mini-garden-bottom", (205 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-extract-x", (190 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-extract-x", (-205 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-extract-top", (-255 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-extract-top", (300 * scale).toFixed(2) + "px");
       }
 
       function tagsForSites(entrySites) {
@@ -2811,6 +2817,148 @@ render();
           t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
           return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         };
+      }
+
+
+      function renderMiniIndexStone() {
+        var layer = document.getElementById("ruin-mini-index-stone-layer");
+        if (!layer || !indexDrawer.isConnected) return;
+
+        var w = indexDrawer.clientWidth;
+        var h = indexDrawer.clientHeight;
+        if (w < 120 || h < 90) return;
+
+        var handleH = window.innerWidth <= 760 ? 34 : 42;
+        var leftInset = w * 0.195;
+        var rightInset = w * 0.115;
+        var seed = hashString(
+          "mini-index-stone-v1:" + Math.round(w) + "x" + Math.round(h)
+        );
+        var rand = seededRandom(seed);
+
+        // The shell itself follows the same asymmetric rails as the cabinet.
+        var shell = [
+          {x:0,y:handleH},
+          {x:leftInset,y:0},
+          {x:w-rightInset,y:0},
+          {x:w,y:handleH},
+          {x:w,y:h},
+          {x:0,y:h}
+        ];
+
+        function cross(a,b,p) {
+          return (b.x-a.x)*(p.y-a.y) - (b.y-a.y)*(p.x-a.x);
+        }
+
+        function intersect(a,b,p,q) {
+          var A1=b.y-a.y, B1=a.x-b.x, C1=A1*a.x+B1*a.y;
+          var A2=q.y-p.y, B2=p.x-q.x, C2=A2*p.x+B2*p.y;
+          var det=A1*B2-A2*B1;
+          if (Math.abs(det)<1e-7) return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+          return {x:(B2*C1-B1*C2)/det,y:(A1*C2-A2*C1)/det};
+        }
+
+        function clipHalf(poly,a,b,keepPositive) {
+          var out=[];
+          for(var i=0;i<poly.length;i++){
+            var cur=poly[i], next=poly[(i+1)%poly.length];
+            var c1=cross(a,b,cur), c2=cross(a,b,next);
+            var in1=keepPositive ? c1>=-0.01 : c1<=0.01;
+            var in2=keepPositive ? c2>=-0.01 : c2<=0.01;
+            if(in1) out.push(cur);
+            if(in1!==in2) out.push(intersect(cur,next,a,b));
+          }
+          return out;
+        }
+
+        function area(poly) {
+          var sum=0;
+          for(var i=0;i<poly.length;i++){
+            var a=poly[i],b=poly[(i+1)%poly.length];
+            sum+=a.x*b.y-b.x*a.y;
+          }
+          return Math.abs(sum/2);
+        }
+
+        function centroid(poly){
+          var x=0,y=0;
+          poly.forEach(function(p){x+=p.x;y+=p.y;});
+          return {x:x/poly.length,y:y/poly.length};
+        }
+
+        var cells=[shell];
+        var cracks=[];
+        var crackCount=2 + Math.floor(rand()*3); // 2–4, matching the sparse source logic.
+
+        for(var cutIndex=0;cutIndex<crackCount;cutIndex++){
+          if(!cells.length) break;
+          var targetIndex=0;
+          for(var ci=1;ci<cells.length;ci++){
+            if(area(cells[ci])>area(cells[targetIndex])) targetIndex=ci;
+          }
+          var target=cells[targetIndex];
+          var c=centroid(target);
+          var angle=(0.20+rand()*0.60)*Math.PI;
+          if(cutIndex%2) angle+=Math.PI*0.48;
+          var dx=Math.cos(angle),dy=Math.sin(angle);
+          var normal={x:-dy,y:dx};
+          var drift=(rand()-.5)*Math.min(w,h)*0.16;
+          var mid={x:c.x+normal.x*drift,y:c.y+normal.y*drift};
+          var len=Math.hypot(w,h)*1.4;
+          var a={x:mid.x-dx*len,y:mid.y-dy*len};
+          var b={x:mid.x+dx*len,y:mid.y+dy*len};
+          var p1=clipHalf(target,a,b,true);
+          var p2=clipHalf(target,a,b,false);
+          if(p1.length<3||p2.length<3||area(p1)<w*h*0.035||area(p2)<w*h*0.035) continue;
+          cells.splice(targetIndex,1,p1,p2);
+          cracks.push({a:a,b:b,width:1.8+rand()*2.6});
+        }
+
+        function roughened(poly,index){
+          var c=centroid(poly);
+          return poly.map(function(p,pi){
+            var local=seededRandom(seed ^ ((index+1)*2654435761) ^ ((pi+7)*2246822519));
+            var inward=0.35+local()*0.85;
+            var vx=c.x-p.x,vy=c.y-p.y;
+            var vl=Math.hypot(vx,vy)||1;
+            return {x:p.x+vx/vl*inward,y:p.y+vy/vl*inward};
+          });
+        }
+
+        var NS="http://www.w3.org/2000/svg";
+        var svg=document.createElementNS(NS,"svg");
+        svg.setAttribute("viewBox","0 0 "+w+" "+h);
+        svg.setAttribute("preserveAspectRatio","none");
+        svg.setAttribute("class","ruin-mini-index-stone-svg");
+
+        var refined=cells.map(roughened);
+        refined.forEach(function(poly,index){
+          var path=document.createElementNS(NS,"path");
+          path.setAttribute("d",poly.map(function(p,i){
+            return (i?"L":"M")+p.x.toFixed(2)+" "+p.y.toFixed(2);
+          }).join(" ")+" Z");
+          path.setAttribute("class","ruin-mini-index-stone-face");
+          path.style.setProperty("--stone-alpha",(0.79+(index%4)*0.025).toFixed(3));
+          path.style.setProperty("--stone-stroke-alpha",(0.60+(index%3)*0.07).toFixed(3));
+          svg.appendChild(path);
+        });
+
+        // A shared rubbing mask: white slab, black fracture seams.
+        var maskSvg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">';
+        maskSvg+='<polygon points="'+shell.map(function(p){return p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' ')+'" fill="white"/>';
+        cracks.forEach(function(crack){
+          maskSvg+='<line x1="'+crack.a.x.toFixed(2)+'" y1="'+crack.a.y.toFixed(2)+'" x2="'+crack.b.x.toFixed(2)+'" y2="'+crack.b.y.toFixed(2)+'" stroke="black" stroke-width="'+crack.width.toFixed(2)+'" stroke-linecap="round"/>';
+        });
+        maskSvg+='</svg>';
+        var maskUrl='url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(maskSvg)+'")';
+
+        layer.replaceChildren(svg);
+        indexDrawer.style.setProperty("--mini-index-stone-mask",maskUrl);
+        indexDrawer.style.setProperty(
+          "--mini-index-drawer-shell-clip",
+          "polygon(0 "+handleH+"px, "+leftInset.toFixed(2)+"px 0, "+(w-rightInset).toFixed(2)+"px 0, 100% "+handleH+"px, 100% 100%, 0 100%)"
+        );
+        indexDrawer.classList.add("stone-ready");
       }
 
       function applyCut(doc, index, isGarden) {
@@ -2874,9 +3022,9 @@ render();
         setGeometryVariables();
 
         var recordDocs = Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc"));
-        var recordBaseTop = 248;
-        var recordGapY = 42;
-        var recordGapX = 5;
+        var recordBaseTop = 322;
+        var recordGapY = 35;
+        var recordGapX = 3.2;
 
         recordDocs.forEach(function(doc, index) {
           var rank = (recordDocs.length - 1) - index;
@@ -2894,8 +3042,8 @@ render();
         var gardenDocs = Array.from(gardenStack.querySelectorAll(".ruin-mini-archive-doc"));
         gardenDocs.forEach(function(doc, index) {
           var rank = (gardenDocs.length - 1) - index;
-          var top = rank * 51 * scale;
-          var right = -rank * 6 * scale;
+          var top = rank * 43 * scale;
+          var right = -rank * 2.6 * scale;
           var jitterX = (((index * 13) % 5) - 2) * 0.78 * scale;
           var jitterY = (((index * 7) % 5) - 2) * 0.64 * scale;
           doc.style.top = (top + jitterY).toFixed(2) + "px";
@@ -2972,8 +3120,9 @@ render();
       });
 
       layoutStacks();
+      renderMiniIndexStone();
 
-      // Miniature port of the source index-drawer: click the trapezoid handle,
+      // Miniature port of the source index-drawer + procedural broken-stone rubbing:
       // slide the slab upward, and sink/restore the archive stacks around it.
       var surfaceTrigger = indexDrawer.querySelector(".ruin-mini-index-surface-trigger");
       var drawerOpenTimer = 0;
@@ -3048,6 +3197,7 @@ render();
           resizeRaf = 0;
           if (token !== ruinMiniArchiveMountToken || !system.isConnected) return;
           layoutStacks();
+          renderMiniIndexStone();
         });
       };
 
