@@ -893,29 +893,77 @@ function renderRuinArchiveCabinetPreview() {
     ja: { before: "档案界面は ", label: "『墟域図・遺構館』", after: " より。" }
   };
   var ariaCopy = {
-    zh: "遗构馆 archive-doc 档案系统预览",
-    en: "Ruin Archive archive-doc system preview",
-    ja: "遺構館 archive-doc システム・プレビュー"
+    zh: "遗构馆 archive-doc 与 index-drawer 缩小系统",
+    en: "Scaled Ruin Archive archive-doc and index-drawer system",
+    ja: "遺構館 archive-doc / index-drawer 縮小システム"
   };
-  var labelsCopy = {
-    zh: { record: "遗构录・卷", center: "遗构馆", garden: "⁙废墟园林・编" },
-    en: { record: "RECORDS · VOL.", center: "ARCHIVE", garden: "⁙FOLLY · SERIES" },
-    ja: { record: "遺構録・巻", center: "遺構館", garden: "⁙フォリー・編" }
+  var drawerCopy = {
+    zh: {
+      record: "遗构录・卷",
+      center: "遗构馆",
+      garden: "⁙废墟园林・编",
+      intro: "《墟域图・遗构馆》收录漫游世界时所遇见的人造残构、荒地与被遗忘的地景，并持续建构一个不断扩张的废墟世界。",
+      p1: "每一处遗构，都保存着稍纵即逝的「如画美」，也孕育着另一场崩解的开始。这些残构由此成为墟构师创作《废墟园林》的土壤。",
+      p2: "所有影像、声音与遗物重新汇入《遗构馆》，成为持续更新的废墟档案，并散落于同一张仍未完成的《墟域图》之中。",
+      title: "— 墟语学索引 —",
+      lex: "「墟语学」将现场征候转化为语素，并连接具有共同征候的遗构。",
+      cats: ["土地","建筑","状态","自然"]
+    },
+    en: {
+      record: "RECORDS · VOL.",
+      center: "ARCHIVE",
+      garden: "⁙FOLLY · SERIES",
+      intro: "Ruin Archive gathers artificial remnants, wastelands, and forgotten landscapes encountered while roaming the world.",
+      p1: "Each record preserves a fleeting picturesque condition while carrying the beginning of another collapse.",
+      p2: "Images, sounds, and relics return to the Archive as an expanding atlas of ruins.",
+      title: "— RUIN LEXICOLOGY —",
+      lex: "Field signs become lexical units that connect ruins sharing the same symptoms.",
+      cats: ["LAND","ARCHITECTURE","STATE","NATURE"]
+    },
+    ja: {
+      record: "遺構録・巻",
+      center: "遺構館",
+      garden: "⁙フォリー・編",
+      intro: "『墟域図・遺構館』は、世界を歩くなかで出会った人工の残構、荒地、忘れられた景観を収録する。",
+      p1: "それぞれの遺構は一瞬の「如画美」を保存しながら、次の崩壊の始まりを孕んでいる。",
+      p2: "映像、音、遺物は再び『遺構館』へ集まり、更新され続ける墟域図の断片となる。",
+      title: "— 墟語学索引 —",
+      lex: "現場の徴候を語素へ変換し、共通する徴候を持つ遺構を接続する。",
+      cats: ["土地","建築","状態","自然"]
+    }
   };
+
+  var indexGroups = [
+    ["mountain","山","slope","坡","shore","岸","bay","湾","port","埠","plateau","塬","valley","谷","cliff","崖"],
+    ["corridor","廊","stair","阶","room","厅","dwelling","居","wall","垣","fort","堡","hall","殿","sacred","圣","tower","塔","tunnel","甬","column","柱","aperture","孔","factory","厂","vessel","舰","rail","辙","courtyard","庭","dam","坝","chamber","室","monument","碑"],
+    ["ruin","残","remains","骸","desolate","荒","sunken","沉","scorched","焦","crack","裂","eroded","蚀","relocated","迁","compressed","压","seepage","渗","contaminated","染","placed","置","interstitial","间"],
+    ["vine","蔓","moss","苔","tree","木","grass","草","spike","棘","ash","灰","membrane","膜","water","水","wave","波","magnetic","磁","soil","土","sand","沙"]
+  ];
+
   var source = sourceCopy[state.lang] || sourceCopy.en;
-  var labels = labelsCopy[state.lang] || labelsCopy.en;
+  var drawer = drawerCopy[state.lang] || drawerCopy.zh;
+
+  function indexRows() {
+    return indexGroups.map(function(group, groupIndex) {
+      var tags = "";
+      for (var i = 0; i < group.length; i += 2) {
+        tags += '<button type="button" class="ruin-mini-index-tag" data-tag="' +
+          escapeHtml(group[i]) + '">' + escapeHtml(group[i + 1]) + '</button>';
+      }
+      return '<div class="ruin-mini-index-row">' +
+        '<div class="ruin-mini-index-category">' + escapeHtml(drawer.cats[groupIndex]) + '</div>' +
+        '<div class="ruin-mini-index-separator">|</div>' +
+        '<div class="ruin-mini-index-tags">' + tags + '</div>' +
+      '</div>';
+    }).join("");
+  }
 
   return '<section class="ruin-mini-section ruin-mini-cabinet-section" aria-label="' +
     escapeHtml(ariaCopy[state.lang] || ariaCopy.en) + '">' +
     '<div class="ruin-mini-shell ruin-mini-cabinet-shell">' +
       '<div id="ruin-mini-archive-system" class="ruin-mini-archive-system">' +
-        '<div id="ruin-mini-stack-record" class="ruin-mini-file-stack ruin-mini-position-left" aria-label="' + escapeHtml(labels.record) + '"></div>' +
-        '<div id="ruin-mini-stack-garden" class="ruin-mini-file-stack ruin-mini-position-right" aria-label="' + escapeHtml(labels.garden) + '"></div>' +
-        '<div class="ruin-mini-archive-bottom-labels" aria-hidden="true">' +
-          '<span class="ruin-mini-bottom-record">' + escapeHtml(labels.record) + '</span>' +
-          '<span class="ruin-mini-bottom-center">' + escapeHtml(labels.center) + '</span>' +
-          '<span class="ruin-mini-bottom-garden">' + escapeHtml(labels.garden) + '</span>' +
-        '</div>' +
+        '<div id="ruin-mini-stack-record" class="ruin-mini-file-stack ruin-mini-position-left" aria-hidden="true"></div>' +
+        '<div id="ruin-mini-stack-garden" class="ruin-mini-file-stack ruin-mini-position-right" aria-hidden="true"></div>' +
       '</div>' +
       '<div class="ruin-mini-cabinet-frame" aria-hidden="true">' +
         '<svg viewBox="0 0 1000 820" preserveAspectRatio="none">' +
@@ -925,6 +973,28 @@ function renderRuinArchiveCabinetPreview() {
             '<path d="M1 1L150 64 M999 1L850 64 M999 819L850 725 M1 819L150 725"/>' +
           '</g>' +
         '</svg>' +
+      '</div>' +
+      '<div id="ruin-mini-index-drawer" class="ruin-mini-index-drawer">' +
+        '<div class="ruin-mini-index-handle">' +
+          '<div class="ruin-mini-index-frosted-shape" aria-hidden="true"></div>' +
+          '<button type="button" class="ruin-mini-index-surface-trigger" aria-expanded="false" aria-label="' + escapeHtml(drawer.center) + '"></button>' +
+          '<div class="ruin-mini-index-bottom-labels" aria-hidden="true">' +
+            '<span>' + escapeHtml(drawer.record) + '</span>' +
+            '<strong>' + escapeHtml(drawer.center) + '</strong>' +
+            '<span>' + escapeHtml(drawer.garden) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ruin-mini-index-content">' +
+          '<section class="ruin-mini-index-fracture-zone">' +
+            '<p class="ruin-mini-index-top-title">' + escapeHtml(drawer.intro) + '</p>' +
+            '<div class="ruin-mini-index-columns"><p>' + escapeHtml(drawer.p1) + '</p><p>' + escapeHtml(drawer.p2) + '</p></div>' +
+          '</section>' +
+          '<section class="ruin-mini-index-stable-zone">' +
+            '<div class="ruin-mini-index-title">' + escapeHtml(drawer.title) + '</div>' +
+            '<p class="ruin-mini-index-lex">' + escapeHtml(drawer.lex) + '</p>' +
+            '<div class="ruin-mini-index-system">' + indexRows() + '</div>' +
+          '</section>' +
+        '</div>' +
       '</div>' +
     '</div>' +
     '<p class="ruin-mini-source ruin-mini-cabinet-source">' +
@@ -2652,7 +2722,8 @@ render();
     var system = document.getElementById("ruin-mini-archive-system");
     var recordStack = document.getElementById("ruin-mini-stack-record");
     var gardenStack = document.getElementById("ruin-mini-stack-garden");
-    if (!system || !recordStack || !gardenStack || system.dataset.mounted === "true") return;
+    var indexDrawer = document.getElementById("ruin-mini-index-drawer");
+    if (!system || !recordStack || !gardenStack || !indexDrawer || system.dataset.mounted === "true") return;
 
     destroyRuinArchiveMiniSystem();
     system.dataset.mounted = "true";
@@ -2662,148 +2733,84 @@ render();
       if (token !== ruinMiniArchiveMountToken || !system.isConnected) return;
 
       var sites = Array.isArray(loadedSites) && loadedSites.length ? loadedSites : RUIN_MINI_FALLBACK_SITES;
-      var gardenSites = sites.filter(function(site) { return site && site.type === "garden"; });
-      var recordSites = sites.filter(function(site) { return site && site.type !== "garden"; });
-      var recordEntries = ruinMiniArchiveBuildRecordEntries(recordSites);
-      var copy = ruinMiniArchiveCopy();
+      var allGarden = sites.filter(function(site) { return site && site.type === "garden"; });
+      var allRecordEntries = ruinMiniArchiveBuildRecordEntries(
+        sites.filter(function(site) { return site && site.type !== "garden"; })
+      );
 
-      var recordYJitter = ruinMiniArchiveSparseJitter(recordEntries.length, [1.5, 2, 2.5, 3], 0.18);
-      var gardenYJitter = ruinMiniArchiveSparseJitter(gardenSites.length, [1.5, 2, 2.5, 3], 0.18);
-      var recordXJitter = ruinMiniArchiveSparseJitter(recordEntries.length, [2.2, 2.6, 3, 3.5], 0.17);
-      var gardenXJitter = ruinMiniArchiveSparseJitter(gardenSites.length, [2.2, 2.6, 3, 3.5], 0.17);
+      function sampleEvenly(list, count, repeat) {
+        if (!list.length) return [];
+        if (list.length >= count) {
+          if (count === 1) return [list[0]];
+          return Array.from({ length: count }, function(_, i) {
+            var idx = Math.round(i * (list.length - 1) / (count - 1));
+            return list[idx];
+          });
+        }
+        if (!repeat) return list.slice();
+        return Array.from({ length: count }, function(_, i) { return list[i % list.length]; });
+      }
 
-      var slider = {
-        docs: [],
-        total: 0,
-        windowStart: 0,
-        windowEnd: -1,
-        initialWindowEnd: -1,
-        activeTop: 0,
-        activeBottom: 0,
-        topExtent: 0,
-        bottomExtent: 0,
-        extractedDoc: null,
-        hoverDirection: 0,
-        hoverTimer: null,
-        hoverToken: 0,
-        scale: 1
-      };
+      // Exactly the reduced visual population requested for this portfolio miniature.
+      var recordEntries = sampleEvenly(allRecordEntries, 9, false);
+      var gardenSites = sampleEvenly(allGarden, 5, true);
 
-      var sourceFanCount = 23;
-      var sourceFanGapY = 18;
-      var sourceFanGapX = 3;
-      var sourceFlatMaxGap = 18;
-      var sourceFlatMinGap = 5;
-      var sourceShiftY = 5;
-      var sourceHoverEdge = 92;
-      var sourceStepMs = 160;
+      var scale = 1;
+      var selectedTags = new Set();
+      var cleanupTimers = [];
 
       function currentScale() {
         return Math.max(0.26, Math.min(0.84, system.clientHeight / 900));
       }
 
       function setGeometryVariables() {
-        var scale = currentScale();
-        slider.scale = scale;
+        scale = currentScale();
         system.style.setProperty("--mini-archive-scale", scale.toFixed(4));
         system.style.setProperty("--mini-archive-doc-w", (240 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-record-doc-h", (640 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-garden-doc-h", (505 * scale).toFixed(2) + "px");
-        var archivePad = Math.max(5, 12 * scale);
-        system.style.setProperty("--mini-archive-pad", archivePad.toFixed(2) + "px");
-        system.style.setProperty("--mini-meta-top", (-archivePad * 0.66).toFixed(2) + "px");
-        system.style.setProperty("--mini-title-top", (-archivePad * 0.25).toFixed(2) + "px");
-        system.style.setProperty("--mini-block-gap", (archivePad * 3.8).toFixed(2) + "px");
-        system.style.setProperty("--mini-identity-gap", (archivePad * 1.1).toFixed(2) + "px");
-        system.style.setProperty("--mini-coordinate-gap", (archivePad * 0.65).toFixed(2) + "px");
-        system.style.setProperty("--mini-nav-pad-y", Math.max(2, archivePad * 0.33).toFixed(2) + "px");
-        system.style.setProperty("--mini-nav-pad-x", Math.max(4, archivePad * 0.66).toFixed(2) + "px");
-        system.style.setProperty("--mini-thumb-gap", (archivePad * 1.6).toFixed(2) + "px");
-        system.style.setProperty("--mini-thumb-pad", Math.max(2, archivePad * 0.4).toFixed(2) + "px");
-        system.style.setProperty("--mini-archive-font", Math.max(6, 13 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-archive-title-font", Math.max(7, 16 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-archive-meta-font", Math.max(5.5, 11 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-record-stack-w", (270 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-record-left", (-38 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-right", (-101 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-bottom", (120 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-record-extract-x", (200 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-extract-x", (-230 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-garden-extract-top", (-350 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-record-extract-top", (((900 - 120 - 233) * 0.70) * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-archive-hover-lift", (8 * scale).toFixed(2) + "px");
-        system.style.setProperty("--mini-thumb-size", Math.max(44, 128 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-left", (-34 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-right", (-86 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-bottom", (112 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-extract-x", (205 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-extract-x", (-220 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-extract-top", (-310 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-extract-top", (238 * scale).toFixed(2) + "px");
       }
 
-      function archiveDocTitle(entrySites, isGarden, index) {
-        if (isGarden) {
-          var cn = ["一","二","三","四","五","六","七","八","九","十"];
-          var seq = cn[index] || String(index + 1);
-          return copy.garden + " · 其" + seq + " | " + entrySites[0].name;
-        }
-        if (entrySites.length > 1) {
-          return entrySites.map(function(site) { return copy.record + " | " + site.name; }).join(" / ");
-        }
-        return copy.record + " | " + entrySites[0].name;
+      function tagsForSites(entrySites) {
+        var tags = new Set();
+        entrySites.forEach(function(site) {
+          String(window.siteTagsMapping && window.siteTagsMapping[site.name] || "")
+            .split(",")
+            .map(function(tag) { return tag.trim(); })
+            .filter(Boolean)
+            .forEach(function(tag) { tags.add(tag); });
+        });
+        return Array.from(tags);
       }
 
-      function makeDoc(entry, index, isGarden, total, yJitter, xJitter) {
+      function makeDoc(entry, visualIndex, isGarden) {
         var entrySites = isGarden ? [entry] : entry.sites;
-        var initial = entrySites[0];
         var doc = document.createElement("div");
         doc.className = "ruin-mini-archive-doc archive-doc archive-cut-doc" + (isGarden ? " garden-archive-doc" : "");
         doc.dataset.isGarden = isGarden ? "1" : "0";
-        doc.dataset.zIndex = "1";
-        doc.style.setProperty("--archive-paper-y-jitter", ((yJitter[index] || 0) * slider.scale).toFixed(2) + "px");
-        doc.style.setProperty("--archive-paper-x-jitter", ((xJitter[index] || 0) * slider.scale).toFixed(2) + "px");
-
-        var dates = Array.from(new Set(entrySites.map(function(site) { return site.archiveDate; }).filter(Boolean))).join(" · ");
-        var recorders = Array.from(new Set(entrySites.map(function(site) { return site.recorder || "罗清源"; }))).join(" / ");
-        var coordinates = entrySites.map(ruinMiniArchiveCoord).join(" · ");
-        var thumbName = RUIN_MINI_ARCHIVE_THUMBNAILS[initial.name];
-        var thumbSrc = thumbName
-          ? "https://ruin-archive.site/thumbnails/" + (isGarden ? "garden-128/" : "") + thumbName
-          : "";
-
-        doc.innerHTML =
-          '<div class="ruin-mini-doc-meta">[ ' + escapeHtml(isGarden ? copy.garden : copy.record) + ' ] | ' +
-            escapeHtml(copy.archive) + ': <span>' + escapeHtml(dates || "—") + '</span></div>' +
-          '<div class="ruin-mini-doc-title">' + escapeHtml(archiveDocTitle(entrySites, isGarden, index)) + '</div>' +
-          '<div class="ruin-mini-archive-thumbnail" aria-hidden="true"></div>' +
-          '<div class="ruin-mini-doc-meta ruin-mini-doc-identity">' +
-            escapeHtml(isGarden ? copy.creator + ": 罗清源" : copy.recorder + ": " + recorders) +
-          '</div>' +
-          '<div class="ruin-mini-doc-meta ruin-mini-doc-coordinate">' + escapeHtml(coordinates) + '</div>' +
-          '<a class="ruin-mini-doc-nav" href="https://ruin-archive.site/" target="_blank" rel="noreferrer">' + escapeHtml(copy.nav) + '</a>';
-
-        if (thumbSrc) {
-          doc.classList.add("has-thumbnail");
-          doc.dataset.thumbnailSrc = thumbSrc;
-        }
-
-        if (isGarden) {
-          var positionIndex = (total - 1) - index;
-          doc.style.top = (positionIndex * 32 * slider.scale).toFixed(2) + "px";
-          doc.style.right = (-positionIndex * 4 * slider.scale).toFixed(2) + "px";
-          var z = String(positionIndex);
-          doc.style.zIndex = z;
-          doc.dataset.zIndex = z;
-        }
-
+        doc.dataset.visualIndex = String(visualIndex);
+        doc.dataset.tags = tagsForSites(entrySites).join(",");
+        doc.setAttribute("aria-hidden", "true");
         return doc;
       }
 
-      function mountThumbnail(doc) {
-        if (!doc || !doc.dataset.thumbnailSrc || doc.dataset.thumbnailMounted === "1") return;
-        var host = doc.querySelector(".ruin-mini-archive-thumbnail");
-        if (!host) return;
-        doc.dataset.thumbnailMounted = "1";
-        var img = document.createElement("img");
-        img.src = doc.dataset.thumbnailSrc;
-        img.alt = "";
-        img.loading = "lazy";
-        host.appendChild(img);
-        host.classList.add("has-image");
+      function seededRandom(seed) {
+        var x = seed >>> 0;
+        return function() {
+          x += 0x6D2B79F5;
+          var t = x;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
       }
 
       function applyCut(doc, index, isGarden) {
@@ -2811,31 +2818,36 @@ render();
         var rect = doc.getBoundingClientRect();
         if (rect.width < 8 || rect.height < 8) return;
 
-        var scale = slider.scale;
-        var seed = hashString((isGarden ? "garden-" : "record-") + index + "-v181");
-        var tl = (4 + (seed % 7)) * scale;
-        var tr = (4 + ((seed >>> 5) % 7)) * scale;
         var w = rect.width;
         var h = rect.height;
+        var rand = seededRandom(hashString((isGarden ? "mini-garden-" : "mini-record-") + index + "-cut-v2"));
+
+        // Larger geometric corner cuts than the prior pass, with four corners
+        // independently authored so the sheets do not read as one repeated icon.
+        var tl = (10 + rand() * 24) * scale;
+        var tr = (8 + rand() * 26) * scale;
+        var br = (rand() < 0.44 ? 7 + rand() * 20 : 0) * scale;
+        var bl = (rand() < 0.38 ? 7 + rand() * 18 : 0) * scale;
+
+        tl = Math.min(tl, w * 0.24, h * 0.15);
+        tr = Math.min(tr, w * 0.24, h * 0.15);
+        br = Math.min(br, w * 0.20, h * 0.12);
+        bl = Math.min(bl, w * 0.20, h * 0.12);
+
         var points = [
-          [tl,0],[w-tr,0],[w,tr],[w,h],[0,h],[0,tl]
+          [tl,0],
+          [w-tr,0],
+          [w,tr],
+          [w,h-br],
+          [w-br,h],
+          [bl,h],
+          [0,h-bl],
+          [0,tl]
         ];
 
-        // Port the source principle that some damage changes the REAL paper
-        // boundary, not merely a decorative line drawn over a rectangle.
-        if (index % 9 === 4) {
-          var mid = w * (0.42 + ((seed >>> 9) % 12) / 100);
-          var chipW = Math.max(5, 10 * scale);
-          var chipD = Math.max(2, 4.5 * scale);
-          points = [[tl,0],[mid-chipW,0],[mid,chipD],[mid+chipW,0],[w-tr,0],[w,tr],[w,h],[0,h],[0,tl]];
-        } else if (index % 11 === 6) {
-          var sideY = h * 0.32;
-          var sideH = Math.max(7, 15 * scale);
-          var sideD = Math.max(2, 4 * scale);
-          points = [[tl,0],[w-tr,0],[w,tr],[w,sideY-sideH],[w-sideD,sideY],[w,sideY+sideH],[w,h],[0,h],[0,tl]];
-        }
-
-        var polygon = points.map(function(p) { return p[0].toFixed(2) + "px " + p[1].toFixed(2) + "px"; }).join(", ");
+        var polygon = points.map(function(p) {
+          return p[0].toFixed(2) + "px " + p[1].toFixed(2) + "px";
+        }).join(", ");
         var clip = "polygon(" + polygon + ")";
         doc.style.clipPath = clip;
         doc.style.webkitClipPath = clip;
@@ -2843,278 +2855,212 @@ render();
 
         var oldOutline = doc.querySelector(":scope > .ruin-mini-archive-cut-outline");
         if (oldOutline) oldOutline.remove();
+
         var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("class", "ruin-mini-archive-cut-outline");
         svg.setAttribute("viewBox", "0 0 " + w + " " + h);
         svg.setAttribute("preserveAspectRatio", "none");
+
         var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        var d = points.map(function(p, pointIndex) {
+        path.setAttribute("d", points.map(function(p, pointIndex) {
           return (pointIndex ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2);
-        }).join(" ") + " Z";
-        path.setAttribute("d", d);
+        }).join(" ") + " Z");
         svg.appendChild(path);
         doc.insertBefore(svg, doc.firstChild);
       }
 
-      function flatGap(available, count) {
-        if (count <= 0) return sourceFlatMaxGap;
-        if (!Number.isFinite(available) || available <= 0) return sourceFlatMinGap;
-        return Math.max(sourceFlatMinGap, Math.min(sourceFlatMaxGap, available / count));
-      }
-
-      function layoutRecordStack() {
-        if (!slider.docs.length || !system.isConnected) return;
-        var scale = currentScale();
-        slider.scale = scale;
+      function layoutStacks() {
+        if (!system.isConnected) return;
         setGeometryVariables();
 
-        var total = slider.total;
-        var start = slider.windowStart;
-        var end = slider.windowEnd;
-        var activeCount = Math.max(0, end - start + 1);
-        var viewportHeightSource = system.clientHeight / scale;
-        var activeHeight = Math.max(0, activeCount - 1) * sourceFanGapY;
-        var travelled = Math.max(0, slider.initialWindowEnd - end);
-        var baseTop = Math.max(205, Math.min(300, viewportHeightSource * 0.285));
-        var bottomReserve = 72;
-        var maxActiveTop = Math.max(150, viewportHeightSource - bottomReserve - activeHeight - 72);
-        var activeTop = Math.min(maxActiveTop, baseTop + travelled * sourceShiftY);
-        var activeBottom = activeTop + activeHeight;
+        var recordDocs = Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc"));
+        var recordBaseTop = 248;
+        var recordGapY = 42;
+        var recordGapX = 5;
 
-        var topCount = Math.max(0, total - 1 - end);
-        var bottomCount = Math.max(0, start);
-        var topMargin = 18;
-        var bottomLimit = viewportHeightSource - bottomReserve;
-        var topGap = flatGap(activeTop - topMargin, topCount);
-        var bottomGap = flatGap(bottomLimit - activeBottom, bottomCount);
-        var bottomFanX = -Math.max(0, activeCount - 1) * sourceFanGapX;
-
-        slider.activeTop = activeTop * scale;
-        slider.activeBottom = activeBottom * scale;
-        slider.topExtent = (topCount ? activeTop - topCount * topGap : activeTop) * scale;
-        slider.bottomExtent = (bottomCount ? activeBottom + bottomCount * bottomGap : activeBottom) * scale;
-
-        slider.docs.forEach(function(doc, index) {
-          var y = activeTop;
-          var x = 0;
-          var z = 1000;
-          var mode = "stack-fan";
-
-          if (index > end) {
-            var topDistance = index - end;
-            y = activeTop - topDistance * topGap;
-            x = 0;
-            z = 900 + Math.max(0, topCount - topDistance);
-            mode = "stack-flat-top";
-          } else if (index < start) {
-            var bottomDistance = start - index;
-            y = activeBottom + bottomDistance * bottomGap;
-            x = bottomFanX;
-            z = 1000 + activeCount + bottomDistance;
-            mode = "stack-flat-bottom";
-          } else {
-            var rank = end - index;
-            y = activeTop + rank * sourceFanGapY;
-            x = -rank * sourceFanGapX;
-            z = 1000 + rank;
-          }
-
-          doc.style.setProperty("--stack-x", (x * scale).toFixed(2) + "px");
-          doc.style.setProperty("--stack-y", (y * scale).toFixed(2) + "px");
-          doc.classList.remove("stack-fan","stack-flat-top","stack-flat-bottom");
-          doc.classList.add(mode);
-          doc.dataset.stackMode = mode;
-          doc.dataset.zIndex = String(z);
-          if (slider.extractedDoc !== doc) doc.style.zIndex = String(z);
+        recordDocs.forEach(function(doc, index) {
+          var rank = (recordDocs.length - 1) - index;
+          var x = -rank * recordGapX * scale;
+          var y = (recordBaseTop + rank * recordGapY) * scale;
+          var jitterX = (((index * 17) % 5) - 2) * 0.72 * scale;
+          var jitterY = (((index * 11) % 5) - 2) * 0.62 * scale;
+          doc.style.setProperty("--stack-x", (x + jitterX).toFixed(2) + "px");
+          doc.style.setProperty("--stack-y", (y + jitterY).toFixed(2) + "px");
+          doc.style.zIndex = String(130 + rank);
+          doc.dataset.zIndex = String(130 + rank);
+          applyCut(doc,index,false);
         });
-      }
 
-      function stopHover() {
-        slider.hoverDirection = 0;
-        slider.hoverToken += 1;
-        if (slider.hoverTimer) {
-          clearTimeout(slider.hoverTimer);
-          slider.hoverTimer = null;
-        }
-      }
-
-      function shiftWindow(direction) {
-        if (!slider.docs.length || slider.extractedDoc) return false;
-        if (direction < 0) {
-          if (slider.windowStart <= 0) return false;
-          slider.windowStart -= 1;
-          slider.windowEnd -= 1;
-        } else if (direction > 0) {
-          if (slider.windowEnd >= slider.total - 1) return false;
-          slider.windowStart += 1;
-          slider.windowEnd += 1;
-        } else {
-          return false;
-        }
-        layoutRecordStack();
-        return true;
-      }
-
-      function setHoverDirection(direction) {
-        if (slider.hoverDirection === direction) return;
-        stopHover();
-        slider.hoverDirection = direction;
-        if (!direction) return;
-        var hoverToken = ++slider.hoverToken;
-        shiftWindow(direction);
-        var tick = function() {
-          if (hoverToken !== slider.hoverToken || slider.hoverDirection !== direction) return;
-          if (!shiftWindow(direction)) { stopHover(); return; }
-          slider.hoverTimer = setTimeout(tick, sourceStepMs);
-        };
-        slider.hoverTimer = setTimeout(tick, sourceStepMs);
-      }
-
-      function onPointerMove(event) {
-        if (window.innerWidth <= 760 || slider.extractedDoc) { stopHover(); return; }
-        var rect = system.getBoundingClientRect();
-        var x = event.clientX - rect.left;
-        var y = event.clientY - rect.top;
-        var scale = slider.scale;
-        if (x < 0 || x > 285 * scale || y < slider.topExtent - 38 * scale || y > slider.bottomExtent + 38 * scale) {
-          stopHover();
-          return;
-        }
-        if (slider.windowEnd < slider.total - 1 && y <= slider.activeTop + sourceHoverEdge * scale) {
-          setHoverDirection(1);
-          return;
-        }
-        if (slider.windowStart > 0 && y >= slider.activeBottom - sourceHoverEdge * scale) {
-          setHoverDirection(-1);
-          return;
-        }
-        stopHover();
-      }
-
-      function finishRetraction(doc) {
-        doc.classList.remove("retracting","extracted");
-        doc.style.zIndex = doc.dataset.zIndex || "";
-        if (slider.extractedDoc === doc) slider.extractedDoc = null;
+        var gardenDocs = Array.from(gardenStack.querySelectorAll(".ruin-mini-archive-doc"));
+        gardenDocs.forEach(function(doc, index) {
+          var rank = (gardenDocs.length - 1) - index;
+          var top = rank * 51 * scale;
+          var right = -rank * 6 * scale;
+          var jitterX = (((index * 13) % 5) - 2) * 0.78 * scale;
+          var jitterY = (((index * 7) % 5) - 2) * 0.64 * scale;
+          doc.style.top = (top + jitterY).toFixed(2) + "px";
+          doc.style.right = (right + jitterX).toFixed(2) + "px";
+          doc.style.zIndex = String(150 + rank);
+          doc.dataset.zIndex = String(150 + rank);
+          applyCut(doc,index,true);
+        });
       }
 
       function retractDoc(doc) {
         if (!doc || !doc.classList.contains("extracted") || doc.classList.contains("retracting")) return;
-        var isRecord = doc.closest("#ruin-mini-stack-record");
+        var isRecord = !!doc.closest("#ruin-mini-stack-record");
         if (!isRecord) {
           doc.classList.remove("extracted");
           doc.style.zIndex = doc.dataset.zIndex || "";
           return;
         }
         doc.classList.add("retracting");
-        var ended = false;
+        var done = false;
         var finish = function() {
-          if (ended) return;
-          ended = true;
-          doc.removeEventListener("transitionend", onEnd);
-          finishRetraction(doc);
+          if (done) return;
+          done = true;
+          doc.classList.remove("retracting","extracted");
+          doc.style.zIndex = doc.dataset.zIndex || "";
         };
         var onEnd = function(event) {
           if (event.target !== doc || (event.propertyName !== "transform" && event.propertyName !== "top")) return;
+          doc.removeEventListener("transitionend",onEnd);
           finish();
         };
-        doc.addEventListener("transitionend", onEnd);
-        setTimeout(finish, 620);
+        doc.addEventListener("transitionend",onEnd);
+        cleanupTimers.push(setTimeout(function() {
+          doc.removeEventListener("transitionend",onEnd);
+          finish();
+        },620));
       }
 
-      function extractDoc(doc) {
+      function toggleExtract(doc) {
         if (!doc) return;
         if (doc.classList.contains("extracted")) {
           retractDoc(doc);
           return;
         }
-
         system.querySelectorAll(".ruin-mini-archive-doc.extracted").forEach(function(other) {
           if (other !== doc) retractDoc(other);
         });
-
-        mountThumbnail(doc);
         doc.classList.remove("retracting");
         doc.classList.add("extracted");
-        doc.style.zIndex = doc.dataset.zIndex || doc.style.zIndex;
-        if (doc.closest("#ruin-mini-stack-record")) slider.extractedDoc = doc;
-        stopHover();
+        doc.style.zIndex = "260";
       }
 
       recordStack.innerHTML = "";
       gardenStack.innerHTML = "";
-      setGeometryVariables();
 
-      gardenSites.forEach(function(site, index) {
-        gardenStack.appendChild(makeDoc(site, index, true, gardenSites.length, gardenYJitter, gardenXJitter));
-      });
-      recordEntries.forEach(function(entry, index) {
-        recordStack.appendChild(makeDoc(entry, index, false, recordEntries.length, recordYJitter, recordXJitter));
-      });
-
-      slider.docs = Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc"));
-      slider.total = slider.docs.length;
-      slider.windowEnd = Math.max(-1, slider.total - 1);
-      slider.windowStart = Math.max(0, slider.windowEnd - sourceFanCount + 1);
-      slider.initialWindowEnd = slider.windowEnd;
-      recordStack.classList.toggle("sliding-record-stack", slider.total > sourceFanCount);
-
-      function wireDoc(doc, index, isGarden) {
-        doc.addEventListener("click", function(event) {
-          if (event.target.closest(".ruin-mini-doc-nav")) return;
+      recordEntries.forEach(function(entry,index) {
+        var doc = makeDoc(entry,index,false);
+        doc.addEventListener("click",function(event) {
           event.preventDefault();
           event.stopPropagation();
-          extractDoc(doc);
+          toggleExtract(doc);
         });
-        applyCut(doc, index, isGarden);
+        recordStack.appendChild(doc);
+      });
+
+      gardenSites.forEach(function(site,index) {
+        var doc = makeDoc(site,index,true);
+        doc.addEventListener("click",function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          toggleExtract(doc);
+        });
+        gardenStack.appendChild(doc);
+      });
+
+      layoutStacks();
+
+      // Miniature port of the source index-drawer: click the trapezoid handle,
+      // slide the slab upward, and sink/restore the archive stacks around it.
+      var surfaceTrigger = indexDrawer.querySelector(".ruin-mini-index-surface-trigger");
+      var drawerOpenTimer = 0;
+
+      function setDrawerOpen(open) {
+        indexDrawer.classList.toggle("open",open);
+        if (surfaceTrigger) surfaceTrigger.setAttribute("aria-expanded",open ? "true" : "false");
+
+        window.clearTimeout(drawerOpenTimer);
+        if (open) {
+          recordStack.classList.add("sink-down");
+          gardenStack.classList.add("sink-down");
+          drawerOpenTimer = window.setTimeout(function() {
+            recordStack.classList.add("elevated-z");
+            gardenStack.classList.add("elevated-z");
+            recordStack.classList.remove("sink-down");
+            gardenStack.classList.remove("sink-down");
+          },400);
+        } else {
+          recordStack.classList.add("sink-down");
+          gardenStack.classList.add("sink-down");
+          drawerOpenTimer = window.setTimeout(function() {
+            recordStack.classList.remove("elevated-z","sink-down");
+            gardenStack.classList.remove("elevated-z","sink-down");
+          },400);
+        }
       }
 
-      Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc")).forEach(function(doc, index) {
-        wireDoc(doc, index, false);
-      });
-      Array.from(gardenStack.querySelectorAll(".ruin-mini-archive-doc")).forEach(function(doc, index) {
-        wireDoc(doc, index, true);
+      function applyIndexFilter() {
+        var active = Array.from(selectedTags);
+        system.querySelectorAll(".ruin-mini-archive-doc").forEach(function(doc) {
+          var docTags = String(doc.dataset.tags || "").split(",").filter(Boolean);
+          var match = !active.length || active.every(function(tag) { return docTags.indexOf(tag) !== -1; });
+          doc.classList.toggle("index-filter-muted",!match);
+        });
+      }
+
+      if (surfaceTrigger) {
+        surfaceTrigger.addEventListener("click",function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          setDrawerOpen(!indexDrawer.classList.contains("open"));
+        });
+      }
+
+      indexDrawer.querySelectorAll(".ruin-mini-index-tag").forEach(function(button) {
+        button.addEventListener("click",function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          var tag = button.dataset.tag;
+          if (selectedTags.has(tag)) selectedTags.delete(tag);
+          else selectedTags.add(tag);
+          button.classList.toggle("active",selectedTags.has(tag));
+          applyIndexFilter();
+        });
       });
 
-      layoutRecordStack();
+      var onOutside = function(event) {
+        if (!system.isConnected) return;
+        if (indexDrawer.classList.contains("open") && !indexDrawer.contains(event.target)) {
+          setDrawerOpen(false);
+        }
+        if (!system.contains(event.target)) {
+          system.querySelectorAll(".ruin-mini-archive-doc.extracted").forEach(retractDoc);
+        }
+      };
 
       var resizeRaf = 0;
       var onResize = function() {
         if (resizeRaf) cancelAnimationFrame(resizeRaf);
         resizeRaf = requestAnimationFrame(function() {
           resizeRaf = 0;
-          if (!system.isConnected || token !== ruinMiniArchiveMountToken) return;
-          setGeometryVariables();
-          var gardenDocs = Array.from(gardenStack.querySelectorAll(".ruin-mini-archive-doc"));
-          gardenDocs.forEach(function(doc, index) {
-            var positionIndex = (gardenDocs.length - 1) - index;
-            doc.style.top = (positionIndex * 32 * slider.scale).toFixed(2) + "px";
-            doc.style.right = (-positionIndex * 4 * slider.scale).toFixed(2) + "px";
-            applyCut(doc, index, true);
-          });
-          slider.docs.forEach(function(doc, index) { applyCut(doc, index, false); });
-          layoutRecordStack();
+          if (token !== ruinMiniArchiveMountToken || !system.isConnected) return;
+          layoutStacks();
         });
       };
 
-      var onDocumentPointer = function(event) {
-        if (!system.isConnected) return;
-        if (!system.contains(event.target)) {
-          system.querySelectorAll(".ruin-mini-archive-doc.extracted").forEach(retractDoc);
-        }
-      };
-
-      system.addEventListener("pointermove", onPointerMove, { passive: true });
-      system.addEventListener("pointerleave", stopHover);
-      document.addEventListener("pointerdown", onDocumentPointer, true);
-      window.addEventListener("resize", onResize, { passive: true });
+      document.addEventListener("pointerdown",onOutside,true);
+      window.addEventListener("resize",onResize,{passive:true});
 
       ruinMiniArchiveCleanup = function() {
-        stopHover();
+        window.clearTimeout(drawerOpenTimer);
+        cleanupTimers.forEach(window.clearTimeout);
+        cleanupTimers = [];
         if (resizeRaf) cancelAnimationFrame(resizeRaf);
-        system.removeEventListener("pointermove", onPointerMove);
-        system.removeEventListener("pointerleave", stopHover);
-        document.removeEventListener("pointerdown", onDocumentPointer, true);
-        window.removeEventListener("resize", onResize);
+        document.removeEventListener("pointerdown",onOutside,true);
+        window.removeEventListener("resize",onResize);
       };
     });
   }
