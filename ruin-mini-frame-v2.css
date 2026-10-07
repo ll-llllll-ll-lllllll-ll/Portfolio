@@ -1,7 +1,7 @@
-/* ===== Ruin Archive miniature frame v4.1 — clean transparent frame ===== */
+/* ===== Ruin Archive miniature frame v4.2 — paired atlas / archive frames ===== */
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-section {
-  width: min(43.2vw, 588px);
+  width: min(50vw, 700px);
   margin: 0 auto clamp(92px, 13vh, 150px);
   padding: 0;
 }
@@ -9,9 +9,9 @@
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
   /* Clean rebuild: the frame is only a transparent outlined construction.
      No cracks, chips, filled material or random fracture geometry. */
-  --ruin-mini-frame-top: 3.6%;
-  --ruin-mini-frame-bottom: 6.24%;
-  --ruin-mini-frame-side: 6.9%;
+  --ruin-mini-frame-top: 5%;
+  --ruin-mini-frame-bottom: 8%;
+  --ruin-mini-frame-side: 8.2%;
   position: relative;
   width: 100%;
   height: auto;
@@ -81,7 +81,7 @@
 .room-view[data-room="ruin-atlas"] .ruin-mini-frame-line {
   fill: none;
   stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
-  stroke-width: .9px;
+  stroke-width: 1.08px;
   vector-effect: non-scaling-stroke;
   stroke-linecap: square;
   stroke-linejoin: miter;
@@ -142,7 +142,7 @@
 
 @media (max-width: 900px) {
   .room-view[data-room="ruin-atlas"] .ruin-mini-section {
-    width: min(51.6vw, 456px);
+    width: min(60vw, 560px);
   }
 }
 
@@ -153,9 +153,9 @@
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-    --ruin-mini-frame-top: 3.9%;
-    --ruin-mini-frame-bottom: 6.3%;
-    --ruin-mini-frame-side: 5.1%;
+    --ruin-mini-frame-top: 4.8%;
+    --ruin-mini-frame-bottom: 7.2%;
+    --ruin-mini-frame-side: 6.2%;
     aspect-ratio: 1.06 / 1;
   }
 
@@ -182,5 +182,190 @@
 @media (prefers-reduced-motion: reduce) {
   .room-view[data-room="ruin-atlas"] .ruin-mini-frame-line {
     transition: none !important;
+  }
+}
+
+
+/* ===== Paired Archive cabinet miniature ===== */
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section {
+  margin-top: clamp(62px, 9vh, 98px);
+  margin-bottom: clamp(26px, 4vh, 48px);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-shell {
+  overflow: visible;
+  background: transparent;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-stage {
+  position: absolute;
+  left: var(--ruin-mini-frame-side);
+  right: var(--ruin-mini-frame-side);
+  top: var(--ruin-mini-frame-top);
+  bottom: var(--ruin-mini-frame-bottom);
+  z-index: 2;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(255,255,251,.24), rgba(255,255,251,.14));
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-stack {
+  position: absolute;
+  inset: 5% 4% 4%;
+  overflow: visible;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: var(--doc-z);
+  width: 34%;
+  height: 76%;
+  box-sizing: border-box;
+  padding: clamp(8px, 1.1vw, 14px);
+  overflow: hidden;
+  border: 1px solid rgba(23,24,19,.38);
+  background: rgba(252,252,247,.56);
+  color: rgba(23,24,19,.68);
+  box-shadow:
+    0 -1px 2px rgba(23,24,19,.035),
+    3px 5px 12px rgba(23,24,19,.045);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  transform:
+    translate(-50%, -50%)
+    translate(var(--doc-x), var(--doc-y))
+    rotate(var(--doc-r));
+  transform-origin: 50% 92%;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.cut-a {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.cut-b {
+  clip-path: polygon(13px 0, 100% 0, 100% 100%, 0 100%, 0 13px);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.cut-c {
+  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 11px 100%, 0 calc(100% - 11px));
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-code,
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta,
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(5px, .54vw, 7px);
+  line-height: 1.4;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-code {
+  margin-bottom: 14%;
+  opacity: .42;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-title {
+  display: block;
+  max-width: 90%;
+  min-height: 2.6em;
+  font-family: var(--serif);
+  font-size: clamp(7px, .8vw, 10px);
+  line-height: 1.35;
+  letter-spacing: .04em;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-rule {
+  display: block;
+  width: 54%;
+  height: 1px;
+  margin: 16% 0 13%;
+  background: rgba(23,24,19,.22);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta {
+  opacity: .56;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
+  position: absolute;
+  left: clamp(8px, 1.1vw, 14px);
+  bottom: clamp(8px, 1.1vw, 14px);
+  opacity: .36;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame-lines,
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-breaks {
+  fill: none;
+  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame-lines {
+  stroke-width: 1.08px;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-breaks {
+  stroke-width: .92px;
+  opacity: .9;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
+  margin-top: 14px;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section + .room-note {
+  padding-top: clamp(30px, 4.5vh, 52px);
+}
+
+@media (max-width: 760px) {
+  .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section {
+    margin-top: 56px;
+    margin-bottom: 22px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc {
+    width: 38%;
+    height: 72%;
+    padding: 8px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-code,
+  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta,
+  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
+    font-size: 5px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-title {
+    font-size: 7px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
+    left: 8px;
+    bottom: 8px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
+    margin-top: 12px;
   }
 }
