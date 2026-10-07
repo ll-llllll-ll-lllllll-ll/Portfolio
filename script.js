@@ -2953,6 +2953,7 @@ render();
         var maskUrl='url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(maskSvg)+'")';
 
         layer.replaceChildren(svg);
+        indexDrawer.style.setProperty("--mini-index-drawer-height",h.toFixed(2)+"px");
         indexDrawer.style.setProperty("--mini-index-stone-mask",maskUrl);
         indexDrawer.style.setProperty(
           "--mini-index-drawer-shell-clip",
