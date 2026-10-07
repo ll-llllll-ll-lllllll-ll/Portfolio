@@ -81,13 +81,13 @@ const ambientMeta = {
 
 const calendarIntro = {
   zh: [
-    "一册记录无法被安排之物的日历：天空、水、天气与光。每天只把目光交给一种景象。"
+    "一册记录无法被安排之物的日历：天空、水、天气与光。它不把时间切成星期，也不记录约会，只把每一天交给海、湖、云或天空；有时同一种景象会连续停留几日，像天气本身一样，不平均，也不解释。首页每天只留下约二十秒的风景，作为信息与判断之间的一枚纯净锚点——明天再来，眼前也许已经换了一面。"
   ],
   en: [
-    "A calendar for things that cannot be scheduled: sky, water, weather and light. Each day is given to a single view."
+    "A calendar for things that cannot be scheduled: sky, water, weather and light. It does not divide time into weeks or keep appointments; it simply gives each day to the sea, lake, clouds or sky. Sometimes one view lingers for several days, like weather itself—uneven and unexplained. Each day the homepage keeps only about twenty seconds of landscape, a quiet anchor among information and judgement. Come back tomorrow and the view may already have changed."
   ],
   ja: [
-    "予定できないもののためのカレンダー——空、水、天気、光。毎日、ひとつの景色だけに目を預ける。"
+    "予定できないもののためのカレンダー——空、水、天気、光。時間を一週間ごとに切り分けず、予定も記さず、ただ一日を海、湖、雲、空のどれかへ渡していく。同じ景色が数日続くこともある。天気そのもののように、均等でもなく、説明もされない。ホームには毎日およそ二十秒の風景だけが残り、情報や判断のあいだに小さな純粋な錨を下ろす。明日また来れば、目の前の景色はもう変わっているかもしれない。"
   ]
 };
 
@@ -441,9 +441,83 @@ function hashString(value) {
   return hash >>> 0;
 }
 
+var ambientMonthCache = {};
+
+function ambientSeededRandom(seed) {
+  var value = seed >>> 0;
+  return function() {
+    value = (value + 0x6D2B79F5) | 0;
+    var t = value;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function ambientWeightedChoice(types, weights, random) {
+  var total = weights.reduce(function(sum, weight) { return sum + weight; }, 0);
+  var cursor = random() * total;
+  for (var i = 0; i < types.length; i += 1) {
+    cursor -= weights[i];
+    if (cursor <= 0) return types[i];
+  }
+  return types[types.length - 1];
+}
+
+function ambientRunLength(random) {
+  var roll = random();
+  if (roll < 0.43) return 1;
+  if (roll < 0.73) return 2;
+  if (roll < 0.89) return 3;
+  if (roll < 0.97) return 4;
+  return 5;
+}
+
+function ambientMonthSchedule(year, month) {
+  var monthKey = year + "-" + pad(month + 1);
+  if (ambientMonthCache[monthKey]) return ambientMonthCache[monthKey];
+
+  var random = ambientSeededRandom(hashString(monthKey + ":quiet-calendar-v3"));
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  /* Each month has its own uneven climate: one or two views may occupy far
+     more days than the others instead of forcing a 25/25/25/25 split. */
+  var weights = AMBIENT_TYPES.map(function() {
+    return 0.48 + random() * 1.18;
+  });
+
+  var dominant = Math.floor(random() * AMBIENT_TYPES.length);
+  weights[dominant] *= 1.35 + random() * 0.55;
+
+  if (random() < 0.58) {
+    var secondary = (dominant + 1 + Math.floor(random() * (AMBIENT_TYPES.length - 1))) % AMBIENT_TYPES.length;
+    weights[secondary] *= 1.08 + random() * 0.28;
+  }
+
+  var schedule = [];
+  var previous = null;
+
+  while (schedule.length < daysInMonth) {
+    var type = ambientWeightedChoice(AMBIENT_TYPES, weights, random);
+
+    /* Adjacent weather fronts are allowed to repeat the same type, so two
+       generated runs may merge into a longer sequence by chance. */
+    if (previous && random() < 0.15) type = previous;
+
+    var run = ambientRunLength(random);
+    for (var i = 0; i < run && schedule.length < daysInMonth; i += 1) {
+      schedule.push(type);
+    }
+    previous = type;
+  }
+
+  ambientMonthCache[monthKey] = schedule;
+  return schedule;
+}
+
 function ambientTypeForDate(date) {
-  var seed = hashString(dateKey(date) + ":quiet-calendar-v1");
-  return AMBIENT_TYPES[seed % AMBIENT_TYPES.length];
+  var schedule = ambientMonthSchedule(date.getFullYear(), date.getMonth());
+  return schedule[Math.max(0, date.getDate() - 1)] || AMBIENT_TYPES[0];
 }
 
 function ambientEntryForDate(date, type) {
