@@ -9,9 +9,9 @@
 .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
   /* Clean rebuild: the frame is only a transparent outlined construction.
      No cracks, chips, filled material or random fracture geometry. */
-  --ruin-mini-frame-top: 5%;
-  --ruin-mini-frame-bottom: 8%;
-  --ruin-mini-frame-side: 8.2%;
+  --ruin-mini-frame-top: 7.8%;
+  --ruin-mini-frame-bottom: 11.5%;
+  --ruin-mini-frame-side: 15%;
   position: relative;
   width: 100%;
   height: auto;
@@ -153,9 +153,9 @@
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-    --ruin-mini-frame-top: 4.8%;
-    --ruin-mini-frame-bottom: 7.2%;
-    --ruin-mini-frame-side: 6.2%;
+    --ruin-mini-frame-top: 6.2%;
+    --ruin-mini-frame-bottom: 9%;
+    --ruin-mini-frame-side: 10.5%;
     aspect-ratio: 1.06 / 1;
   }
 
@@ -186,121 +186,106 @@
 }
 
 
-/* ===== Paired Archive cabinet miniature ===== */
+/* ===== Paired Archive cabinet miniature =====
+   Scaled directly from ruin-archive's archive-doc rail logic:
+   left = record stack (18px Y / 3px X rhythm);
+   right = garden stack (32px Y / 4px X rhythm).
+   The mini version preserves those ratios while shrinking them to this frame.
+*/
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section {
   margin-top: clamp(62px, 9vh, 98px);
   margin-bottom: clamp(26px, 4vh, 48px);
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-shell {
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-stage {
   position: absolute;
-  left: var(--ruin-mini-frame-side);
-  right: var(--ruin-mini-frame-side);
-  top: var(--ruin-mini-frame-top);
-  bottom: var(--ruin-mini-frame-bottom);
+  inset: 1px;
   z-index: 2;
   overflow: hidden;
-  background:
-    linear-gradient(rgba(255,255,251,.24), rgba(255,255,251,.14));
+  background: rgba(244,243,238,.96);
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-stack {
   position: absolute;
-  inset: 5% 4% 4%;
+  inset: 0;
   overflow: visible;
+  pointer-events: none;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc {
   position: absolute;
-  left: 50%;
-  top: 50%;
   z-index: var(--doc-z);
-  width: 34%;
-  height: 76%;
   box-sizing: border-box;
-  padding: clamp(8px, 1.1vw, 14px);
-  overflow: hidden;
-  border: 1px solid rgba(23,24,19,.38);
-  background: rgba(252,252,247,.56);
+  background: rgba(244,243,238,.985);
   color: rgba(23,24,19,.68);
-  box-shadow:
-    0 -1px 2px rgba(23,24,19,.035),
-    3px 5px 12px rgba(23,24,19,.045);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+  filter: none;
+  transform-origin: center bottom;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc path {
+  fill: rgba(244,243,238,.985);
+  stroke: var(--ruin-mini-line-strong, rgba(23,24,19,.70));
+  stroke-width: 1.05px;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+/* Left rail: miniature of #stack-record.
+   Original stack advances 18px vertically and 3px horizontally.
+   Here that rhythm is reduced proportionally and the sheets stay mostly
+   outside the inner opening, exactly like the full archive interface. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-record-doc {
+  left: -10.8%;
+  top: calc(29% + (var(--doc-i) * 5.65%) + var(--doc-jy));
+  width: 28.5%;
+  height: 76%;
   transform:
-    translate(-50%, -50%)
-    translate(var(--doc-x), var(--doc-y))
-    rotate(var(--doc-r));
-  transform-origin: 50% 92%;
+    translateX(calc((var(--doc-i) * 1.02%) + var(--doc-jx)));
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.cut-a {
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+/* Right rail: miniature of #stack-garden.
+   The source stack uses the looser 32px / 4px garden rhythm. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-garden-doc {
+  right: -10.5%;
+  top: calc(58% + (var(--doc-i) * 6.55%) + var(--doc-jy));
+  width: 27.5%;
+  height: 60%;
+  transform:
+    translateX(calc((var(--doc-i) * -1.2%) + var(--doc-jx)));
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.cut-b {
-  clip-path: polygon(13px 0, 100% 0, 100% 100%, 0 100%, 0 13px);
+/* Sparse archive-paper misregistration: the full site only displaces a few
+   sheets, rather than rotating the whole stack into a decorative fan. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-record-doc:nth-child(3n+2),
+.room-view[data-room="ruin-atlas"] .ruin-mini-garden-doc:nth-child(3n+1) {
+  transform:
+    translateX(calc((var(--doc-i) * 1.02%) + var(--doc-jx)))
+    translateY(1px);
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.cut-c {
-  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 11px 100%, 0 calc(100% - 11px));
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-code,
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta,
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
-  display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: clamp(5px, .54vw, 7px);
-  line-height: 1.4;
-  letter-spacing: .08em;
-  white-space: nowrap;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-code {
-  margin-bottom: 14%;
-  opacity: .42;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-title {
-  display: block;
-  max-width: 90%;
-  min-height: 2.6em;
-  font-family: var(--serif);
-  font-size: clamp(7px, .8vw, 10px);
-  line-height: 1.35;
-  letter-spacing: .04em;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-rule {
-  display: block;
-  width: 54%;
-  height: 1px;
-  margin: 16% 0 13%;
-  background: rgba(23,24,19,.22);
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta {
-  opacity: .56;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
-  position: absolute;
-  left: clamp(8px, 1.1vw, 14px);
-  bottom: clamp(8px, 1.1vw, 14px);
-  opacity: .36;
+.room-view[data-room="ruin-atlas"] .ruin-mini-garden-doc:nth-child(3n+1) {
+  transform:
+    translateX(calc((var(--doc-i) * -1.2%) + var(--doc-jx)))
+    translateY(-1px);
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame {
   position: absolute;
   inset: 0;
-  z-index: 18;
+  z-index: 90;
   overflow: visible;
   pointer-events: none;
 }
@@ -315,19 +300,19 @@
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame-lines,
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-breaks {
   fill: none;
-  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
+  stroke: var(--ruin-mini-line-strong, rgba(23,24,19,.72));
   vector-effect: non-scaling-stroke;
   stroke-linecap: square;
   stroke-linejoin: miter;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame-lines {
-  stroke-width: 1.08px;
+  stroke-width: 1.12px;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-breaks {
-  stroke-width: .92px;
-  opacity: .9;
+  stroke-width: .9px;
+  opacity: .86;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
@@ -344,25 +329,18 @@
     margin-bottom: 22px;
   }
 
-  .room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc {
-    width: 38%;
-    height: 72%;
-    padding: 8px;
+  .room-view[data-room="ruin-atlas"] .ruin-mini-record-doc {
+    left: -13%;
+    top: calc(30% + (var(--doc-i) * 5.9%) + var(--doc-jy));
+    width: 31%;
+    height: 75%;
   }
 
-  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-code,
-  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta,
-  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
-    font-size: 5px;
-  }
-
-  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-title {
-    font-size: 7px;
-  }
-
-  .room-view[data-room="ruin-atlas"] .ruin-mini-doc-coord {
-    left: 8px;
-    bottom: 8px;
+  .room-view[data-room="ruin-atlas"] .ruin-mini-garden-doc {
+    right: -12%;
+    top: calc(58% + (var(--doc-i) * 6.8%) + var(--doc-jy));
+    width: 30%;
+    height: 61%;
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
