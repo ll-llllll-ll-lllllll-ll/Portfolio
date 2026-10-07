@@ -1999,17 +1999,9 @@ render();
       worldPane.style.zIndex = "210";
       worldPane.style.pointerEvents = "none";
 
-      /* Match ruin-archive.site: markers are plain solid divIcon dots, never
-         outlined rings. Keep them on a dedicated pane so reader-tone filters
-         apply to the SVG atlas only, not to the markers. */
-      map.createPane("ruinMiniMarkerPane");
-      var markerPane = map.getPane("ruinMiniMarkerPane");
-      markerPane.style.zIndex = "650";
-      markerPane.style.pointerEvents = "auto";
-      markerPane.style.setProperty("filter", "none", "important");
-      markerPane.style.setProperty("opacity", "1", "important");
-      markerPane.style.setProperty("mix-blend-mode", "normal", "important");
-
+      /* Markers intentionally stay on Leaflet's native markerPane, exactly as
+         on ruin-archive.site. The atlas SVG alone lives in the filtered world
+         pane, so marker coordinates and transforms remain Leaflet-native. */
       L.imageOverlay(
         "https://ruin-archive.site/assets/ruin-map.svg?v=20261003",
         bounds,
@@ -2035,8 +2027,7 @@ render();
           ruinMiniGeoToSvg(site.lat, site.lng),
           {
             icon: icon,
-            keyboard: false,
-            pane: "ruinMiniMarkerPane"
+            keyboard: false
           }
         ).addTo(map);
 
