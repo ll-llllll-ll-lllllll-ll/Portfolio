@@ -2605,3 +2605,26 @@ body {
     transition: none !important;
   }
 }
+
+
+/* Ruin Archive paired section headings */
+.room-view[data-room="ruin-atlas"] .room-note-title {
+  color: rgba(23, 24, 19, 0.72);
+  font-family: var(--serif);
+  font-size: clamp(14px, 1.15vw, 17px);
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: 0.035em;
+}
+
+.room-view[data-room="ruin-atlas"] .room-note-title strong {
+  color: rgba(23, 24, 19, 0.94);
+  font-weight: 650;
+}
+
+@media (max-width: 760px) {
+  .room-view[data-room="ruin-atlas"] .room-note-title {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+}
