@@ -10,12 +10,14 @@
     calendar/sky/    -> 天之日 / day of the sky
 
   The homepage loads only the clip assigned to the selected date.
-  The date itself is used as the seed, so refreshing the page does not change
-  today's clip and revisiting an older date returns to the same clip.
+  Calendar probability is derived automatically from each category's library
+  length: a folder with more clips receives more days, reducing repetition.
+  Within each category, clips are shuffled into a deterministic no-repeat bag,
+  so all available clips are used before a clip is repeated.
 
   Files are currently numbered 1.webm, 2.webm, ...
-  When more clips are added later, keep the numbering continuous and only
-  update the count below.
+  When more clips are added later, keep the numbering continuous and update
+  only the count below; the calendar weighting will adjust automatically.
 */
 
 (function () {
