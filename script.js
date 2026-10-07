@@ -793,6 +793,88 @@ function renderRuinAtlasPreview() {
   '</section>';
 }
 
+function renderRuinArchiveCabinetPreview() {
+  var sourceCopy = {
+    zh: { before: "档案界面取自 ", label: "《墟域图·遗构馆》", after: " 网站。" },
+    en: { before: "Archive interface from ", label: "Ruin Archive", after: "." },
+    ja: { before: "档案界面は ", label: "『墟域図・遺構館』", after: " より。" }
+  };
+  var ariaCopy = {
+    zh: "遗构馆 档案堆叠预览",
+    en: "Ruin Archive stacked record preview",
+    ja: "遺構館 ファイルスタック・プレビュー"
+  };
+  var source = sourceCopy[state.lang] || sourceCopy.en;
+
+  var docs = [
+    ["AETHER", "2026.01", "31°13′33″N"],
+    ["EFFLUENT", "2025.05", "30°27′16″N"],
+    ["土還灶垣", "2026.08", "31°39′52″N"],
+    ["隐染悬里", "2024.01", "37°27′16″N"],
+    ["束垣胚庭", "DISCOVERY", "ARCHIVE"],
+    ["彩壳堡", "GUEST", "RECORD"],
+    ["悬崖土房", "2026.08", "31°40′22″N"],
+    ["FOLLY-I", "SCORE", "01"],
+    ["FOLLY-II", "FILM", "02"],
+    ["FIELD-NOTE", "TXT", "03"],
+    ["OBJECT", "INDEX", "04"],
+    ["PHOTO", "RECORD", "05"],
+    ["WANDER", "LOG", "06"]
+  ];
+
+  var poses = [
+    [-24,-8,-5.2,1,"cut-a"],[-20,-4,3.8,2,"cut-b"],[-16,0,-2.6,3,"cut-c"],
+    [-11,4,5.1,4,"cut-a"],[-6,8,-4.0,5,"cut-b"],[-1,12,2.8,6,"cut-c"],
+    [5,8,-1.7,7,"cut-a"],[10,5,4.5,8,"cut-b"],[14,1,-3.4,9,"cut-c"],
+    [18,-3,2.2,10,"cut-a"],[13,-8,-5.0,11,"cut-b"],[7,-12,3.3,12,"cut-c"],
+    [0,-15,-1.4,13,"cut-a"]
+  ];
+
+  var docHtml = docs.map(function(doc, index) {
+    var pose = poses[index];
+    return '<div class="ruin-mini-archive-doc ' + pose[4] + '" style="' +
+      '--doc-x:' + pose[0] + '%;--doc-y:' + pose[1] + '%;--doc-r:' + pose[2] + 'deg;--doc-z:' + pose[3] + ';">' +
+      '<span class="ruin-mini-doc-code">' + escapeHtml(String(index + 1).padStart(2, "0")) + '</span>' +
+      '<span class="ruin-mini-doc-title">' + escapeHtml(doc[0]) + '</span>' +
+      '<span class="ruin-mini-doc-rule" aria-hidden="true"></span>' +
+      '<span class="ruin-mini-doc-meta">' + escapeHtml(doc[1]) + '</span>' +
+      '<span class="ruin-mini-doc-coord">' + escapeHtml(doc[2]) + '</span>' +
+    '</div>';
+  }).join("");
+
+  return '<section class="ruin-mini-section ruin-mini-cabinet-section" aria-label="' +
+    escapeHtml(ariaCopy[state.lang] || ariaCopy.en) + '">' +
+    '<div class="ruin-mini-shell ruin-mini-cabinet-shell">' +
+      '<div class="ruin-mini-cabinet-stage" aria-hidden="true">' +
+        '<div class="ruin-mini-cabinet-stack">' + docHtml + '</div>' +
+      '</div>' +
+      '<div class="ruin-mini-cabinet-frame" aria-hidden="true">' +
+        '<svg viewBox="0 0 1000 820" preserveAspectRatio="none">' +
+          '<g class="ruin-mini-cabinet-frame-lines">' +
+            '<path d="M1 1H628 M682 1H999V244 M999 302V819H622 M566 819H1V536 M1 482V1"/>' +
+            '<path d="M82 42H636 M676 42H918V262 M918 300V754H650 M608 754H82V522 M82 484V42"/>' +
+            '<path d="M1 1L82 42 M999 1L918 42 M999 819L918 754 M1 819L82 754"/>' +
+          '</g>' +
+          '<g class="ruin-mini-cabinet-breaks">' +
+            '<path d="M628 1l10 15 14-9 9 15 21-21"/>' +
+            '<path d="M999 244l-18 8 8 13-16 11 26 26"/>' +
+            '<path d="M1 482l18 9-8 11 17 9-27 25"/>' +
+            '<path d="M566 819l13-19 13 8 16-22 14 33"/>' +
+            '<path d="M636 42l10 14 13-9 17 15"/>' +
+            '<path d="M918 262l-16 10 9 12-19 16"/>' +
+          '</g>' +
+        '</svg>' +
+      '</div>' +
+    '</div>' +
+    '<p class="ruin-mini-source ruin-mini-cabinet-source">' +
+      escapeHtml(source.before) +
+      '<a href="https://ruin-archive.site/" target="_blank" rel="noreferrer">' + escapeHtml(source.label) + '</a>' +
+      escapeHtml(source.after) +
+    '</p>' +
+  '</section>';
+}
+
+
 function renderRoom(item) {
   var images = item.images || [];
   var next = rooms[(roomIndex(item) + 1) % rooms.length];
@@ -834,7 +916,11 @@ function renderRoom(item) {
 
   if (Array.isArray(item.notes) && item.notes.length) {
     html += '<section class="room-notes">';
-    item.notes.forEach(function(note) {
+    item.notes.forEach(function(note, noteIndex) {
+      if (item.slug === "ruin-atlas" && noteIndex === 1) {
+        html += renderRuinArchiveCabinetPreview();
+      }
+
       var richBody = note.bodyHtml ? localised(note.bodyHtml) : null;
       var body = localised(note.body);
       var bodyHtml = "";
