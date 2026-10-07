@@ -893,68 +893,29 @@ function renderRuinArchiveCabinetPreview() {
     ja: { before: "档案界面は ", label: "『墟域図・遺構館』", after: " より。" }
   };
   var ariaCopy = {
-    zh: "遗构馆 archive-doc 档案堆叠预览",
-    en: "Ruin Archive archive-doc stack preview",
-    ja: "遺構館 archive-doc スタック・プレビュー"
+    zh: "遗构馆 archive-doc 档案系统预览",
+    en: "Ruin Archive archive-doc system preview",
+    ja: "遺構館 archive-doc システム・プレビュー"
+  };
+  var labelsCopy = {
+    zh: { record: "遗构录・卷", center: "遗构馆", garden: "⁙废墟园林・编" },
+    en: { record: "RECORDS · VOL.", center: "ARCHIVE", garden: "⁙FOLLY · SERIES" },
+    ja: { record: "遺構録・巻", center: "遺構館", garden: "⁙フォリー・編" }
   };
   var source = sourceCopy[state.lang] || sourceCopy.en;
-
-  /* This is a scaled-down transplant of the original ruin-archive archive-doc
-     logic rather than a generic card pile:
-     - record docs live on the left rail;
-     - garden docs live on the right rail;
-     - each successive sheet advances vertically and slightly sideways;
-     - sparse x/y misregistration keeps the stack physical;
-     - every sheet carries the clipped archive-doc corner profile. */
-  var recordJitterX = [0,0,-1.1,0,1.4,0,-1.7,0,0,1.2,0,-1.3,0,0];
-  var recordJitterY = [0,0,.7,0,-.5,0,.9,0,0,-.7,0,.6,0,0];
-  var gardenJitterX = [0,1.2,0,-1.4,0,.9,0];
-  var gardenJitterY = [0,-.7,0,.8,0,-.5,0];
-
-  function archiveDocSvg(side, index) {
-    var broken = index % 4 === 2;
-    if (side === "left") {
-      return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
-        (broken
-          ? '<path d="M0 .5H49 M58 .5H61 L99.5 15V100H0Z"/>'
-          : '<path d="M0 .5H61 L99.5 15V100H0Z"/>') +
-      '</svg>';
-    }
-    return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
-      (broken
-        ? '<path d="M39 .5H47 M55 .5H100V100H.5V15Z"/>'
-        : '<path d="M39 .5H100V100H.5V15Z"/>') +
-    '</svg>';
-  }
-
-  var recordDocs = "";
-  for (var r = 0; r < 14; r += 1) {
-    recordDocs += '<div class="ruin-mini-archive-doc ruin-mini-record-doc" style="' +
-      '--doc-i:' + r + ';' +
-      '--doc-jx:' + recordJitterX[r] + 'px;' +
-      '--doc-jy:' + recordJitterY[r] + 'px;' +
-      '--doc-z:' + (30 + r) + ';">' +
-      archiveDocSvg("left", r) +
-    '</div>';
-  }
-
-  var gardenDocs = "";
-  for (var g = 0; g < 7; g += 1) {
-    gardenDocs += '<div class="ruin-mini-archive-doc ruin-mini-garden-doc" style="' +
-      '--doc-i:' + g + ';' +
-      '--doc-jx:' + gardenJitterX[g] + 'px;' +
-      '--doc-jy:' + gardenJitterY[g] + 'px;' +
-      '--doc-z:' + (55 + g) + ';">' +
-      archiveDocSvg("right", g) +
-    '</div>';
-  }
+  var labels = labelsCopy[state.lang] || labelsCopy.en;
 
   return '<section class="ruin-mini-section ruin-mini-cabinet-section" aria-label="' +
     escapeHtml(ariaCopy[state.lang] || ariaCopy.en) + '">' +
     '<div class="ruin-mini-shell ruin-mini-cabinet-shell">' +
-      '<div class="ruin-mini-cabinet-stage" aria-hidden="true">' +
-        '<div class="ruin-mini-cabinet-stack ruin-mini-cabinet-record-stack">' + recordDocs + '</div>' +
-        '<div class="ruin-mini-cabinet-stack ruin-mini-cabinet-garden-stack">' + gardenDocs + '</div>' +
+      '<div id="ruin-mini-archive-system" class="ruin-mini-archive-system">' +
+        '<div id="ruin-mini-stack-record" class="ruin-mini-file-stack ruin-mini-position-left" aria-label="' + escapeHtml(labels.record) + '"></div>' +
+        '<div id="ruin-mini-stack-garden" class="ruin-mini-file-stack ruin-mini-position-right" aria-label="' + escapeHtml(labels.garden) + '"></div>' +
+        '<div class="ruin-mini-archive-bottom-labels" aria-hidden="true">' +
+          '<span class="ruin-mini-bottom-record">' + escapeHtml(labels.record) + '</span>' +
+          '<span class="ruin-mini-bottom-center">' + escapeHtml(labels.center) + '</span>' +
+          '<span class="ruin-mini-bottom-garden">' + escapeHtml(labels.garden) + '</span>' +
+        '</div>' +
       '</div>' +
       '<div class="ruin-mini-cabinet-frame" aria-hidden="true">' +
         '<svg viewBox="0 0 1000 820" preserveAspectRatio="none">' +
@@ -962,12 +923,6 @@ function renderRuinArchiveCabinetPreview() {
             '<path d="M1 1H999V819H1Z"/>' +
             '<path d="M150 64H850V725H150Z"/>' +
             '<path d="M1 1L150 64 M999 1L850 64 M999 819L850 725 M1 819L150 725"/>' +
-          '</g>' +
-          '<g class="ruin-mini-cabinet-breaks">' +
-            '<path d="M646 1h18 M676 1h9"/>' +
-            '<path d="M999 262v18 M999 294v10"/>' +
-            '<path d="M1 494v15 M1 521v8"/>' +
-            '<path d="M570 819h17 M600 819h9"/>' +
           '</g>' +
         '</svg>' +
       '</div>' +
@@ -2546,6 +2501,614 @@ render();
   }
 
 
+
+  /* ==========================================================================
+     Mini Ruin Archive · archive-doc subsystem
+     --------------------------------------------------------------------------
+     This is a scoped, scaled port of the uploaded ruin-archive archive-doc
+     system: real document elements, the 23-sheet sliding record fan, compressed
+     top/bottom records, the right Folly stack, sparse paper misregistration,
+     clipped/cut sheet contours, extraction, and smooth retraction.
+     ========================================================================== */
+  var ruinMiniArchiveCleanup = null;
+  var ruinMiniArchiveMountToken = 0;
+
+  var RUIN_MINI_ARCHIVE_COMBINED_GROUPS = [
+    { id: "monastic-retreat-pair", memberNames: ["山融灶垣", "崖隐蚀垣"] },
+    { id: "fukushima-solastalgia-pair", memberNames: ["隐染悬里", "雾蚀空庐"] }
+  ];
+
+  var RUIN_MINI_ARCHIVE_THUMBNAILS = {
+    "瘟猪坝沉墟": "effluent-sedimentation.webp",
+    "电台路焦土": "aether-scorched-earth.webp",
+    "山葬灰脉": "yellow-mountain.webp",
+    "硅脉遗厂": "silicon-vein-works.webp",
+    "琉棘庭": "walled-gallery.webp",
+    "裂翼坪": "fallen-wing-field.webp",
+    "轨畔孤构": "rail-side.webp",
+    "残柱林": "concrete-pole.webp",
+    "钟寂残堂": "bell-silent-church.webp",
+    "池骸湾": "bath-crack.webp",
+    "毒烬轮冢": "toxic-tire-pyre.webp",
+    "褶层湾": "quarry-bay-stairway.webp",
+    "隐染悬里": "suspended-homeland.webp",
+    "雾蚀空庐": "mist-eroded-hut.webp",
+    "锈祷圣堂": "rust-prayer-sanctuary.webp",
+    "釉骸拓壁": "membrane.webp",
+    "叠骸构阵": "fish-mouth.webp",
+    "苔网塬": "gloss-veil.webp",
+    "陆坞舰骸": "brick-battleship.webp",
+    "墟响厅": "mirror.webp",
+    "波蚀脊堤": "wave-eroded-structure.webp",
+    "曜原驿": "solar.webp",
+    "溶境遗廊": "aquarium-bunker.webp",
+    "荒娱敖包": "mountain-signal.webp",
+    "彩壳堡": "castle.webp",
+    "削岩残居": "roof.webp",
+    "隐阶空墅": "hidden-stair-villa.webp",
+    "暮辉骸殿": "afterglow-palace.webp",
+    "迁痕空埠": "dock.webp",
+    "山骸窟殿": "phospho.webp",
+    "山融灶垣": "earthwall.webp",
+    "崖隐蚀垣": "cliff-granary.webp",
+    "褶脊胚庭": "compressed-courtyard.webp",
+    "草间稚居": "grass-child-dwelling.webp"
+  };
+
+  function ruinMiniArchiveBuildRecordEntries(recordSites) {
+    var byName = new Map(recordSites.map(function(site) { return [site.name, site]; }));
+    var grouped = new Set();
+    var groupByName = new Map();
+
+    RUIN_MINI_ARCHIVE_COMBINED_GROUPS.forEach(function(group) {
+      group.memberNames.forEach(function(name) { groupByName.set(name, group); });
+    });
+
+    var entries = [];
+    recordSites.forEach(function(site) {
+      if (!site || grouped.has(site.name)) return;
+      var group = groupByName.get(site.name);
+      if (group) {
+        var members = group.memberNames.map(function(name) { return byName.get(name); }).filter(Boolean);
+        if (members.length > 1) {
+          entries.push({ isGroup: true, group: group, sites: members });
+          members.forEach(function(member) { grouped.add(member.name); });
+          return;
+        }
+      }
+      entries.push({ isGroup: false, group: null, sites: [site] });
+      grouped.add(site.name);
+    });
+    return entries;
+  }
+
+  function ruinMiniArchiveSparseJitter(total, magnitudes, probability) {
+    var values = Array(total).fill(0);
+    if (!total) return values;
+    var target = Math.min(total, Math.max(1, Math.round(total * probability)));
+    var pool = Array.from({ length: total }, function(_, i) { return i; });
+    for (var i = pool.length - 1; i > 0; i -= 1) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var held = pool[i]; pool[i] = pool[j]; pool[j] = held;
+    }
+
+    var chosen = [];
+    pool.forEach(function(index) {
+      if (chosen.length >= target) return;
+      if (chosen.some(function(other) { return Math.abs(other - index) <= 1; })) return;
+      chosen.push(index);
+    });
+    pool.forEach(function(index) {
+      if (chosen.length < target && chosen.indexOf(index) === -1) chosen.push(index);
+    });
+
+    chosen.forEach(function(index, order) {
+      var mag = magnitudes[(order + Math.floor(Math.random() * magnitudes.length)) % magnitudes.length];
+      var sign = Math.random() < 0.58 ? -1 : 1;
+      values[index] = Number((sign * mag).toFixed(1));
+    });
+    return values;
+  }
+
+  function ruinMiniArchiveDms(value, positive, negative) {
+    var n = Number(value) || 0;
+    var abs = Math.abs(n);
+    var deg = Math.floor(abs);
+    var minutesFloat = (abs - deg) * 60;
+    var min = Math.floor(minutesFloat);
+    var sec = ((minutesFloat - min) * 60).toFixed(1);
+    return deg + "°" + String(min).padStart(2, "0") + "′" + String(sec).padStart(4, "0") + "″" + (n >= 0 ? positive : negative);
+  }
+
+  function ruinMiniArchiveCoord(site) {
+    return ruinMiniArchiveDms(site.lat, "N", "S") + " " + ruinMiniArchiveDms(site.lng, "E", "W");
+  }
+
+  function ruinMiniArchiveCopy() {
+    var lang = state.lang;
+    if (lang === "en") {
+      return { record: "Record", garden: "Folly", archive: "archive", recorder: "Recorder", creator: "Ruinwright", nav: "OPEN ORIGINAL ⌖" };
+    }
+    if (lang === "ja") {
+      return { record: "遺構録", garden: "フォリー", archive: "記録", recorder: "記録者", creator: "墟構師", nav: "原版を開く ⌖" };
+    }
+    return { record: "遗构录", garden: "废墟园林", archive: "归档", recorder: "记录者", creator: "墟构师", nav: "打开原站 ⌖" };
+  }
+
+  function destroyRuinArchiveMiniSystem() {
+    ruinMiniArchiveMountToken += 1;
+    if (typeof ruinMiniArchiveCleanup === "function") {
+      try { ruinMiniArchiveCleanup(); } catch (_) {}
+    }
+    ruinMiniArchiveCleanup = null;
+  }
+
+  function mountRuinArchiveMiniSystem(item) {
+    if (!item || item.slug !== "ruin-atlas") {
+      destroyRuinArchiveMiniSystem();
+      return;
+    }
+
+    var system = document.getElementById("ruin-mini-archive-system");
+    var recordStack = document.getElementById("ruin-mini-stack-record");
+    var gardenStack = document.getElementById("ruin-mini-stack-garden");
+    if (!system || !recordStack || !gardenStack || system.dataset.mounted === "true") return;
+
+    destroyRuinArchiveMiniSystem();
+    system.dataset.mounted = "true";
+    var token = ++ruinMiniArchiveMountToken;
+
+    ensureRuinMiniSites().then(function(loadedSites) {
+      if (token !== ruinMiniArchiveMountToken || !system.isConnected) return;
+
+      var sites = Array.isArray(loadedSites) && loadedSites.length ? loadedSites : RUIN_MINI_FALLBACK_SITES;
+      var gardenSites = sites.filter(function(site) { return site && site.type === "garden"; });
+      var recordSites = sites.filter(function(site) { return site && site.type !== "garden"; });
+      var recordEntries = ruinMiniArchiveBuildRecordEntries(recordSites);
+      var copy = ruinMiniArchiveCopy();
+
+      var recordYJitter = ruinMiniArchiveSparseJitter(recordEntries.length, [1.5, 2, 2.5, 3], 0.18);
+      var gardenYJitter = ruinMiniArchiveSparseJitter(gardenSites.length, [1.5, 2, 2.5, 3], 0.18);
+      var recordXJitter = ruinMiniArchiveSparseJitter(recordEntries.length, [2.2, 2.6, 3, 3.5], 0.17);
+      var gardenXJitter = ruinMiniArchiveSparseJitter(gardenSites.length, [2.2, 2.6, 3, 3.5], 0.17);
+
+      var slider = {
+        docs: [],
+        total: 0,
+        windowStart: 0,
+        windowEnd: -1,
+        initialWindowEnd: -1,
+        activeTop: 0,
+        activeBottom: 0,
+        topExtent: 0,
+        bottomExtent: 0,
+        extractedDoc: null,
+        hoverDirection: 0,
+        hoverTimer: null,
+        hoverToken: 0,
+        scale: 1
+      };
+
+      var sourceFanCount = 23;
+      var sourceFanGapY = 18;
+      var sourceFanGapX = 3;
+      var sourceFlatMaxGap = 18;
+      var sourceFlatMinGap = 5;
+      var sourceShiftY = 5;
+      var sourceHoverEdge = 92;
+      var sourceStepMs = 160;
+
+      function currentScale() {
+        return Math.max(0.26, Math.min(0.84, system.clientHeight / 900));
+      }
+
+      function setGeometryVariables() {
+        var scale = currentScale();
+        slider.scale = scale;
+        system.style.setProperty("--mini-archive-scale", scale.toFixed(4));
+        system.style.setProperty("--mini-archive-doc-w", (240 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-doc-h", (640 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-doc-h", (505 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-archive-pad", Math.max(5, 12 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-archive-font", Math.max(6, 13 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-archive-title-font", Math.max(7, 16 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-archive-meta-font", Math.max(5.5, 11 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-stack-w", (270 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-left", (-38 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-right", (-101 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-bottom", (120 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-extract-x", (200 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-extract-x", (-230 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-extract-top", (-350 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-record-extract-top", (((900 - 120 - 233) * 0.70) * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-archive-hover-lift", (8 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-thumb-size", Math.max(44, 128 * scale).toFixed(2) + "px");
+      }
+
+      function archiveDocTitle(entrySites, isGarden, index) {
+        if (isGarden) {
+          var cn = ["一","二","三","四","五","六","七","八","九","十"];
+          var seq = cn[index] || String(index + 1);
+          return copy.garden + " · 其" + seq + " | " + entrySites[0].name;
+        }
+        if (entrySites.length > 1) {
+          return entrySites.map(function(site) { return copy.record + " | " + site.name; }).join(" / ");
+        }
+        return copy.record + " | " + entrySites[0].name;
+      }
+
+      function makeDoc(entry, index, isGarden, total, yJitter, xJitter) {
+        var entrySites = isGarden ? [entry] : entry.sites;
+        var initial = entrySites[0];
+        var doc = document.createElement("div");
+        doc.className = "ruin-mini-archive-doc archive-doc archive-cut-doc" + (isGarden ? " garden-archive-doc" : "");
+        doc.dataset.isGarden = isGarden ? "1" : "0";
+        doc.dataset.zIndex = "1";
+        doc.style.setProperty("--archive-paper-y-jitter", ((yJitter[index] || 0) * slider.scale).toFixed(2) + "px");
+        doc.style.setProperty("--archive-paper-x-jitter", ((xJitter[index] || 0) * slider.scale).toFixed(2) + "px");
+
+        var dates = Array.from(new Set(entrySites.map(function(site) { return site.archiveDate; }).filter(Boolean))).join(" · ");
+        var recorders = Array.from(new Set(entrySites.map(function(site) { return site.recorder || "罗清源"; }))).join(" / ");
+        var coordinates = entrySites.map(ruinMiniArchiveCoord).join(" · ");
+        var thumbName = RUIN_MINI_ARCHIVE_THUMBNAILS[initial.name];
+        var thumbSrc = thumbName
+          ? "https://ruin-archive.site/thumbnails/" + (isGarden ? "garden-128/" : "") + thumbName
+          : "";
+
+        doc.innerHTML =
+          '<div class="ruin-mini-doc-meta">[ ' + escapeHtml(isGarden ? copy.garden : copy.record) + ' ] | ' +
+            escapeHtml(copy.archive) + ': <span>' + escapeHtml(dates || "—") + '</span></div>' +
+          '<div class="ruin-mini-doc-title">' + escapeHtml(archiveDocTitle(entrySites, isGarden, index)) + '</div>' +
+          '<div class="ruin-mini-archive-thumbnail" aria-hidden="true"></div>' +
+          '<div class="ruin-mini-doc-meta ruin-mini-doc-identity">' +
+            escapeHtml(isGarden ? copy.creator + ": 罗清源" : copy.recorder + ": " + recorders) +
+          '</div>' +
+          '<div class="ruin-mini-doc-meta ruin-mini-doc-coordinate">' + escapeHtml(coordinates) + '</div>' +
+          '<a class="ruin-mini-doc-nav" href="https://ruin-archive.site/" target="_blank" rel="noreferrer">' + escapeHtml(copy.nav) + '</a>';
+
+        if (thumbSrc) {
+          doc.classList.add("has-thumbnail");
+          doc.dataset.thumbnailSrc = thumbSrc;
+        }
+
+        if (isGarden) {
+          var positionIndex = (total - 1) - index;
+          doc.style.top = (positionIndex * 32 * slider.scale).toFixed(2) + "px";
+          doc.style.right = (-positionIndex * 4 * slider.scale).toFixed(2) + "px";
+          var z = String(positionIndex);
+          doc.style.zIndex = z;
+          doc.dataset.zIndex = z;
+        }
+
+        return doc;
+      }
+
+      function mountThumbnail(doc) {
+        if (!doc || !doc.dataset.thumbnailSrc || doc.dataset.thumbnailMounted === "1") return;
+        var host = doc.querySelector(".ruin-mini-archive-thumbnail");
+        if (!host) return;
+        doc.dataset.thumbnailMounted = "1";
+        var img = document.createElement("img");
+        img.src = doc.dataset.thumbnailSrc;
+        img.alt = "";
+        img.loading = "lazy";
+        host.appendChild(img);
+        host.classList.add("has-image");
+      }
+
+      function applyCut(doc, index, isGarden) {
+        if (!doc || !doc.isConnected) return;
+        var rect = doc.getBoundingClientRect();
+        if (rect.width < 8 || rect.height < 8) return;
+
+        var scale = slider.scale;
+        var seed = hashString((isGarden ? "garden-" : "record-") + index + "-v181");
+        var tl = (4 + (seed % 7)) * scale;
+        var tr = (4 + ((seed >>> 5) % 7)) * scale;
+        var w = rect.width;
+        var h = rect.height;
+        var points = [
+          [tl,0],[w-tr,0],[w,tr],[w,h],[0,h],[0,tl]
+        ];
+
+        // Port the source principle that some damage changes the REAL paper
+        // boundary, not merely a decorative line drawn over a rectangle.
+        if (index % 9 === 4) {
+          var mid = w * (0.42 + ((seed >>> 9) % 12) / 100);
+          var chipW = Math.max(5, 10 * scale);
+          var chipD = Math.max(2, 4.5 * scale);
+          points = [[tl,0],[mid-chipW,0],[mid,chipD],[mid+chipW,0],[w-tr,0],[w,tr],[w,h],[0,h],[0,tl]];
+        } else if (index % 11 === 6) {
+          var sideY = h * 0.32;
+          var sideH = Math.max(7, 15 * scale);
+          var sideD = Math.max(2, 4 * scale);
+          points = [[tl,0],[w-tr,0],[w,tr],[w,sideY-sideH],[w-sideD,sideY],[w,sideY+sideH],[w,h],[0,h],[0,tl]];
+        }
+
+        var polygon = points.map(function(p) { return p[0].toFixed(2) + "px " + p[1].toFixed(2) + "px"; }).join(", ");
+        var clip = "polygon(" + polygon + ")";
+        doc.style.clipPath = clip;
+        doc.style.webkitClipPath = clip;
+        doc.style.setProperty("--archive-doc-shape-clip", clip);
+
+        var oldOutline = doc.querySelector(":scope > .ruin-mini-archive-cut-outline");
+        if (oldOutline) oldOutline.remove();
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "ruin-mini-archive-cut-outline");
+        svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+        svg.setAttribute("preserveAspectRatio", "none");
+        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        var d = points.map(function(p, pointIndex) {
+          return (pointIndex ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2);
+        }).join(" ") + " Z";
+        path.setAttribute("d", d);
+        svg.appendChild(path);
+        doc.insertBefore(svg, doc.firstChild);
+      }
+
+      function flatGap(available, count) {
+        if (count <= 0) return sourceFlatMaxGap;
+        if (!Number.isFinite(available) || available <= 0) return sourceFlatMinGap;
+        return Math.max(sourceFlatMinGap, Math.min(sourceFlatMaxGap, available / count));
+      }
+
+      function layoutRecordStack() {
+        if (!slider.docs.length || !system.isConnected) return;
+        var scale = currentScale();
+        slider.scale = scale;
+        setGeometryVariables();
+
+        var total = slider.total;
+        var start = slider.windowStart;
+        var end = slider.windowEnd;
+        var activeCount = Math.max(0, end - start + 1);
+        var viewportHeightSource = system.clientHeight / scale;
+        var activeHeight = Math.max(0, activeCount - 1) * sourceFanGapY;
+        var travelled = Math.max(0, slider.initialWindowEnd - end);
+        var baseTop = Math.max(205, Math.min(300, viewportHeightSource * 0.285));
+        var bottomReserve = 72;
+        var maxActiveTop = Math.max(150, viewportHeightSource - bottomReserve - activeHeight - 72);
+        var activeTop = Math.min(maxActiveTop, baseTop + travelled * sourceShiftY);
+        var activeBottom = activeTop + activeHeight;
+
+        var topCount = Math.max(0, total - 1 - end);
+        var bottomCount = Math.max(0, start);
+        var topMargin = 18;
+        var bottomLimit = viewportHeightSource - bottomReserve;
+        var topGap = flatGap(activeTop - topMargin, topCount);
+        var bottomGap = flatGap(bottomLimit - activeBottom, bottomCount);
+        var bottomFanX = -Math.max(0, activeCount - 1) * sourceFanGapX;
+
+        slider.activeTop = activeTop * scale;
+        slider.activeBottom = activeBottom * scale;
+        slider.topExtent = (topCount ? activeTop - topCount * topGap : activeTop) * scale;
+        slider.bottomExtent = (bottomCount ? activeBottom + bottomCount * bottomGap : activeBottom) * scale;
+
+        slider.docs.forEach(function(doc, index) {
+          var y = activeTop;
+          var x = 0;
+          var z = 1000;
+          var mode = "stack-fan";
+
+          if (index > end) {
+            var topDistance = index - end;
+            y = activeTop - topDistance * topGap;
+            x = 0;
+            z = 900 + Math.max(0, topCount - topDistance);
+            mode = "stack-flat-top";
+          } else if (index < start) {
+            var bottomDistance = start - index;
+            y = activeBottom + bottomDistance * bottomGap;
+            x = bottomFanX;
+            z = 1000 + activeCount + bottomDistance;
+            mode = "stack-flat-bottom";
+          } else {
+            var rank = end - index;
+            y = activeTop + rank * sourceFanGapY;
+            x = -rank * sourceFanGapX;
+            z = 1000 + rank;
+          }
+
+          doc.style.setProperty("--stack-x", (x * scale).toFixed(2) + "px");
+          doc.style.setProperty("--stack-y", (y * scale).toFixed(2) + "px");
+          doc.classList.remove("stack-fan","stack-flat-top","stack-flat-bottom");
+          doc.classList.add(mode);
+          doc.dataset.stackMode = mode;
+          doc.dataset.zIndex = String(z);
+          if (slider.extractedDoc !== doc) doc.style.zIndex = String(z);
+        });
+      }
+
+      function stopHover() {
+        slider.hoverDirection = 0;
+        slider.hoverToken += 1;
+        if (slider.hoverTimer) {
+          clearTimeout(slider.hoverTimer);
+          slider.hoverTimer = null;
+        }
+      }
+
+      function shiftWindow(direction) {
+        if (!slider.docs.length || slider.extractedDoc) return false;
+        if (direction < 0) {
+          if (slider.windowStart <= 0) return false;
+          slider.windowStart -= 1;
+          slider.windowEnd -= 1;
+        } else if (direction > 0) {
+          if (slider.windowEnd >= slider.total - 1) return false;
+          slider.windowStart += 1;
+          slider.windowEnd += 1;
+        } else {
+          return false;
+        }
+        layoutRecordStack();
+        return true;
+      }
+
+      function setHoverDirection(direction) {
+        if (slider.hoverDirection === direction) return;
+        stopHover();
+        slider.hoverDirection = direction;
+        if (!direction) return;
+        var hoverToken = ++slider.hoverToken;
+        shiftWindow(direction);
+        var tick = function() {
+          if (hoverToken !== slider.hoverToken || slider.hoverDirection !== direction) return;
+          if (!shiftWindow(direction)) { stopHover(); return; }
+          slider.hoverTimer = setTimeout(tick, sourceStepMs);
+        };
+        slider.hoverTimer = setTimeout(tick, sourceStepMs);
+      }
+
+      function onPointerMove(event) {
+        if (window.innerWidth <= 760 || slider.extractedDoc) { stopHover(); return; }
+        var rect = system.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        var scale = slider.scale;
+        if (x < 0 || x > 285 * scale || y < slider.topExtent - 38 * scale || y > slider.bottomExtent + 38 * scale) {
+          stopHover();
+          return;
+        }
+        if (slider.windowEnd < slider.total - 1 && y <= slider.activeTop + sourceHoverEdge * scale) {
+          setHoverDirection(1);
+          return;
+        }
+        if (slider.windowStart > 0 && y >= slider.activeBottom - sourceHoverEdge * scale) {
+          setHoverDirection(-1);
+          return;
+        }
+        stopHover();
+      }
+
+      function finishRetraction(doc) {
+        doc.classList.remove("retracting","extracted");
+        doc.style.zIndex = doc.dataset.zIndex || "";
+        if (slider.extractedDoc === doc) slider.extractedDoc = null;
+      }
+
+      function retractDoc(doc) {
+        if (!doc || !doc.classList.contains("extracted") || doc.classList.contains("retracting")) return;
+        var isRecord = doc.closest("#ruin-mini-stack-record");
+        if (!isRecord) {
+          doc.classList.remove("extracted");
+          doc.style.zIndex = doc.dataset.zIndex || "";
+          return;
+        }
+        doc.classList.add("retracting");
+        var ended = false;
+        var finish = function() {
+          if (ended) return;
+          ended = true;
+          doc.removeEventListener("transitionend", onEnd);
+          finishRetraction(doc);
+        };
+        var onEnd = function(event) {
+          if (event.target !== doc || (event.propertyName !== "transform" && event.propertyName !== "top")) return;
+          finish();
+        };
+        doc.addEventListener("transitionend", onEnd);
+        setTimeout(finish, 620);
+      }
+
+      function extractDoc(doc) {
+        if (!doc) return;
+        if (doc.classList.contains("extracted")) {
+          retractDoc(doc);
+          return;
+        }
+
+        system.querySelectorAll(".ruin-mini-archive-doc.extracted").forEach(function(other) {
+          if (other !== doc) retractDoc(other);
+        });
+
+        mountThumbnail(doc);
+        doc.classList.remove("retracting");
+        doc.classList.add("extracted");
+        doc.style.zIndex = doc.dataset.zIndex || doc.style.zIndex;
+        if (doc.closest("#ruin-mini-stack-record")) slider.extractedDoc = doc;
+        stopHover();
+      }
+
+      recordStack.innerHTML = "";
+      gardenStack.innerHTML = "";
+      setGeometryVariables();
+
+      gardenSites.forEach(function(site, index) {
+        gardenStack.appendChild(makeDoc(site, index, true, gardenSites.length, gardenYJitter, gardenXJitter));
+      });
+      recordEntries.forEach(function(entry, index) {
+        recordStack.appendChild(makeDoc(entry, index, false, recordEntries.length, recordYJitter, recordXJitter));
+      });
+
+      slider.docs = Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc"));
+      slider.total = slider.docs.length;
+      slider.windowEnd = Math.max(-1, slider.total - 1);
+      slider.windowStart = Math.max(0, slider.windowEnd - sourceFanCount + 1);
+      slider.initialWindowEnd = slider.windowEnd;
+      recordStack.classList.toggle("sliding-record-stack", slider.total > sourceFanCount);
+
+      function wireDoc(doc, index, isGarden) {
+        doc.addEventListener("click", function(event) {
+          if (event.target.closest(".ruin-mini-doc-nav")) return;
+          event.preventDefault();
+          event.stopPropagation();
+          extractDoc(doc);
+        });
+        applyCut(doc, index, isGarden);
+      }
+
+      Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc")).forEach(function(doc, index) {
+        wireDoc(doc, index, false);
+      });
+      Array.from(gardenStack.querySelectorAll(".ruin-mini-archive-doc")).forEach(function(doc, index) {
+        wireDoc(doc, index, true);
+      });
+
+      layoutRecordStack();
+
+      var resizeRaf = 0;
+      var onResize = function() {
+        if (resizeRaf) cancelAnimationFrame(resizeRaf);
+        resizeRaf = requestAnimationFrame(function() {
+          resizeRaf = 0;
+          if (!system.isConnected || token !== ruinMiniArchiveMountToken) return;
+          setGeometryVariables();
+          var gardenDocs = Array.from(gardenStack.querySelectorAll(".ruin-mini-archive-doc"));
+          gardenDocs.forEach(function(doc, index) {
+            var positionIndex = (gardenDocs.length - 1) - index;
+            doc.style.top = (positionIndex * 32 * slider.scale).toFixed(2) + "px";
+            doc.style.right = (-positionIndex * 4 * slider.scale).toFixed(2) + "px";
+            applyCut(doc, index, true);
+          });
+          slider.docs.forEach(function(doc, index) { applyCut(doc, index, false); });
+          layoutRecordStack();
+        });
+      };
+
+      var onDocumentPointer = function(event) {
+        if (!system.isConnected) return;
+        if (!system.contains(event.target)) {
+          system.querySelectorAll(".ruin-mini-archive-doc.extracted").forEach(retractDoc);
+        }
+      };
+
+      system.addEventListener("pointermove", onPointerMove, { passive: true });
+      system.addEventListener("pointerleave", stopHover);
+      document.addEventListener("pointerdown", onDocumentPointer, true);
+      window.addEventListener("resize", onResize, { passive: true });
+
+      ruinMiniArchiveCleanup = function() {
+        stopHover();
+        if (resizeRaf) cancelAnimationFrame(resizeRaf);
+        system.removeEventListener("pointermove", onPointerMove);
+        system.removeEventListener("pointerleave", stopHover);
+        document.removeEventListener("pointerdown", onDocumentPointer, true);
+        window.removeEventListener("resize", onResize);
+      };
+    });
+  }
+
   function mountSeawaterWorld(item) {
     if (!item || item.slug !== "seawater") return;
 
@@ -3324,6 +3887,7 @@ render();
     sizeCollectionStages(item);
     mountSeawaterWorld(item);
     mountRuinAtlasMiniMap(item);
+    mountRuinArchiveMiniSystem(item);
   }
 
   var appNode = document.querySelector("#app");
