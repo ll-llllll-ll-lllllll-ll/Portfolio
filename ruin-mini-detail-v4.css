@@ -51,11 +51,16 @@
    No hairline ring. Garden = 6px solid dot; record = 5px solid dot.
    -------------------------------------------------------------------------- */
 .room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon {
-  position: relative;
+  /* Leaflet positions every DivIcon with absolute positioning + an inline
+     translate3d. Never change this wrapper to relative: doing so makes icons
+     participate in normal flow and visibly drifts them away from their LatLng. */
+  position: absolute !important;
+  display: block !important;
+  margin: 0;
   border: 0 !important;
   background: transparent !important;
-  filter: none;
-  mix-blend-mode: normal;
+  filter: none !important;
+  mix-blend-mode: normal !important;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-marker-icon .garden-dot,
