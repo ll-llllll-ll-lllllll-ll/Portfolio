@@ -186,7 +186,7 @@
 }
 
 
-/* ===== Paired Archive cabinet miniature · real archive-doc port ===== */
+/* ===== Paired Archive cabinet miniature · source-system refinement ===== */
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section {
   margin-top: clamp(62px, 9vh, 98px);
   margin-bottom: clamp(26px, 4vh, 48px);
@@ -200,30 +200,38 @@
 .room-view[data-room="ruin-atlas"] .ruin-mini-archive-system {
   position: absolute;
   inset: 1px;
-  z-index: 2;
-  overflow: hidden;
-  isolation: isolate;
-  background: var(--ruin-mini-paper, #f4f3ee);
+  z-index: 120;
+  overflow: visible;
+  background: transparent;
   color: var(--ruin-mini-text, rgba(23,24,19,.82));
+  pointer-events: none;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-file-stack {
   position: absolute;
-  z-index: 20;
+  z-index: 130;
+  pointer-events: none;
+  transition: transform .4s cubic-bezier(.25,1,.5,1), z-index 0s;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-file-stack.sink-down {
+  transform: translateY(115%) !important;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-file-stack.elevated-z {
+  z-index: 225 !important;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-position-left {
-  left: var(--mini-record-left, -24px);
+  left: var(--mini-record-left, -22px);
   top: 0;
   width: var(--mini-record-stack-w, 172px);
   height: 100%;
-  pointer-events: none;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-position-right {
-  right: var(--mini-garden-right, -64px);
-  bottom: var(--mini-garden-bottom, 77px);
-  pointer-events: none;
+  right: var(--mini-garden-right, -55px);
+  bottom: var(--mini-garden-bottom, 72px);
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc {
@@ -231,20 +239,16 @@
   width: var(--mini-archive-doc-w, 153px);
   height: var(--mini-garden-doc-h, 322px);
   box-sizing: border-box;
-  padding: var(--mini-archive-pad, 8px);
-  overflow: hidden;
+  padding: 0;
   border: 0;
   background: transparent;
-  color: var(--ruin-mini-text, rgba(23,24,19,.78));
   cursor: pointer;
   pointer-events: auto;
-  text-align: left;
+  overflow: hidden;
   transition:
     transform .4s cubic-bezier(.19,1,.22,1),
     top .4s cubic-bezier(.19,1,.22,1),
-    bottom .4s cubic-bezier(.19,1,.22,1),
-    background .3s ease,
-    color .3s ease;
+    opacity .26s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -255,19 +259,15 @@
   z-index: 0;
   pointer-events: none;
   background: var(--ruin-mini-paper, #f4f3ee);
-  clip-path: var(--archive-doc-shape-clip, polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%, 0 6px));
-  -webkit-clip-path: var(--archive-doc-shape-clip, polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%, 0 6px));
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc > :not(.ruin-mini-archive-cut-outline) {
-  position: relative;
-  z-index: 2;
+  clip-path: var(--archive-doc-shape-clip);
+  -webkit-clip-path: var(--archive-doc-shape-clip);
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-archive-cut-outline {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
+  display: block;
   width: 100%;
   height: 100%;
   overflow: visible;
@@ -276,8 +276,8 @@
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-archive-cut-outline path {
   fill: none;
-  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
-  stroke-width: .86px;
+  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.74));
+  stroke-width: 1.08px;
   vector-effect: non-scaling-stroke;
   stroke-linecap: square;
   stroke-linejoin: miter;
@@ -287,195 +287,45 @@
   top: 0 !important;
   left: 0 !important;
   height: var(--mini-record-doc-h, 408px);
-  text-align: right;
-  transform: translate3d(
-    calc(var(--stack-x, 0px) + var(--archive-paper-x-jitter, 0px)),
-    calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px)),
-    0
-  );
-  transition:
-    transform .135s cubic-bezier(.22,.72,.2,1),
-    background .22s ease,
-    color .22s ease;
+  transform: translate3d(var(--stack-x,0px),var(--stack-y,0px),0);
 }
 
-.room-view[data-room="ruin-atlas"] #ruin-mini-stack-record .ruin-mini-archive-doc.stack-flat-top,
-.room-view[data-room="ruin-atlas"] #ruin-mini-stack-record .ruin-mini-archive-doc.stack-flat-bottom {
-  transform: translate3d(
-    var(--stack-x, 0px),
-    var(--stack-y, 0px),
-    0
-  );
+.room-view[data-room="ruin-atlas"] #ruin-mini-stack-garden .ruin-mini-archive-doc {
+  height: var(--mini-garden-doc-h, 322px);
 }
 
-.room-view[data-room="ruin-atlas"] #ruin-mini-stack-record .ruin-mini-archive-doc.stack-fan:hover:not(.extracted) {
-  transform: translate3d(
-    calc(var(--stack-x, 0px) + var(--archive-paper-x-jitter, 0px)),
-    calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px) - var(--mini-archive-hover-lift, 5px)),
-    0
-  );
-}
-
-.room-view[data-room="ruin-atlas"] #ruin-mini-stack-garden .ruin-mini-archive-doc:not(.extracted) {
-  transform: translate(
-    var(--archive-paper-x-jitter, 0px),
-    var(--archive-paper-y-jitter, 0px)
-  );
-}
-
-.room-view[data-room="ruin-atlas"] #ruin-mini-stack-garden .ruin-mini-archive-doc:hover:not(.extracted) {
-  transform: translate(
-    var(--archive-paper-x-jitter, 0px),
-    calc(var(--archive-paper-y-jitter, 0px) - var(--mini-archive-hover-lift, 5px))
-  );
+/* No hover-driven stack translation in the portfolio miniature. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc:hover:not(.extracted) {
+  transform: inherit;
 }
 
 .room-view[data-room="ruin-atlas"] #ruin-mini-stack-record .ruin-mini-archive-doc.extracted {
-  top: var(--mini-record-extract-top, 244px) !important;
+  top: var(--mini-record-extract-top, 152px) !important;
   left: 0 !important;
-  transform: translateX(var(--mini-record-extract-x, 128px)) skewY(-1.5deg) !important;
-  transition:
-    transform .4s cubic-bezier(.19,1,.22,1),
-    top .4s cubic-bezier(.19,1,.22,1),
-    background .22s ease,
-    color .22s ease;
-  overflow: visible;
+  transform: translateX(var(--mini-record-extract-x, 131px)) skewY(-1.5deg) !important;
+  z-index: 260 !important;
 }
 
 .room-view[data-room="ruin-atlas"] #ruin-mini-stack-garden .ruin-mini-archive-doc.extracted {
-  top: var(--mini-garden-extract-top, -223px) !important;
+  top: var(--mini-garden-extract-top, -198px) !important;
   bottom: auto !important;
-  transform: translateX(var(--mini-garden-extract-x, -147px)) skewY(1.5deg) !important;
-  margin-top: 0 !important;
-  overflow: visible;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.extracted::before {
-  background: color-mix(in srgb, var(--ruin-mini-paper, #f4f3ee) 82%, transparent);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
+  transform: translateX(var(--mini-garden-extract-x, -141px)) skewY(1.5deg) !important;
+  z-index: 260 !important;
 }
 
 .room-view[data-room="ruin-atlas"] #ruin-mini-stack-record .ruin-mini-archive-doc.extracted.retracting {
   top: 0 !important;
-  transform: translate3d(
-    calc(var(--stack-x, 0px) + var(--archive-paper-x-jitter, 0px)),
-    calc(var(--stack-y, 0px) + var(--archive-paper-y-jitter, 0px)),
-    0
-  ) !important;
+  transform: translate3d(var(--stack-x,0px),var(--stack-y,0px),0) !important;
   transition:
     transform .46s cubic-bezier(.19,1,.22,1),
-    top .46s cubic-bezier(.19,1,.22,1),
-    background .32s ease,
-    backdrop-filter .32s ease;
+    top .46s cubic-bezier(.19,1,.22,1);
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-meta {
-  margin: var(--mini-meta-top, -5px) 0 var(--mini-block-gap, 30px);
-  color: var(--ruin-mini-muted, rgba(23,24,19,.50));
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: var(--mini-archive-meta-font, 7px);
-  font-weight: 300;
-  line-height: 1.5;
-  letter-spacing: .025em;
-  white-space: nowrap;
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.index-filter-muted {
+  opacity: .11;
 }
 
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-title {
-  margin: var(--mini-title-top, -2px) 0 var(--mini-block-gap, 30px);
-  font-family: var(--serif);
-  font-size: var(--mini-archive-title-font, 10px);
-  font-weight: 400;
-  line-height: 1.35;
-  letter-spacing: .035em;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-identity {
-  margin-top: var(--mini-identity-gap, 9px);
-  margin-bottom: var(--mini-identity-gap, 9px);
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-coordinate {
-  margin: 0 0 var(--mini-coordinate-gap, 5px);
-  white-space: normal;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-nav {
-  display: inline-block;
-  padding: var(--mini-nav-pad-y, 3px) var(--mini-nav-pad-x, 5px);
-  border: 1px solid var(--ruin-mini-line-strong, rgba(23,24,19,.58));
-  color: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: var(--mini-archive-meta-font, 7px);
-  line-height: 1.25;
-  text-decoration: none;
-  white-space: nowrap;
-  pointer-events: auto;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-nav:hover,
-.room-view[data-room="ruin-atlas"] .ruin-mini-doc-nav:focus-visible {
-  background: var(--ruin-mini-text, #1c1c1a);
-  color: var(--ruin-mini-paper, #f4f3ee);
-  outline: none;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-thumbnail {
-  display: none;
-  width: var(--mini-thumb-size, 82px);
-  height: var(--mini-thumb-size, 82px);
-  box-sizing: content-box;
-  margin: 0 0 var(--mini-thumb-gap, 13px);
-  padding: var(--mini-thumb-pad, 3px);
-  border: 1px solid color-mix(in srgb, var(--ruin-mini-text, #1c1c1a) 28%, transparent);
-  overflow: hidden;
-  background: color-mix(in srgb, var(--ruin-mini-paper, #f4f3ee) 72%, transparent);
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-doc.extracted.has-thumbnail .ruin-mini-archive-thumbnail.has-image {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-thumbnail img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-archive-bottom-labels {
-  position: absolute;
-  left: 3.5%;
-  right: 3.5%;
-  bottom: 1.9%;
-  z-index: 80;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: end;
-  color: var(--ruin-mini-text, rgba(23,24,19,.72));
-  font-family: var(--serif);
-  font-size: clamp(7px, .72vw, 10px);
-  letter-spacing: .065em;
-  pointer-events: none;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-bottom-record {
-  justify-self: start;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-bottom-center {
-  justify-self: center;
-  font-size: 1.18em;
-  letter-spacing: .18em;
-}
-
-.room-view[data-room="ruin-atlas"] .ruin-mini-bottom-garden {
-  justify-self: end;
-}
-
+/* Frame sits below the archive sheets; its lines remain slightly heavier. */
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame {
   position: absolute;
   inset: 0;
@@ -493,11 +343,213 @@
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-frame-lines {
   fill: none;
-  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
-  stroke-width: 1.12px;
+  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.76));
+  stroke-width: 1.34px;
   vector-effect: non-scaling-stroke;
   stroke-linecap: square;
   stroke-linejoin: miter;
+}
+
+/* ===== Miniature port of ruin-archive index-drawer ===== */
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 79%;
+  z-index: 190;
+  transform: translateY(calc(100% - 42px));
+  transition: transform .4s cubic-bezier(.25,1,.5,1);
+  pointer-events: auto;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer.open {
+  transform: translateY(0);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-handle {
+  position: relative;
+  width: 100%;
+  height: 42px;
+  pointer-events: none;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-frosted-shape {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ruin-mini-paper,#f4f3ee) 82%, transparent);
+  border: 1.08px solid var(--ruin-mini-line-strong,rgba(102,102,96,.70));
+  border-bottom: 0;
+  clip-path: polygon(0 100%, 14.8% 0, 85.2% 0, 100% 100%);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-surface-trigger {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  clip-path: polygon(0 100%, 14.8% 0, 85.2% 0, 100% 100%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-bottom-labels {
+  position: absolute;
+  left: 3.4%;
+  right: 3.4%;
+  bottom: 7px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 12px;
+  pointer-events: none;
+  font-family: var(--serif);
+  font-size: clamp(6.5px,.62vw,9px);
+  letter-spacing: .055em;
+  color: var(--ruin-mini-text,rgba(23,24,19,.72));
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-bottom-labels span:last-child {
+  text-align: right;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-bottom-labels strong {
+  font-size: 1.18em;
+  font-weight: 400;
+  letter-spacing: .16em;
+  white-space: nowrap;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-content {
+  height: calc(100% - 42px);
+  box-sizing: border-box;
+  padding: 26px 9.5% 20px 12.5%;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--ruin-mini-paper,#f4f3ee) 84%, transparent);
+  border-top: 1px solid color-mix(in srgb,var(--ruin-mini-line-strong,#666) 62%,transparent);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  scrollbar-width: none;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-content::-webkit-scrollbar {
+  display: none;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-fracture-zone {
+  padding: 0 3% 18px;
+  border-bottom: 1px solid color-mix(in srgb,var(--ruin-mini-line-strong,#666) 28%,transparent);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-top-title {
+  margin: 0 0 14px;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: clamp(8px,.78vw,11px);
+  line-height: 1.55;
+  letter-spacing: .05em;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-columns {
+  columns: 2;
+  column-gap: 34px;
+  font-family: var(--serif);
+  font-size: clamp(7px,.70vw,10px);
+  line-height: 1.65;
+  text-align: justify;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-columns p {
+  margin: 0 0 8px;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-stable-zone {
+  padding: 18px 0 0;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-title {
+  text-align: center;
+  font-family: var(--serif);
+  font-size: clamp(9px,.85vw,12px);
+  letter-spacing: .16em;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-lex {
+  max-width: 78%;
+  margin: 8px auto 16px;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: clamp(6.5px,.62vw,9px);
+  line-height: 1.55;
+  opacity: .68;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-system {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 18px;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--serif);
+  font-size: clamp(7px,.66vw,9.5px);
+  line-height: 1.65;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-category {
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-separator {
+  opacity: .42;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 8px;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-tag {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-tag:hover,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-tag.active {
+  font-weight: 600;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-tag.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
@@ -505,23 +557,43 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section + .room-note {
-  padding-top: clamp(30px, 4.5vh, 52px);
+  padding-top: clamp(30px,4.5vh,52px);
 }
 
-@media (max-width: 760px) {
+@media (max-width:760px) {
   .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section {
     margin-top: 56px;
     margin-bottom: 22px;
   }
 
-  .room-view[data-room="ruin-atlas"] .ruin-mini-archive-system {
-    touch-action: manipulation;
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer {
+    height: 82%;
+    transform: translateY(calc(100% - 34px));
   }
 
-  .room-view[data-room="ruin-atlas"] .ruin-mini-archive-bottom-labels {
-    font-size: 6.5px;
-    left: 3%;
-    right: 3%;
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-handle {
+    height: 34px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-content {
+    height: calc(100% - 34px);
+    padding: 16px 8% 18px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-columns {
+    columns: 1;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-system {
+    display: block;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-row {
+    margin-bottom: 5px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-bottom-labels {
+    font-size: 6px;
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
