@@ -449,7 +449,7 @@ function hashString(value) {
   return hash >>> 0;
 }
 
-var ambientMonthCache = {};
+var ambientYearCache = {};
 
 function ambientSeededRandom(seed) {
   var value = seed >>> 0;
@@ -464,6 +464,8 @@ function ambientSeededRandom(seed) {
 
 function ambientWeightedChoice(types, weights, random) {
   var total = weights.reduce(function(sum, weight) { return sum + weight; }, 0);
+  if (total <= 0) return types[0];
+
   var cursor = random() * total;
   for (var i = 0; i < types.length; i += 1) {
     cursor -= weights[i];
@@ -474,64 +476,155 @@ function ambientWeightedChoice(types, weights, random) {
 
 function ambientRunLength(random) {
   var roll = random();
-  if (roll < 0.43) return 1;
-  if (roll < 0.73) return 2;
-  if (roll < 0.89) return 3;
+  if (roll < 0.46) return 1;
+  if (roll < 0.75) return 2;
+  if (roll < 0.90) return 3;
   if (roll < 0.97) return 4;
   return 5;
 }
 
-function ambientMonthSchedule(year, month) {
-  var monthKey = year + "-" + pad(month + 1);
-  if (ambientMonthCache[monthKey]) return ambientMonthCache[monthKey];
+function ambientLibraryCount(type) {
+  return Array.isArray(AMBIENT_LIBRARY[type]) ? AMBIENT_LIBRARY[type].length : 0;
+}
 
-  var random = ambientSeededRandom(hashString(monthKey + ":quiet-calendar-v3"));
-  var daysInMonth = new Date(year, month + 1, 0).getDate();
+function ambientLibrarySignature() {
+  return AMBIENT_TYPES.map(function(type) {
+    return type + ":" + ambientLibraryCount(type);
+  }).join("|");
+}
 
-  /* Each month has its own uneven climate: one or two views may occupy far
-     more days than the others instead of forcing a 25/25/25/25 split. */
-  var weights = AMBIENT_TYPES.map(function() {
-    return 0.48 + random() * 1.18;
-  });
+function ambientShuffleIndices(length, random, avoidFirst) {
+  var values = [];
+  for (var i = 0; i < length; i += 1) values.push(i);
 
-  var dominant = Math.floor(random() * AMBIENT_TYPES.length);
-  weights[dominant] *= 1.35 + random() * 0.55;
-
-  if (random() < 0.58) {
-    var secondary = (dominant + 1 + Math.floor(random() * (AMBIENT_TYPES.length - 1))) % AMBIENT_TYPES.length;
-    weights[secondary] *= 1.08 + random() * 0.28;
+  for (var j = values.length - 1; j > 0; j -= 1) {
+    var swapIndex = Math.floor(random() * (j + 1));
+    var tmp = values[j];
+    values[j] = values[swapIndex];
+    values[swapIndex] = tmp;
   }
 
-  var schedule = [];
-  var previous = null;
+  /* When a bag is refilled, do not let its first clip equal the clip that
+     ended the previous bag. This means a category cycles through all of its
+     available material before repeating, with no immediate duplicate at the
+     cycle boundary. */
+  if (values.length > 1 && Number.isInteger(avoidFirst) && values[0] === avoidFirst) {
+    var replacementIndex = 1 + Math.floor(random() * (values.length - 1));
+    var held = values[0];
+    values[0] = values[replacementIndex];
+    values[replacementIndex] = held;
+  }
 
-  while (schedule.length < daysInMonth) {
-    var type = ambientWeightedChoice(AMBIENT_TYPES, weights, random);
+  return values;
+}
 
-    /* Adjacent weather fronts are allowed to repeat the same type, so two
-       generated runs may merge into a longer sequence by chance. */
-    if (previous && random() < 0.15) type = previous;
+function ambientNextEntryIndex(type, bags, lastEntry, random) {
+  var count = ambientLibraryCount(type);
+  if (!count) return -1;
 
-    var run = ambientRunLength(random);
-    for (var i = 0; i < run && schedule.length < daysInMonth; i += 1) {
-      schedule.push(type);
+  if (!Array.isArray(bags[type]) || bags[type].length === 0) {
+    bags[type] = ambientShuffleIndices(count, random, lastEntry[type]);
+  }
+
+  var next = bags[type].shift();
+  lastEntry[type] = next;
+  return next;
+}
+
+function ambientBuildYearSchedule(year) {
+  var signature = ambientLibrarySignature();
+  var cacheKey = String(year) + "|" + signature;
+  if (ambientYearCache[cacheKey]) return ambientYearCache[cacheKey];
+
+  var random = ambientSeededRandom(hashString(cacheKey + ":quiet-calendar-v4"));
+  var assignments = {};
+  var bags = {};
+  var lastEntry = {};
+  var previousType = null;
+
+  for (var month = 0; month < 12; month += 1) {
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    /* Inventory is the primary probability. A folder with ten clips receives
+       roughly ten times the base weight of a folder with one. The modest
+       month-specific multiplier keeps each month irregular without overturning
+       that stock-based hierarchy. */
+    var availableTypes = AMBIENT_TYPES.filter(function(type) {
+      return ambientLibraryCount(type) > 0;
+    });
+
+    var monthWeights = availableTypes.map(function(type) {
+      var inventory = ambientLibraryCount(type);
+      return inventory * (0.82 + random() * 0.36);
+    });
+
+    var day = 1;
+    while (day <= daysInMonth) {
+      var choiceWeights = monthWeights.slice();
+
+      /* A one-clip category (currently cloud) can never form back-to-back
+         runs, because that would necessarily repeat the exact same video on
+         consecutive days. */
+      if (previousType && ambientLibraryCount(previousType) <= 1) {
+        var previousIndex = availableTypes.indexOf(previousType);
+        if (previousIndex >= 0 && availableTypes.length > 1) {
+          choiceWeights[previousIndex] = 0;
+        }
+      }
+
+      var type = ambientWeightedChoice(availableTypes, choiceWeights, random);
+      var inventoryCount = ambientLibraryCount(type);
+
+      /* Consecutive landscape days remain possible, but a run cannot be longer
+         than the number of unique clips in that category. Thus sea may run for
+         up to three days with three different clips; cloud stays one day; lake
+         and sky can linger longer without repeating footage. */
+      var run = Math.min(ambientRunLength(random), Math.max(1, inventoryCount));
+
+      for (var offset = 0; offset < run && day <= daysInMonth; offset += 1, day += 1) {
+        var date = new Date(year, month, day, 12);
+        assignments[dateKey(date)] = {
+          type: type,
+          entryIndex: ambientNextEntryIndex(type, bags, lastEntry, random)
+        };
+      }
+
+      previousType = type;
     }
-    previous = type;
   }
 
-  ambientMonthCache[monthKey] = schedule;
-  return schedule;
+  ambientYearCache[cacheKey] = assignments;
+  return assignments;
+}
+
+function ambientAssignmentForDate(date) {
+  var schedule = ambientBuildYearSchedule(date.getFullYear());
+  var assignment = schedule[dateKey(date)];
+  if (assignment) return assignment;
+
+  var fallbackType = AMBIENT_TYPES.find(function(type) {
+    return ambientLibraryCount(type) > 0;
+  }) || AMBIENT_TYPES[0];
+
+  return { type: fallbackType, entryIndex: 0 };
 }
 
 function ambientTypeForDate(date) {
-  var schedule = ambientMonthSchedule(date.getFullYear(), date.getMonth());
-  return schedule[Math.max(0, date.getDate() - 1)] || AMBIENT_TYPES[0];
+  return ambientAssignmentForDate(date).type;
 }
 
 function ambientEntryForDate(date, type) {
-  var pool = Array.isArray(AMBIENT_LIBRARY[type]) ? AMBIENT_LIBRARY[type] : [];
+  var assignment = ambientAssignmentForDate(date);
+  var resolvedType = assignment.type;
+  var pool = Array.isArray(AMBIENT_LIBRARY[resolvedType]) ? AMBIENT_LIBRARY[resolvedType] : [];
   if (!pool.length) return null;
-  return pool[hashString(dateKey(date) + ":" + type) % pool.length];
+
+  var index = assignment.entryIndex;
+  if (!Number.isInteger(index) || index < 0 || index >= pool.length) index = 0;
+
+  /* type is retained in the function signature for existing callers; the
+     assignment itself is authoritative so the media always matches the day. */
+  return pool[index];
 }
 
 function selectedDate() {
