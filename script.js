@@ -800,68 +800,81 @@ function renderRuinArchiveCabinetPreview() {
     ja: { before: "档案界面は ", label: "『墟域図・遺構館』", after: " より。" }
   };
   var ariaCopy = {
-    zh: "遗构馆 档案堆叠预览",
-    en: "Ruin Archive stacked record preview",
-    ja: "遺構館 ファイルスタック・プレビュー"
+    zh: "遗构馆 archive-doc 档案堆叠预览",
+    en: "Ruin Archive archive-doc stack preview",
+    ja: "遺構館 archive-doc スタック・プレビュー"
   };
   var source = sourceCopy[state.lang] || sourceCopy.en;
 
-  var docs = [
-    ["AETHER", "2026.01", "31°13′33″N"],
-    ["EFFLUENT", "2025.05", "30°27′16″N"],
-    ["土還灶垣", "2026.08", "31°39′52″N"],
-    ["隐染悬里", "2024.01", "37°27′16″N"],
-    ["束垣胚庭", "DISCOVERY", "ARCHIVE"],
-    ["彩壳堡", "GUEST", "RECORD"],
-    ["悬崖土房", "2026.08", "31°40′22″N"],
-    ["FOLLY-I", "SCORE", "01"],
-    ["FOLLY-II", "FILM", "02"],
-    ["FIELD-NOTE", "TXT", "03"],
-    ["OBJECT", "INDEX", "04"],
-    ["PHOTO", "RECORD", "05"],
-    ["WANDER", "LOG", "06"]
-  ];
+  /* This is a scaled-down transplant of the original ruin-archive archive-doc
+     logic rather than a generic card pile:
+     - record docs live on the left rail;
+     - garden docs live on the right rail;
+     - each successive sheet advances vertically and slightly sideways;
+     - sparse x/y misregistration keeps the stack physical;
+     - every sheet carries the clipped archive-doc corner profile. */
+  var recordJitterX = [0,0,-1.1,0,1.4,0,-1.7,0,0,1.2,0,-1.3,0,0];
+  var recordJitterY = [0,0,.7,0,-.5,0,.9,0,0,-.7,0,.6,0,0];
+  var gardenJitterX = [0,1.2,0,-1.4,0,.9,0];
+  var gardenJitterY = [0,-.7,0,.8,0,-.5,0];
 
-  var poses = [
-    [-24,-8,-5.2,1,"cut-a"],[-20,-4,3.8,2,"cut-b"],[-16,0,-2.6,3,"cut-c"],
-    [-11,4,5.1,4,"cut-a"],[-6,8,-4.0,5,"cut-b"],[-1,12,2.8,6,"cut-c"],
-    [5,8,-1.7,7,"cut-a"],[10,5,4.5,8,"cut-b"],[14,1,-3.4,9,"cut-c"],
-    [18,-3,2.2,10,"cut-a"],[13,-8,-5.0,11,"cut-b"],[7,-12,3.3,12,"cut-c"],
-    [0,-15,-1.4,13,"cut-a"]
-  ];
+  function archiveDocSvg(side, index) {
+    var broken = index % 4 === 2;
+    if (side === "left") {
+      return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+        (broken
+          ? '<path d="M0 .5H49 M58 .5H61 L99.5 15V100H0Z"/>'
+          : '<path d="M0 .5H61 L99.5 15V100H0Z"/>') +
+      '</svg>';
+    }
+    return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+      (broken
+        ? '<path d="M39 .5H47 M55 .5H100V100H.5V15Z"/>'
+        : '<path d="M39 .5H100V100H.5V15Z"/>') +
+    '</svg>';
+  }
 
-  var docHtml = docs.map(function(doc, index) {
-    var pose = poses[index];
-    return '<div class="ruin-mini-archive-doc ' + pose[4] + '" style="' +
-      '--doc-x:' + pose[0] + '%;--doc-y:' + pose[1] + '%;--doc-r:' + pose[2] + 'deg;--doc-z:' + pose[3] + ';">' +
-      '<span class="ruin-mini-doc-code">' + escapeHtml(String(index + 1).padStart(2, "0")) + '</span>' +
-      '<span class="ruin-mini-doc-title">' + escapeHtml(doc[0]) + '</span>' +
-      '<span class="ruin-mini-doc-rule" aria-hidden="true"></span>' +
-      '<span class="ruin-mini-doc-meta">' + escapeHtml(doc[1]) + '</span>' +
-      '<span class="ruin-mini-doc-coord">' + escapeHtml(doc[2]) + '</span>' +
+  var recordDocs = "";
+  for (var r = 0; r < 14; r += 1) {
+    recordDocs += '<div class="ruin-mini-archive-doc ruin-mini-record-doc" style="' +
+      '--doc-i:' + r + ';' +
+      '--doc-jx:' + recordJitterX[r] + 'px;' +
+      '--doc-jy:' + recordJitterY[r] + 'px;' +
+      '--doc-z:' + (30 + r) + ';">' +
+      archiveDocSvg("left", r) +
     '</div>';
-  }).join("");
+  }
+
+  var gardenDocs = "";
+  for (var g = 0; g < 7; g += 1) {
+    gardenDocs += '<div class="ruin-mini-archive-doc ruin-mini-garden-doc" style="' +
+      '--doc-i:' + g + ';' +
+      '--doc-jx:' + gardenJitterX[g] + 'px;' +
+      '--doc-jy:' + gardenJitterY[g] + 'px;' +
+      '--doc-z:' + (55 + g) + ';">' +
+      archiveDocSvg("right", g) +
+    '</div>';
+  }
 
   return '<section class="ruin-mini-section ruin-mini-cabinet-section" aria-label="' +
     escapeHtml(ariaCopy[state.lang] || ariaCopy.en) + '">' +
     '<div class="ruin-mini-shell ruin-mini-cabinet-shell">' +
       '<div class="ruin-mini-cabinet-stage" aria-hidden="true">' +
-        '<div class="ruin-mini-cabinet-stack">' + docHtml + '</div>' +
+        '<div class="ruin-mini-cabinet-stack ruin-mini-cabinet-record-stack">' + recordDocs + '</div>' +
+        '<div class="ruin-mini-cabinet-stack ruin-mini-cabinet-garden-stack">' + gardenDocs + '</div>' +
       '</div>' +
       '<div class="ruin-mini-cabinet-frame" aria-hidden="true">' +
         '<svg viewBox="0 0 1000 820" preserveAspectRatio="none">' +
           '<g class="ruin-mini-cabinet-frame-lines">' +
-            '<path d="M1 1H628 M682 1H999V244 M999 302V819H622 M566 819H1V536 M1 482V1"/>' +
-            '<path d="M82 42H636 M676 42H918V262 M918 300V754H650 M608 754H82V522 M82 484V42"/>' +
-            '<path d="M1 1L82 42 M999 1L918 42 M999 819L918 754 M1 819L82 754"/>' +
+            '<path d="M1 1H999V819H1Z"/>' +
+            '<path d="M150 64H850V725H150Z"/>' +
+            '<path d="M1 1L150 64 M999 1L850 64 M999 819L850 725 M1 819L150 725"/>' +
           '</g>' +
           '<g class="ruin-mini-cabinet-breaks">' +
-            '<path d="M628 1l10 15 14-9 9 15 21-21"/>' +
-            '<path d="M999 244l-18 8 8 13-16 11 26 26"/>' +
-            '<path d="M1 482l18 9-8 11 17 9-27 25"/>' +
-            '<path d="M566 819l13-19 13 8 16-22 14 33"/>' +
-            '<path d="M636 42l10 14 13-9 17 15"/>' +
-            '<path d="M918 262l-16 10 9 12-19 16"/>' +
+            '<path d="M646 1h18 M676 1h9"/>' +
+            '<path d="M999 262v18 M999 294v10"/>' +
+            '<path d="M1 494v15 M1 521v8"/>' +
+            '<path d="M570 819h17 M600 819h9"/>' +
           '</g>' +
         '</svg>' +
       '</div>' +
@@ -873,7 +886,6 @@ function renderRuinArchiveCabinetPreview() {
     '</p>' +
   '</section>';
 }
-
 
 function renderRoom(item) {
   var images = item.images || [];
