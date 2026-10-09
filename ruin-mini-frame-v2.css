@@ -200,7 +200,14 @@
   --ruin-mini-page: #f7f5ef;
   overflow: hidden;
   background: transparent;
+  opacity: 1;
+  transition: opacity .23s ease;
 }
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-shell.is-refracturing {
+  opacity: 0;
+}
+
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-archive-system {
   position: absolute;
@@ -288,6 +295,17 @@
   vector-effect: non-scaling-stroke;
   stroke-linecap: square;
   stroke-linejoin: miter;
+}
+
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-archive-hairline-crack {
+  fill: none;
+  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.68));
+  stroke-width: .72px;
+  stroke-opacity: .62;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .room-view[data-room="ruin-atlas"] #ruin-mini-stack-record .ruin-mini-archive-doc {
@@ -621,8 +639,49 @@
   transform: translateX(-50%);
 }
 
+.room-view[data-room="ruin-atlas"] .ruin-mini-refracture-control {
+  margin: 18px 0 0;
+  text-align: center;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-refracture-button {
+  appearance: none;
+  margin: 0;
+  padding: 3px 8px 4px;
+  border: 1px solid rgba(23,24,19,.34);
+  background: transparent;
+  color: rgba(23,24,19,.66);
+  font-family: var(--serif);
+  font-size: 9px;
+  line-height: 1.35;
+  letter-spacing: .12em;
+  cursor: pointer;
+  transition: opacity .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-refracture-button:hover,
+.room-view[data-room="ruin-atlas"] .ruin-mini-refracture-button:focus-visible {
+  color: rgba(23,24,19,.92);
+  border-color: rgba(23,24,19,.62);
+  outline: none;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-refracture-button:disabled {
+  opacity: .34;
+  cursor: default;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-refracture-note {
+  margin: 7px 0 0;
+  color: rgba(23,24,19,.42);
+  font-family: var(--serif);
+  font-size: 8.5px;
+  line-height: 1.55;
+  letter-spacing: .04em;
+}
+
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-section + .room-note {
@@ -668,5 +727,28 @@
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-source {
     margin-top: 12px;
+  }
+}
+
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-crack-branch-face {
+  stroke-width: .62px;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-crack-branch-void {
+  stroke-linecap: round;
+}
+
+@media (max-width:760px) {
+  .room-view[data-room="ruin-atlas"] .ruin-mini-refracture-control {
+    margin-top: 14px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-refracture-button {
+    font-size: 8.5px;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-refracture-note {
+    font-size: 8px;
   }
 }
