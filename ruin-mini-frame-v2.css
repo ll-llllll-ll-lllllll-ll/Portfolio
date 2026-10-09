@@ -502,8 +502,8 @@
   mask-image: var(--mini-index-stone-mask, none);
   -webkit-mask-size: 100% calc(100% + var(--mini-index-handle-h, 42px));
   mask-size: 100% calc(100% + var(--mini-index-handle-h, 42px));
-  -webkit-mask-position: 0 calc(-1 * var(--mini-index-handle-h, 42px));
-  mask-position: 0 calc(-1 * var(--mini-index-handle-h, 42px));
+  -webkit-mask-position: 0 calc(0px - var(--mini-index-handle-h, 42px));
+  mask-position: 0 calc(0px - var(--mini-index-handle-h, 42px));
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   scrollbar-width: none;
