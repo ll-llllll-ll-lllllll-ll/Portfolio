@@ -948,12 +948,21 @@ function renderRuinArchiveCabinetPreview() {
     ja: { button: "もう一度砕く", note: "移ろい続ける廃墟に、定まった姿はない。" }
   };
   var fracture = fractureCopy[state.lang] || fractureCopy.zh;
-  var indexHeadingCopy = {
-    zh: "索引系统",
-    en: "INDEX SYSTEM",
-    ja: "索引システム"
+  var steleCopy = {
+    zh: {
+      lead: "断裂石碑—碑文拓片",
+      body: "这个效果模拟了断裂石碑的碑文拓片，文字也在断裂处断掉。"
+    },
+    en: {
+      lead: "Fractured stele — inscription rubbing",
+      body: "This effect simulates a rubbing taken from a broken stele; the inscription breaks wherever the stone breaks."
+    },
+    ja: {
+      lead: "断裂石碑—碑文拓本",
+      body: "この効果は、割れた石碑から採った碑文の拓本を模している。文字も石の断裂した箇所で途切れる。"
+    }
   };
-  var indexHeading = indexHeadingCopy[state.lang] || indexHeadingCopy.zh;
+  var stele = steleCopy[state.lang] || steleCopy.zh;
 
   function indexRows() {
     return indexGroups.map(function(group, groupIndex) {
@@ -992,10 +1001,11 @@ function renderRuinArchiveCabinetPreview() {
           '<button type="button" class="ruin-mini-index-surface-trigger" aria-expanded="false" aria-label="' + escapeHtml(drawer.center) + '"></button>' +
         '</div>' +
         '<div class="ruin-mini-index-content">' +
-          '<section id="ruin-mini-index-stable-zone" class="ruin-mini-index-stable-zone">' +
-            '<div class="ruin-mini-index-title">' + escapeHtml(indexHeading) + '</div>' +
-            '<div class="ruin-mini-index-system">' + indexRows() + '</div>' +
-          '</section>' +
+          '<div class="ruin-mini-stele-copy" data-stele-lang="' + escapeHtml(state.lang) + '">' +
+            '<span class="ruin-mini-stele-lead">' + escapeHtml(stele.lead) + '</span>' +
+            '<span class="ruin-mini-stele-separator">：</span>' +
+            '<span class="ruin-mini-stele-body">' + escapeHtml(stele.body) + '</span>' +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -2864,8 +2874,7 @@ render();
           el.style.setProperty("mask-repeat","no-repeat");
         }
 
-        // The miniature now contains only the protected index system.
-        // Keep the stone geometry visible; do not cut the controls/text itself.
+        applySharedMask(indexDrawer.querySelector(".ruin-mini-stele-copy"));
       }
 
       var onMiniStoneGeometry=function(event){
@@ -3234,14 +3243,6 @@ render();
         }
       }
 
-      function applyIndexFilter() {
-        var active = Array.from(selectedTags);
-        system.querySelectorAll(".ruin-mini-archive-doc").forEach(function(doc) {
-          var docTags = String(doc.dataset.tags || "").split(",").filter(Boolean);
-          var match = !active.length || active.every(function(tag) { return docTags.indexOf(tag) !== -1; });
-          doc.classList.toggle("index-filter-muted",!match);
-        });
-      }
 
       if (surfaceTrigger) {
         surfaceTrigger.addEventListener("click",function(event) {
@@ -3250,18 +3251,6 @@ render();
           setDrawerOpen(!indexDrawer.classList.contains("open"));
         });
       }
-
-      indexDrawer.querySelectorAll(".ruin-mini-index-tag").forEach(function(button) {
-        button.addEventListener("click",function(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          var tag = button.dataset.tag;
-          if (selectedTags.has(tag)) selectedTags.delete(tag);
-          else selectedTags.add(tag);
-          button.classList.toggle("active",selectedTags.has(tag));
-          applyIndexFilter();
-        });
-      });
 
       var onRefracture = function(event) {
         event.preventDefault();
