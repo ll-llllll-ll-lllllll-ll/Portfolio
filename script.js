@@ -2778,7 +2778,7 @@ render();
         system.style.setProperty("--mini-garden-stack-w", rightRailWidth.toFixed(2) + "px");
         system.style.setProperty("--mini-record-left", "0px");
         system.style.setProperty("--mini-garden-right", "0px");
-        system.style.setProperty("--mini-garden-bottom", (205 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-bottom", (285 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-record-extract-x", (190 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-garden-extract-x", (-205 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-garden-extract-top", (-255 * scale).toFixed(2) + "px");
@@ -2828,37 +2828,36 @@ render();
         var h = indexDrawer.clientHeight;
         if (w < 120 || h < 90) return;
 
-        var handleH = window.innerWidth <= 760 ? 34 : 42;
+        // The closed drawer occupies exactly the bottom frame rail. This makes
+        // the top of the stone handle coincide with the inner-frame bottom edge.
+        var handleH = Math.max(28, system.clientHeight * (95 / 820));
         var leftInset = w * 0.195;
         var rightInset = w * 0.115;
+        indexDrawer.style.setProperty("--mini-index-handle-h",handleH.toFixed(2)+"px");
+
         var seed = hashString(
-          "mini-index-stone-v1:" + Math.round(w) + "x" + Math.round(h)
+          "mini-index-stone-v2:" + Math.round(w) + "x" + Math.round(h)
         );
         var rand = seededRandom(seed);
 
-        // The shell itself follows the same asymmetric rails as the cabinet.
-        var shell = [
-          {x:0,y:handleH},
-          {x:leftInset,y:0},
-          {x:w-rightInset,y:0},
-          {x:w,y:handleH},
-          {x:w,y:h},
-          {x:0,y:h}
-        ];
-
-        function cross(a,b,p) {
-          return (b.x-a.x)*(p.y-a.y) - (b.y-a.y)*(p.x-a.x);
+        function clampLocal(value,min,max){ return Math.max(min,Math.min(max,value)); }
+        function lerpPoint(a,b,t){ return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}; }
+        function distance(a,b){ return Math.hypot(b.x-a.x,b.y-a.y); }
+        function unit(dx,dy){
+          var len=Math.hypot(dx,dy)||1;
+          return {x:dx/len,y:dy/len};
         }
-
-        function intersect(a,b,p,q) {
+        function cross(a,b,p){
+          return (b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
+        }
+        function intersect(a,b,p,q){
           var A1=b.y-a.y, B1=a.x-b.x, C1=A1*a.x+B1*a.y;
           var A2=q.y-p.y, B2=p.x-q.x, C2=A2*p.x+B2*p.y;
           var det=A1*B2-A2*B1;
-          if (Math.abs(det)<1e-7) return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+          if(Math.abs(det)<1e-7) return null;
           return {x:(B2*C1-B1*C2)/det,y:(A1*C2-A2*C1)/det};
         }
-
-        function clipHalf(poly,a,b,keepPositive) {
+        function clipHalf(poly,a,b,keepPositive){
           var out=[];
           for(var i=0;i<poly.length;i++){
             var cur=poly[i], next=poly[(i+1)%poly.length];
@@ -2866,12 +2865,14 @@ render();
             var in1=keepPositive ? c1>=-0.01 : c1<=0.01;
             var in2=keepPositive ? c2>=-0.01 : c2<=0.01;
             if(in1) out.push(cur);
-            if(in1!==in2) out.push(intersect(cur,next,a,b));
+            if(in1!==in2){
+              var hit=intersect(cur,next,a,b);
+              if(hit) out.push(hit);
+            }
           }
           return out;
         }
-
-        function area(poly) {
+        function area(poly){
           var sum=0;
           for(var i=0;i<poly.length;i++){
             var a=poly[i],b=poly[(i+1)%poly.length];
@@ -2879,48 +2880,176 @@ render();
           }
           return Math.abs(sum/2);
         }
-
         function centroid(poly){
           var x=0,y=0;
           poly.forEach(function(p){x+=p.x;y+=p.y;});
           return {x:x/poly.length,y:y/poly.length};
         }
+        function lineHits(poly,a,b){
+          var hits=[];
+          for(var i=0;i<poly.length;i++){
+            var p=poly[i],q=poly[(i+1)%poly.length];
+            var hit=intersect(a,b,p,q);
+            if(!hit) continue;
+            var withinX=hit.x>=Math.min(p.x,q.x)-.2&&hit.x<=Math.max(p.x,q.x)+.2;
+            var withinY=hit.y>=Math.min(p.y,q.y)-.2&&hit.y<=Math.max(p.y,q.y)+.2;
+            if(!withinX||!withinY) continue;
+            if(hits.some(function(existing){return distance(existing,hit)<.8;})) continue;
+            hits.push(hit);
+          }
+          var d=unit(b.x-a.x,b.y-a.y);
+          hits.sort(function(p,q){
+            return (p.x-a.x)*d.x+(p.y-a.y)*d.y-((q.x-a.x)*d.x+(q.y-a.y)*d.y);
+          });
+          return hits;
+        }
+
+        // Directly adapted from the source drawer's outer-rim pit profile:
+        // one real bite is cut into the slab silhouette before fracture splitting.
+        function pitEdge(a,b,pit){
+          if(!pit) return [a,b];
+          var dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+          var nx=-dy/len,ny=dx/len;
+          var centerT=clampLocal(pit.centerT,.06,.94);
+          var halfT=clampLocal(pit.halfT,.025,.18);
+          var depth=clampLocal(pit.depth,1.8,8.8);
+          var profile=pit.deep
+            ? [[-1.38,0],[-1.08,.02],[-.84,.10],[-.62,.26],[-.46,.56],[-.28,.90],[-.12,1.16],[.05,1.30],[.18,1.12],[.34,.78],[.54,.54],[.76,.30],[1,.10],[1.26,.02],[1.42,0]]
+            : [[-1.28,0],[-.96,.10],[-.62,.34],[-.30,.68],[-.08,.94],[0,1],[.18,.82],[.46,.48],[.82,.17],[1.24,0]];
+          var reach=pit.deep?1.42:1.30;
+          var startT=clampLocal(centerT-halfT*reach,0,1);
+          var endT=clampLocal(centerT+halfT*reach,0,1);
+          var out=[a];
+          function base(t){return {x:a.x+dx*t,y:a.y+dy*t};}
+          if(startT>.002) out.push(base(startT));
+          profile.forEach(function(pair){
+            var offset=pair[0],weight=pair[1];
+            var side=offset<0?-1:1;
+            var sideScale=1+pit.bias*side*(pit.deep?.24:.14);
+            var t=clampLocal(centerT+offset*sideScale*halfT,startT,endT);
+            var p=base(t);
+            var lip=pit.deep&&Math.abs(offset)<.24?1.08:1;
+            out.push({x:p.x+nx*depth*weight*lip,y:p.y+ny*depth*weight*lip});
+          });
+          if(endT<.998) out.push(base(endT));
+          out.push(b);
+          return out;
+        }
+        function makePit(segment){
+          var deep=rand()<.34;
+          var safe=segment==="top"
+            ? [[.09,.155],[.845,.91]]
+            : segment==="left" ? [[.16,.28],[.74,.86]] : [[.14,.26],[.72,.84]];
+          var range=safe[Math.floor(rand()*safe.length)]||safe[0];
+          return {
+            centerT:range[0]+rand()*(range[1]-range[0]),
+            halfT:segment==="top"
+              ? .04+rand()*(deep?.014:.018)
+              : (deep?.07:.082)+rand()*(deep?.022:.026),
+            depth:deep ? 5.6+rand()*2.8 : 2.3+rand()*1.2,
+            deep:deep,
+            bias:(rand()-.5)*1.35
+          };
+        }
+
+        var pitPlan={left:null,top:null,right:null};
+        var pitRoll=rand();
+        var pitSide=pitRoll<.50?"top":(pitRoll<.75?"left":"right");
+        pitPlan[pitSide]=makePit(pitSide);
+
+        var leftStart={x:0,y:handleH};
+        var leftTop={x:leftInset,y:0};
+        var rightTop={x:w-rightInset,y:0};
+        var rightEnd={x:w,y:handleH};
+        var leftEdge=pitEdge(leftStart,leftTop,pitPlan.left);
+        var topEdge=pitEdge(leftTop,rightTop,pitPlan.top);
+        var rightEdge=pitEdge(rightTop,rightEnd,pitPlan.right);
+        var shell=leftEdge.slice(0,-1)
+          .concat(topEdge.slice(0,-1))
+          .concat(rightEdge)
+          .concat([{x:w,y:h},{x:0,y:h}]);
 
         var cells=[shell];
         var cracks=[];
-        var crackCount=2 + Math.floor(rand()*3); // 2–4, matching the sparse source logic.
+        var target=2+Math.floor(rand()*3); // 2–4 seams in this desktop miniature.
+        var anglePools=[[42,68],[112,138],[78,101],[36,48],[132,145]];
+        var attempts=0;
 
-        for(var cutIndex=0;cutIndex<crackCount;cutIndex++){
-          if(!cells.length) break;
+        while(cracks.length<target&&attempts++<50){
           var targetIndex=0;
           for(var ci=1;ci<cells.length;ci++){
             if(area(cells[ci])>area(cells[targetIndex])) targetIndex=ci;
           }
-          var target=cells[targetIndex];
-          var c=centroid(target);
-          var angle=(0.20+rand()*0.60)*Math.PI;
-          if(cutIndex%2) angle+=Math.PI*0.48;
-          var dx=Math.cos(angle),dy=Math.sin(angle);
-          var normal={x:-dy,y:dx};
-          var drift=(rand()-.5)*Math.min(w,h)*0.16;
-          var mid={x:c.x+normal.x*drift,y:c.y+normal.y*drift};
+          var poly=cells[targetIndex];
+          var c=centroid(poly);
+          var pool=anglePools[Math.floor(rand()*anglePools.length)];
+          var angle=(pool[0]+rand()*(pool[1]-pool[0]))*Math.PI/180;
+          var d={x:Math.cos(angle),y:Math.sin(angle)};
+          var n={x:-d.y,y:d.x};
+          var mid={
+            x:c.x+(rand()-.5)*w*.16,
+            y:clampLocal(c.y+(rand()-.5)*h*.15,h*.16,h*.90)
+          };
           var len=Math.hypot(w,h)*1.4;
-          var a={x:mid.x-dx*len,y:mid.y-dy*len};
-          var b={x:mid.x+dx*len,y:mid.y+dy*len};
-          var p1=clipHalf(target,a,b,true);
-          var p2=clipHalf(target,a,b,false);
-          if(p1.length<3||p2.length<3||area(p1)<w*h*0.035||area(p2)<w*h*0.035) continue;
+          var a={x:mid.x-d.x*len,y:mid.y-d.y*len};
+          var b={x:mid.x+d.x*len,y:mid.y+d.y*len};
+          var hits=lineHits(poly,a,b);
+          if(hits.length<2) continue;
+          var startHit=hits[0],endHit=hits[hits.length-1];
+          if(distance(startHit,endHit)<Math.min(w,h)*.22) continue;
+
+          var p1=clipHalf(poly,a,b,true);
+          var p2=clipHalf(poly,a,b,false);
+          if(p1.length<3||p2.length<3||area(p1)<w*h*.028||area(p2)<w*h*.028) continue;
+
           cells.splice(targetIndex,1,p1,p2);
-          cracks.push({a:a,b:b,width:1.8+rand()*2.6});
+
+          // Source-like fracture centreline: not perfectly straight, and each
+          // seam receives a different "contact / open" rhythm.
+          var crackRand=seededRandom(seed ^ ((cracks.length+1)*2654435761));
+          var path=[];
+          var pieces=6+Math.floor(crackRand()*4);
+          var tangent=unit(endHit.x-startHit.x,endHit.y-startHit.y);
+          var normal={x:-tangent.y,y:tangent.x};
+          var bow=(crackRand()-.5)*Math.min(w,h)*.018;
+          for(var pi=0;pi<pieces;pi++){
+            var t=pi/(pieces-1);
+            var envelope=Math.sin(Math.PI*t);
+            var rough=(crackRand()-.5)*Math.min(w,h)*.010*envelope;
+            path.push({
+              x:startHit.x+(endHit.x-startHit.x)*t+normal.x*(bow*envelope+rough),
+              y:startHit.y+(endHit.y-startHit.y)*t+normal.y*(bow*envelope+rough)
+            });
+          }
+
+          var profileRoll=crackRand();
+          var profile=profileRoll<.46?"small":profileRoll<.82?"medium":"large";
+          var baseGap=profile==="large" ? 3.0+crackRand()*2.0
+            : profile==="medium" ? 2.0+crackRand()*1.6
+            : 1.15+crackRand()*1.0;
+          var mouthWidth=profile==="large" ? 10+crackRand()*9.5
+            : profile==="medium" ? 7+crackRand()*7
+            : 4.2+crackRand()*4.8;
+          var mouthDepth=profile==="large" ? 18+crackRand()*11
+            : profile==="medium" ? 13+crackRand()*9
+            : 9+crackRand()*7;
+
+          cracks.push({
+            path:path,
+            baseGap:baseGap,
+            mouthWidth:mouthWidth,
+            mouthDepth:mouthDepth,
+            profile:profile,
+            phase:crackRand()*Math.PI*2
+          });
         }
 
         function roughened(poly,index){
           var c=centroid(poly);
           return poly.map(function(p,pi){
             var local=seededRandom(seed ^ ((index+1)*2654435761) ^ ((pi+7)*2246822519));
-            var inward=0.35+local()*0.85;
-            var vx=c.x-p.x,vy=c.y-p.y;
-            var vl=Math.hypot(vx,vy)||1;
+            var inward=.35+local()*.88;
+            var vx=c.x-p.x,vy=c.y-p.y,vl=Math.hypot(vx,vy)||1;
             return {x:p.x+vx/vl*inward,y:p.y+vy/vl*inward};
           });
         }
@@ -2938,16 +3067,122 @@ render();
             return (i?"L":"M")+p.x.toFixed(2)+" "+p.y.toFixed(2);
           }).join(" ")+" Z");
           path.setAttribute("class","ruin-mini-index-stone-face");
-          path.style.setProperty("--stone-alpha",(0.79+(index%4)*0.025).toFixed(3));
-          path.style.setProperty("--stone-stroke-alpha",(0.60+(index%3)*0.07).toFixed(3));
+          path.style.setProperty("--stone-alpha",(.80+(index%4)*.023).toFixed(3));
+          path.style.setProperty("--stone-stroke-alpha",(.62+(index%3)*.08).toFixed(3));
           svg.appendChild(path);
         });
 
-        // A shared rubbing mask: white slab, black fracture seams.
+        // Draw actual open fracture gaps on top of the slab faces. The width
+        // varies along a single seam; ends flare into weathered mouths, closely
+        // following the source's small/medium/large opening logic.
+        var crackGroup=document.createElementNS(NS,"g");
+        crackGroup.setAttribute("class","ruin-mini-index-open-cracks");
+        cracks.forEach(function(crack,crackIndex){
+          var pts=crack.path;
+          for(var si=0;si<pts.length-1;si++){
+            var a=pts[si],b=pts[si+1];
+            var midT=(si+.5)/(pts.length-1);
+            var contactWave=.56+.44*Math.abs(Math.sin(midT*Math.PI*2.2+crack.phase));
+            var gap=crack.baseGap*contactWave;
+
+            var voidLine=document.createElementNS(NS,"line");
+            voidLine.setAttribute("x1",a.x.toFixed(2));
+            voidLine.setAttribute("y1",a.y.toFixed(2));
+            voidLine.setAttribute("x2",b.x.toFixed(2));
+            voidLine.setAttribute("y2",b.y.toFixed(2));
+            voidLine.setAttribute("class","ruin-mini-index-crack-void");
+            voidLine.style.setProperty("--crack-gap",gap.toFixed(2)+"px");
+            crackGroup.appendChild(voidLine);
+
+            var d=unit(b.x-a.x,b.y-a.y);
+            var n={x:-d.y,y:d.x};
+            [-1,1].forEach(function(sign){
+              var edge=document.createElementNS(NS,"line");
+              edge.setAttribute("x1",(a.x+n.x*gap*.48*sign).toFixed(2));
+              edge.setAttribute("y1",(a.y+n.y*gap*.48*sign).toFixed(2));
+              edge.setAttribute("x2",(b.x+n.x*gap*.48*sign).toFixed(2));
+              edge.setAttribute("y2",(b.y+n.y*gap*.48*sign).toFixed(2));
+              edge.setAttribute("class","ruin-mini-index-crack-face");
+              edge.style.setProperty("--crack-face-alpha",(0.40+((si+crackIndex)%3)*.13).toFixed(2));
+              crackGroup.appendChild(edge);
+            });
+          }
+
+          function addMouth(endpoint,nextPoint,isStart){
+            var inward=unit(nextPoint.x-endpoint.x,nextPoint.y-endpoint.y);
+            var normal={x:-inward.y,y:inward.x};
+            var asym=.78+((crackIndex+isStart)%3)*.13;
+            var w1=crack.mouthWidth*asym;
+            var w2=crack.mouthWidth*(1.72-asym);
+            var depth=crack.mouthDepth*(.88+((crackIndex+1)%3)*.09);
+            var throatHalf=Math.max(.8,crack.baseGap*.58);
+            var throat={x:endpoint.x+inward.x*depth,y:endpoint.y+inward.y*depth};
+            var pA={x:endpoint.x+normal.x*w1,y:endpoint.y+normal.y*w1};
+            var pB={x:endpoint.x-normal.x*w2,y:endpoint.y-normal.y*w2};
+            var tA={x:throat.x+normal.x*throatHalf,y:throat.y+normal.y*throatHalf};
+            var tB={x:throat.x-normal.x*throatHalf,y:throat.y-normal.y*throatHalf};
+
+            var mouth=document.createElementNS(NS,"path");
+            mouth.setAttribute("d",
+              "M"+pA.x.toFixed(2)+" "+pA.y.toFixed(2)+
+              " Q"+(lerpPoint(pA,tA,.44).x+normal.x*1.4).toFixed(2)+" "+
+                   (lerpPoint(pA,tA,.44).y+normal.y*1.4).toFixed(2)+" "+
+                   tA.x.toFixed(2)+" "+tA.y.toFixed(2)+
+              " L"+tB.x.toFixed(2)+" "+tB.y.toFixed(2)+
+              " Q"+(lerpPoint(tB,pB,.56).x-normal.x*1.2).toFixed(2)+" "+
+                   (lerpPoint(tB,pB,.56).y-normal.y*1.2).toFixed(2)+" "+
+                   pB.x.toFixed(2)+" "+pB.y.toFixed(2)+" Z"
+            );
+            mouth.setAttribute("class","ruin-mini-index-crack-mouth");
+            crackGroup.appendChild(mouth);
+
+            [[pA,tA],[pB,tB]].forEach(function(pair){
+              var lip=document.createElementNS(NS,"path");
+              lip.setAttribute("d","M"+pair[0].x.toFixed(2)+" "+pair[0].y.toFixed(2)+
+                " Q"+lerpPoint(pair[0],pair[1],.52).x.toFixed(2)+" "+
+                lerpPoint(pair[0],pair[1],.52).y.toFixed(2)+" "+
+                pair[1].x.toFixed(2)+" "+pair[1].y.toFixed(2));
+              lip.setAttribute("class","ruin-mini-index-crack-mouth-edge");
+              crackGroup.appendChild(lip);
+            });
+          }
+
+          if(pts.length>2){
+            addMouth(pts[0],pts[1],1);
+            addMouth(pts[pts.length-1],pts[pts.length-2],0);
+          }
+        });
+        svg.appendChild(crackGroup);
+
+        // Shared rubbing mask: stone silhouette + real edge pits, with variable
+        // fracture widths and flared mouths removed from the text mask.
         var maskSvg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">';
         maskSvg+='<polygon points="'+shell.map(function(p){return p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' ')+'" fill="white"/>';
         cracks.forEach(function(crack){
-          maskSvg+='<line x1="'+crack.a.x.toFixed(2)+'" y1="'+crack.a.y.toFixed(2)+'" x2="'+crack.b.x.toFixed(2)+'" y2="'+crack.b.y.toFixed(2)+'" stroke="black" stroke-width="'+crack.width.toFixed(2)+'" stroke-linecap="round"/>';
+          for(var si=0;si<crack.path.length-1;si++){
+            var a=crack.path[si],b=crack.path[si+1];
+            var midT=(si+.5)/(crack.path.length-1);
+            var contactWave=.56+.44*Math.abs(Math.sin(midT*Math.PI*2.2+crack.phase));
+            var gap=crack.baseGap*contactWave;
+            maskSvg+='<line x1="'+a.x.toFixed(2)+'" y1="'+a.y.toFixed(2)+'" x2="'+b.x.toFixed(2)+'" y2="'+b.y.toFixed(2)+'" stroke="black" stroke-width="'+gap.toFixed(2)+'" stroke-linecap="round"/>';
+          }
+          [0,crack.path.length-1].forEach(function(which){
+            var endpoint=crack.path[which];
+            var nextPoint=which===0?crack.path[1]:crack.path[crack.path.length-2];
+            var inward=unit(nextPoint.x-endpoint.x,nextPoint.y-endpoint.y);
+            var normal={x:-inward.y,y:inward.x};
+            var depth=crack.mouthDepth;
+            var throat={x:endpoint.x+inward.x*depth,y:endpoint.y+inward.y*depth};
+            var mw=crack.mouthWidth;
+            var th=Math.max(.8,crack.baseGap*.58);
+            var mouthPts=[
+              {x:endpoint.x+normal.x*mw,y:endpoint.y+normal.y*mw},
+              {x:throat.x+normal.x*th,y:throat.y+normal.y*th},
+              {x:throat.x-normal.x*th,y:throat.y-normal.y*th},
+              {x:endpoint.x-normal.x*mw,y:endpoint.y-normal.y*mw}
+            ];
+            maskSvg+='<polygon points="'+mouthPts.map(function(p){return p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' ')+'" fill="black"/>';
+          });
         });
         maskSvg+='</svg>';
         var maskUrl='url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(maskSvg)+'")';
@@ -2957,7 +3192,7 @@ render();
         indexDrawer.style.setProperty("--mini-index-stone-mask",maskUrl);
         indexDrawer.style.setProperty(
           "--mini-index-drawer-shell-clip",
-          "polygon(0 "+handleH+"px, "+leftInset.toFixed(2)+"px 0, "+(w-rightInset).toFixed(2)+"px 0, 100% "+handleH+"px, 100% 100%, 0 100%)"
+          "polygon("+shell.map(function(p){return p.x.toFixed(2)+"px "+p.y.toFixed(2)+"px";}).join(", ")+")"
         );
         indexDrawer.classList.add("stone-ready");
       }
@@ -3023,7 +3258,7 @@ render();
         setGeometryVariables();
 
         var recordDocs = Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc"));
-        var recordBaseTop = 322;
+        var recordBaseTop = 390;
         var recordGapY = 35;
         var recordGapX = 3.2;
 
