@@ -982,7 +982,7 @@ function renderRuinArchiveCabinetPreview() {
       '</div>' +
       '<div id="ruin-mini-index-drawer" class="ruin-mini-index-drawer">' +
         '<div id="ruin-mini-index-stone-layer" class="ruin-mini-index-stone-layer" aria-hidden="true"></div>' +
-        '<div class="ruin-mini-index-handle">' +
+        '<div id="ruin-mini-index-handle" class="ruin-mini-index-handle">' +
           '<button type="button" class="ruin-mini-index-surface-trigger" aria-expanded="false" aria-label="' + escapeHtml(drawer.center) + '"></button>' +
           '<div class="ruin-mini-index-bottom-labels" aria-hidden="true">' +
             '<span>' + escapeHtml(drawer.record) + '</span>' +
@@ -995,7 +995,7 @@ function renderRuinArchiveCabinetPreview() {
             '<p class="ruin-mini-index-top-title">' + escapeHtml(drawer.intro) + '</p>' +
             '<div class="ruin-mini-index-columns"><p>' + escapeHtml(drawer.p1) + '</p><p>' + escapeHtml(drawer.p2) + '</p></div>' +
           '</section>' +
-          '<section class="ruin-mini-index-stable-zone">' +
+          '<section id="ruin-mini-index-stable-zone" class="ruin-mini-index-stable-zone">' +
             '<div class="ruin-mini-index-title">' + escapeHtml(drawer.title) + '</div>' +
             '<p class="ruin-mini-index-lex">' + escapeHtml(drawer.lex) + '</p>' +
             '<div class="ruin-mini-index-system">' + indexRows() + '</div>' +
@@ -2832,454 +2832,61 @@ render();
       }
 
 
-      function renderMiniIndexStone() {
-        var layer = document.getElementById("ruin-mini-index-stone-layer");
-        if (!layer || !indexDrawer.isConnected) return;
+      function syncMiniSourceStoneMask(geom) {
+        if (!geom || !Array.isArray(geom.cells) || !geom.cells.length || !indexDrawer.isConnected) return;
 
-        var w = indexDrawer.clientWidth;
-        var h = indexDrawer.clientHeight;
-        if (w < 120 || h < 90) return;
+        var drawerRect=indexDrawer.getBoundingClientRect();
+        if(drawerRect.width<20||drawerRect.height<20) return;
+        if(Math.abs((Number(geom.width)||0)-drawerRect.width)>4) return;
 
-        // The closed drawer occupies exactly the bottom frame rail. This makes
-        // the top of the stone handle coincide with the inner-frame bottom edge.
-        var handleH = Math.max(28, system.clientHeight * (95 / 820));
-        var leftInset = w * 0.195;
-        var rightInset = w * 0.115;
-        indexDrawer.style.setProperty("--mini-index-handle-h",handleH.toFixed(2)+"px");
+        var polygons=geom.cells.map(function(cell){
+          var pts=(cell.points||[]).map(function(p){
+            return Number(p.x).toFixed(2)+","+Number(p.y).toFixed(2);
+          }).join(" ");
+          return '<polygon points="'+pts+'" fill="white"/>';
+        }).join("");
 
-        var seed = hashString(
-          "mini-index-stone-v3:" + fractureIteration + ":" + Math.round(w) + "x" + Math.round(h)
-        );
-        var rand = seededRandom(seed);
-
-        function clampLocal(value,min,max){ return Math.max(min,Math.min(max,value)); }
-        function lerpPoint(a,b,t){ return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}; }
-        function distance(a,b){ return Math.hypot(b.x-a.x,b.y-a.y); }
-        function unit(dx,dy){
-          var len=Math.hypot(dx,dy)||1;
-          return {x:dx/len,y:dy/len};
-        }
-        function cross(a,b,p){
-          return (b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
-        }
-        function intersect(a,b,p,q){
-          var A1=b.y-a.y, B1=a.x-b.x, C1=A1*a.x+B1*a.y;
-          var A2=q.y-p.y, B2=p.x-q.x, C2=A2*p.x+B2*p.y;
-          var det=A1*B2-A2*B1;
-          if(Math.abs(det)<1e-7) return null;
-          return {x:(B2*C1-B1*C2)/det,y:(A1*C2-A2*C1)/det};
-        }
-        function clipHalf(poly,a,b,keepPositive){
-          var out=[];
-          for(var i=0;i<poly.length;i++){
-            var cur=poly[i], next=poly[(i+1)%poly.length];
-            var c1=cross(a,b,cur), c2=cross(a,b,next);
-            var in1=keepPositive ? c1>=-0.01 : c1<=0.01;
-            var in2=keepPositive ? c2>=-0.01 : c2<=0.01;
-            if(in1) out.push(cur);
-            if(in1!==in2){
-              var hit=intersect(cur,next,a,b);
-              if(hit) out.push(hit);
-            }
-          }
-          return out;
-        }
-        function area(poly){
-          var sum=0;
-          for(var i=0;i<poly.length;i++){
-            var a=poly[i],b=poly[(i+1)%poly.length];
-            sum+=a.x*b.y-b.x*a.y;
-          }
-          return Math.abs(sum/2);
-        }
-        function centroid(poly){
-          var x=0,y=0;
-          poly.forEach(function(p){x+=p.x;y+=p.y;});
-          return {x:x/poly.length,y:y/poly.length};
-        }
-        function lineHits(poly,a,b){
-          var hits=[];
-          for(var i=0;i<poly.length;i++){
-            var p=poly[i],q=poly[(i+1)%poly.length];
-            var hit=intersect(a,b,p,q);
-            if(!hit) continue;
-            var withinX=hit.x>=Math.min(p.x,q.x)-.2&&hit.x<=Math.max(p.x,q.x)+.2;
-            var withinY=hit.y>=Math.min(p.y,q.y)-.2&&hit.y<=Math.max(p.y,q.y)+.2;
-            if(!withinX||!withinY) continue;
-            if(hits.some(function(existing){return distance(existing,hit)<.8;})) continue;
-            hits.push(hit);
-          }
-          var d=unit(b.x-a.x,b.y-a.y);
-          hits.sort(function(p,q){
-            return (p.x-a.x)*d.x+(p.y-a.y)*d.y-((q.x-a.x)*d.x+(q.y-a.y)*d.y);
-          });
-          return hits;
-        }
-
-        // Directly adapted from the source drawer's outer-rim pit profile:
-        // one real bite is cut into the slab silhouette before fracture splitting.
-        function pitEdge(a,b,pit){
-          if(!pit) return [a,b];
-          var dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
-          var nx=-dy/len,ny=dx/len;
-          var centerT=clampLocal(pit.centerT,.06,.94);
-          var halfT=clampLocal(pit.halfT,.025,.18);
-          var depth=clampLocal(pit.depth,1.8,8.8);
-          var profile=pit.deep
-            ? [[-1.38,0],[-1.08,.02],[-.84,.10],[-.62,.26],[-.46,.56],[-.28,.90],[-.12,1.16],[.05,1.30],[.18,1.12],[.34,.78],[.54,.54],[.76,.30],[1,.10],[1.26,.02],[1.42,0]]
-            : [[-1.28,0],[-.96,.10],[-.62,.34],[-.30,.68],[-.08,.94],[0,1],[.18,.82],[.46,.48],[.82,.17],[1.24,0]];
-          var reach=pit.deep?1.42:1.30;
-          var startT=clampLocal(centerT-halfT*reach,0,1);
-          var endT=clampLocal(centerT+halfT*reach,0,1);
-          var out=[a];
-          function base(t){return {x:a.x+dx*t,y:a.y+dy*t};}
-          if(startT>.002) out.push(base(startT));
-          profile.forEach(function(pair){
-            var offset=pair[0],weight=pair[1];
-            var side=offset<0?-1:1;
-            var sideScale=1+pit.bias*side*(pit.deep?.24:.14);
-            var t=clampLocal(centerT+offset*sideScale*halfT,startT,endT);
-            var p=base(t);
-            var lip=pit.deep&&Math.abs(offset)<.24?1.08:1;
-            out.push({x:p.x+nx*depth*weight*lip,y:p.y+ny*depth*weight*lip});
-          });
-          if(endT<.998) out.push(base(endT));
-          out.push(b);
-          return out;
-        }
-        function makePit(segment){
-          var deep=rand()<.34;
-          var safe=segment==="top"
-            ? [[.09,.155],[.845,.91]]
-            : segment==="left" ? [[.16,.28],[.74,.86]] : [[.14,.26],[.72,.84]];
-          var range=safe[Math.floor(rand()*safe.length)]||safe[0];
-          return {
-            centerT:range[0]+rand()*(range[1]-range[0]),
-            halfT:segment==="top"
-              ? .04+rand()*(deep?.014:.018)
-              : (deep?.07:.082)+rand()*(deep?.022:.026),
-            depth:deep ? 5.6+rand()*2.8 : 2.3+rand()*1.2,
-            deep:deep,
-            bias:(rand()-.5)*1.35
-          };
-        }
-
-        var pitPlan={left:null,top:null,right:null};
-        var pitRoll=rand();
-        var pitSide=pitRoll<.50?"top":(pitRoll<.75?"left":"right");
-        pitPlan[pitSide]=makePit(pitSide);
-
-        var leftStart={x:0,y:handleH};
-        var leftTop={x:leftInset,y:0};
-        var rightTop={x:w-rightInset,y:0};
-        var rightEnd={x:w,y:handleH};
-        var leftEdge=pitEdge(leftStart,leftTop,pitPlan.left);
-        var topEdge=pitEdge(leftTop,rightTop,pitPlan.top);
-        var rightEdge=pitEdge(rightTop,rightEnd,pitPlan.right);
-        var shell=leftEdge.slice(0,-1)
-          .concat(topEdge.slice(0,-1))
-          .concat(rightEdge)
-          .concat([{x:w,y:h},{x:0,y:h}]);
-
-        var cells=[shell];
-        var cracks=[];
-        var target=2+Math.floor(rand()*3); // 2–4 seams in this desktop miniature.
-        var anglePools=[[42,68],[112,138],[78,101],[36,48],[132,145]];
-        var attempts=0;
-
-        while(cracks.length<target&&attempts++<50){
-          var targetIndex=0;
-          for(var ci=1;ci<cells.length;ci++){
-            if(area(cells[ci])>area(cells[targetIndex])) targetIndex=ci;
-          }
-          var poly=cells[targetIndex];
-          var c=centroid(poly);
-          var pool=anglePools[Math.floor(rand()*anglePools.length)];
-          var angle=(pool[0]+rand()*(pool[1]-pool[0]))*Math.PI/180;
-          var d={x:Math.cos(angle),y:Math.sin(angle)};
-          var n={x:-d.y,y:d.x};
-          var mid={
-            x:c.x+(rand()-.5)*w*.16,
-            y:clampLocal(c.y+(rand()-.5)*h*.15,h*.16,h*.90)
-          };
-          var len=Math.hypot(w,h)*1.4;
-          var a={x:mid.x-d.x*len,y:mid.y-d.y*len};
-          var b={x:mid.x+d.x*len,y:mid.y+d.y*len};
-          var hits=lineHits(poly,a,b);
-          if(hits.length<2) continue;
-          var startHit=hits[0],endHit=hits[hits.length-1];
-          if(distance(startHit,endHit)<Math.min(w,h)*.22) continue;
-
-          var p1=clipHalf(poly,a,b,true);
-          var p2=clipHalf(poly,a,b,false);
-          if(p1.length<3||p2.length<3||area(p1)<w*h*.028||area(p2)<w*h*.028) continue;
-
-          cells.splice(targetIndex,1,p1,p2);
-
-          // Source-like fracture centreline: not perfectly straight, and each
-          // seam receives a different "contact / open" rhythm.
-          var crackRand=seededRandom(seed ^ ((cracks.length+1)*2654435761));
-          var path=[];
-          var pieces=6+Math.floor(crackRand()*4);
-          var tangent=unit(endHit.x-startHit.x,endHit.y-startHit.y);
-          var normal={x:-tangent.y,y:tangent.x};
-          var bow=(crackRand()-.5)*Math.min(w,h)*.018;
-          for(var pi=0;pi<pieces;pi++){
-            var t=pi/(pieces-1);
-            var envelope=Math.sin(Math.PI*t);
-            var rough=(crackRand()-.5)*Math.min(w,h)*.010*envelope;
-            path.push({
-              x:startHit.x+(endHit.x-startHit.x)*t+normal.x*(bow*envelope+rough),
-              y:startHit.y+(endHit.y-startHit.y)*t+normal.y*(bow*envelope+rough)
-            });
-          }
-
-          var profileRoll=crackRand();
-          var profile=profileRoll<.46?"small":profileRoll<.82?"medium":"large";
-          var baseGap=profile==="large" ? 3.0+crackRand()*2.0
-            : profile==="medium" ? 2.0+crackRand()*1.6
-            : 1.15+crackRand()*1.0;
-          var mouthWidth=profile==="large" ? 10+crackRand()*9.5
-            : profile==="medium" ? 7+crackRand()*7
-            : 4.2+crackRand()*4.8;
-          var mouthDepth=profile==="large" ? 18+crackRand()*11
-            : profile==="medium" ? 13+crackRand()*9
-            : 9+crackRand()*7;
-
-          cracks.push({
-            path:path,
-            baseGap:baseGap,
-            mouthWidth:mouthWidth,
-            mouthDepth:mouthDepth,
-            profile:profile,
-            phase:crackRand()*Math.PI*2,
-            branches:[]
-          });
-        }
-
-        // Secondary fissures: the source stele sometimes lets a main seam shed
-        // a shorter branch. Keep them sparse and lighter than the structural cuts.
-        cracks.forEach(function(crack, crackIndex){
-          var branchRand = seededRandom(seed ^ ((crackIndex + 11) * 1597334677));
-          var branchCount = branchRand() < .28 ? 0 : (branchRand() < .82 ? 1 : 2);
-          for(var bi=0;bi<branchCount;bi++){
-            if(crack.path.length < 4) continue;
-            var anchorIndex = 1 + Math.floor(branchRand() * (crack.path.length - 2));
-            var anchor = crack.path[anchorIndex];
-            var before = crack.path[Math.max(0,anchorIndex-1)];
-            var after = crack.path[Math.min(crack.path.length-1,anchorIndex+1)];
-            var baseDir = unit(after.x-before.x,after.y-before.y);
-            var sign = branchRand()<.5 ? -1 : 1;
-            var angle = sign * ((24 + branchRand()*31) * Math.PI/180);
-            var bd = {
-              x:baseDir.x*Math.cos(angle)-baseDir.y*Math.sin(angle),
-              y:baseDir.x*Math.sin(angle)+baseDir.y*Math.cos(angle)
-            };
-            var length = Math.min(w,h) * (.055 + branchRand()*.085);
-            var segCount = 3 + Math.floor(branchRand()*3);
-            var points=[{x:anchor.x,y:anchor.y}];
-            var bn={x:-bd.y,y:bd.x};
-            for(var bsi=1;bsi<=segCount;bsi++){
-              var bt=bsi/segCount;
-              var jitter=(branchRand()-.5)*Math.min(w,h)*.008*Math.sin(Math.PI*bt);
-              points.push({
-                x:anchor.x+bd.x*length*bt+bn.x*jitter,
-                y:anchor.y+bd.y*length*bt+bn.y*jitter
-              });
-            }
-            crack.branches.push({
-              path:points,
-              gap:.62+branchRand()*1.18,
-              phase:branchRand()*Math.PI*2
-            });
-          }
-        });
-
-        function roughened(poly,index){
-          var c=centroid(poly);
-          return poly.map(function(p,pi){
-            var local=seededRandom(seed ^ ((index+1)*2654435761) ^ ((pi+7)*2246822519));
-            var inward=.35+local()*.88;
-            var vx=c.x-p.x,vy=c.y-p.y,vl=Math.hypot(vx,vy)||1;
-            return {x:p.x+vx/vl*inward,y:p.y+vy/vl*inward};
-          });
-        }
-
-        var NS="http://www.w3.org/2000/svg";
-        var svg=document.createElementNS(NS,"svg");
-        svg.setAttribute("viewBox","0 0 "+w+" "+h);
-        svg.setAttribute("preserveAspectRatio","none");
-        svg.setAttribute("class","ruin-mini-index-stone-svg");
-
-        var refined=cells.map(roughened);
-        refined.forEach(function(poly,index){
-          var path=document.createElementNS(NS,"path");
-          path.setAttribute("d",poly.map(function(p,i){
-            return (i?"L":"M")+p.x.toFixed(2)+" "+p.y.toFixed(2);
-          }).join(" ")+" Z");
-          path.setAttribute("class","ruin-mini-index-stone-face");
-          path.style.setProperty("--stone-alpha",(.80+(index%4)*.023).toFixed(3));
-          path.style.setProperty("--stone-stroke-alpha",(.62+(index%3)*.08).toFixed(3));
-          svg.appendChild(path);
-        });
-
-        // Draw actual open fracture gaps on top of the slab faces. The width
-        // varies along a single seam; ends flare into weathered mouths, closely
-        // following the source's small/medium/large opening logic.
-        var crackGroup=document.createElementNS(NS,"g");
-        crackGroup.setAttribute("class","ruin-mini-index-open-cracks");
-        cracks.forEach(function(crack,crackIndex){
-          var pts=crack.path;
-          for(var si=0;si<pts.length-1;si++){
-            var a=pts[si],b=pts[si+1];
-            var midT=(si+.5)/(pts.length-1);
-            var contactWave=.56+.44*Math.abs(Math.sin(midT*Math.PI*2.2+crack.phase));
-            var gap=crack.baseGap*contactWave;
-
-            var voidLine=document.createElementNS(NS,"line");
-            voidLine.setAttribute("x1",a.x.toFixed(2));
-            voidLine.setAttribute("y1",a.y.toFixed(2));
-            voidLine.setAttribute("x2",b.x.toFixed(2));
-            voidLine.setAttribute("y2",b.y.toFixed(2));
-            voidLine.setAttribute("class","ruin-mini-index-crack-void");
-            voidLine.style.setProperty("--crack-gap",gap.toFixed(2)+"px");
-            crackGroup.appendChild(voidLine);
-
-            var d=unit(b.x-a.x,b.y-a.y);
-            var n={x:-d.y,y:d.x};
-            [-1,1].forEach(function(sign){
-              var edge=document.createElementNS(NS,"line");
-              edge.setAttribute("x1",(a.x+n.x*gap*.48*sign).toFixed(2));
-              edge.setAttribute("y1",(a.y+n.y*gap*.48*sign).toFixed(2));
-              edge.setAttribute("x2",(b.x+n.x*gap*.48*sign).toFixed(2));
-              edge.setAttribute("y2",(b.y+n.y*gap*.48*sign).toFixed(2));
-              edge.setAttribute("class","ruin-mini-index-crack-face");
-              edge.style.setProperty("--crack-face-alpha",(0.40+((si+crackIndex)%3)*.13).toFixed(2));
-              crackGroup.appendChild(edge);
-            });
-          }
-
-          function addMouth(endpoint,nextPoint,isStart){
-            var inward=unit(nextPoint.x-endpoint.x,nextPoint.y-endpoint.y);
-            var normal={x:-inward.y,y:inward.x};
-            var asym=.78+((crackIndex+isStart)%3)*.13;
-            var w1=crack.mouthWidth*asym;
-            var w2=crack.mouthWidth*(1.72-asym);
-            var depth=crack.mouthDepth*(.88+((crackIndex+1)%3)*.09);
-            var throatHalf=Math.max(.8,crack.baseGap*.58);
-            var throat={x:endpoint.x+inward.x*depth,y:endpoint.y+inward.y*depth};
-            var pA={x:endpoint.x+normal.x*w1,y:endpoint.y+normal.y*w1};
-            var pB={x:endpoint.x-normal.x*w2,y:endpoint.y-normal.y*w2};
-            var tA={x:throat.x+normal.x*throatHalf,y:throat.y+normal.y*throatHalf};
-            var tB={x:throat.x-normal.x*throatHalf,y:throat.y-normal.y*throatHalf};
-
-            var mouth=document.createElementNS(NS,"path");
-            mouth.setAttribute("d",
-              "M"+pA.x.toFixed(2)+" "+pA.y.toFixed(2)+
-              " Q"+(lerpPoint(pA,tA,.44).x+normal.x*1.4).toFixed(2)+" "+
-                   (lerpPoint(pA,tA,.44).y+normal.y*1.4).toFixed(2)+" "+
-                   tA.x.toFixed(2)+" "+tA.y.toFixed(2)+
-              " L"+tB.x.toFixed(2)+" "+tB.y.toFixed(2)+
-              " Q"+(lerpPoint(tB,pB,.56).x-normal.x*1.2).toFixed(2)+" "+
-                   (lerpPoint(tB,pB,.56).y-normal.y*1.2).toFixed(2)+" "+
-                   pB.x.toFixed(2)+" "+pB.y.toFixed(2)+" Z"
-            );
-            mouth.setAttribute("class","ruin-mini-index-crack-mouth");
-            crackGroup.appendChild(mouth);
-
-            [[pA,tA],[pB,tB]].forEach(function(pair){
-              var lip=document.createElementNS(NS,"path");
-              lip.setAttribute("d","M"+pair[0].x.toFixed(2)+" "+pair[0].y.toFixed(2)+
-                " Q"+lerpPoint(pair[0],pair[1],.52).x.toFixed(2)+" "+
-                lerpPoint(pair[0],pair[1],.52).y.toFixed(2)+" "+
-                pair[1].x.toFixed(2)+" "+pair[1].y.toFixed(2));
-              lip.setAttribute("class","ruin-mini-index-crack-mouth-edge");
-              crackGroup.appendChild(lip);
-            });
-          }
-
-          crack.branches.forEach(function(branch){
-            for(var bsi=0;bsi<branch.path.length-1;bsi++){
-              var ba=branch.path[bsi], bb=branch.path[bsi+1];
-              var wave=.62+.38*Math.abs(Math.sin((bsi+.5)*1.7+branch.phase));
-              var branchGap=branch.gap*wave;
-
-              var bVoid=document.createElementNS(NS,"line");
-              bVoid.setAttribute("x1",ba.x.toFixed(2));
-              bVoid.setAttribute("y1",ba.y.toFixed(2));
-              bVoid.setAttribute("x2",bb.x.toFixed(2));
-              bVoid.setAttribute("y2",bb.y.toFixed(2));
-              bVoid.setAttribute("class","ruin-mini-index-crack-void ruin-mini-index-crack-branch-void");
-              bVoid.style.setProperty("--crack-gap",branchGap.toFixed(2)+"px");
-              crackGroup.appendChild(bVoid);
-
-              var bEdge=document.createElementNS(NS,"line");
-              bEdge.setAttribute("x1",ba.x.toFixed(2));
-              bEdge.setAttribute("y1",ba.y.toFixed(2));
-              bEdge.setAttribute("x2",bb.x.toFixed(2));
-              bEdge.setAttribute("y2",bb.y.toFixed(2));
-              bEdge.setAttribute("class","ruin-mini-index-crack-face ruin-mini-index-crack-branch-face");
-              bEdge.style.setProperty("--crack-face-alpha",(0.28+((bsi+crackIndex)%3)*.09).toFixed(2));
-              crackGroup.appendChild(bEdge);
-            }
-          });
-
-          if(pts.length>2){
-            addMouth(pts[0],pts[1],1);
-            addMouth(pts[pts.length-1],pts[pts.length-2],0);
-          }
-        });
-        svg.appendChild(crackGroup);
-
-        // Shared rubbing mask: stone silhouette + real edge pits, with variable
-        // fracture widths and flared mouths removed from the text mask.
-        var maskSvg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">';
-        maskSvg+='<polygon points="'+shell.map(function(p){return p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' ')+'" fill="white"/>';
-        cracks.forEach(function(crack){
-          for(var si=0;si<crack.path.length-1;si++){
-            var a=crack.path[si],b=crack.path[si+1];
-            var midT=(si+.5)/(crack.path.length-1);
-            var contactWave=.56+.44*Math.abs(Math.sin(midT*Math.PI*2.2+crack.phase));
-            var gap=crack.baseGap*contactWave;
-            maskSvg+='<line x1="'+a.x.toFixed(2)+'" y1="'+a.y.toFixed(2)+'" x2="'+b.x.toFixed(2)+'" y2="'+b.y.toFixed(2)+'" stroke="black" stroke-width="'+gap.toFixed(2)+'" stroke-linecap="round"/>';
-          }
-          crack.branches.forEach(function(branch){
-            for(var bsi=0;bsi<branch.path.length-1;bsi++){
-              var ba=branch.path[bsi],bb=branch.path[bsi+1];
-              var wave=.62+.38*Math.abs(Math.sin((bsi+.5)*1.7+branch.phase));
-              var branchGap=branch.gap*wave;
-              maskSvg+='<line x1="'+ba.x.toFixed(2)+'" y1="'+ba.y.toFixed(2)+'" x2="'+bb.x.toFixed(2)+'" y2="'+bb.y.toFixed(2)+'" stroke="black" stroke-width="'+branchGap.toFixed(2)+'" stroke-linecap="round"/>';
-            }
-          });
-          [0,crack.path.length-1].forEach(function(which){
-            var endpoint=crack.path[which];
-            var nextPoint=which===0?crack.path[1]:crack.path[crack.path.length-2];
-            var inward=unit(nextPoint.x-endpoint.x,nextPoint.y-endpoint.y);
-            var normal={x:-inward.y,y:inward.x};
-            var depth=crack.mouthDepth;
-            var throat={x:endpoint.x+inward.x*depth,y:endpoint.y+inward.y*depth};
-            var mw=crack.mouthWidth;
-            var th=Math.max(.8,crack.baseGap*.58);
-            var mouthPts=[
-              {x:endpoint.x+normal.x*mw,y:endpoint.y+normal.y*mw},
-              {x:throat.x+normal.x*th,y:throat.y+normal.y*th},
-              {x:throat.x-normal.x*th,y:throat.y-normal.y*th},
-              {x:endpoint.x-normal.x*mw,y:endpoint.y-normal.y*mw}
-            ];
-            maskSvg+='<polygon points="'+mouthPts.map(function(p){return p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' ')+'" fill="black"/>';
-          });
-        });
-        maskSvg+='</svg>';
-        var maskUrl='url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(maskSvg)+'")';
-
-        layer.replaceChildren(svg);
-        indexDrawer.style.setProperty("--mini-index-drawer-height",h.toFixed(2)+"px");
+        var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+
+          Number(geom.width).toFixed(2)+' '+Number(geom.height).toFixed(2)+
+          '" preserveAspectRatio="none">'+polygons+'</svg>';
+        var maskUrl='url("data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)+'")';
         indexDrawer.style.setProperty("--mini-index-stone-mask",maskUrl);
-        indexDrawer.style.setProperty(
-          "--mini-index-drawer-shell-clip",
-          "polygon("+shell.map(function(p){return p.x.toFixed(2)+"px "+p.y.toFixed(2)+"px";}).join(", ")+")"
-        );
-        indexDrawer.classList.add("stone-ready");
+
+        function applySharedMask(el){
+          if(!el) return;
+          var rect=el.getBoundingClientRect();
+          if(rect.width<2||rect.height<2) return;
+          var x=rect.left-drawerRect.left;
+          var y=rect.top-drawerRect.top;
+          el.style.setProperty("-webkit-mask-image",maskUrl);
+          el.style.setProperty("mask-image",maskUrl);
+          el.style.setProperty("-webkit-mask-size",Number(geom.width).toFixed(2)+"px "+Number(geom.height).toFixed(2)+"px");
+          el.style.setProperty("mask-size",Number(geom.width).toFixed(2)+"px "+Number(geom.height).toFixed(2)+"px");
+          el.style.setProperty("-webkit-mask-position",(-x).toFixed(2)+"px "+(-y).toFixed(2)+"px");
+          el.style.setProperty("mask-position",(-x).toFixed(2)+"px "+(-y).toFixed(2)+"px");
+          el.style.setProperty("-webkit-mask-repeat","no-repeat");
+          el.style.setProperty("mask-repeat","no-repeat");
+        }
+
+        applySharedMask(indexDrawer.querySelector(".ruin-mini-index-fracture-zone"));
+        applySharedMask(indexDrawer.querySelector(".ruin-mini-index-bottom-labels"));
+      }
+
+      var onMiniStoneGeometry=function(event){
+        syncMiniSourceStoneMask(event&&event.detail ? event.detail : window.__indexStoneFragmentGeometry);
+      };
+      window.addEventListener("index-stone-geometry-ready",onMiniStoneGeometry);
+
+      function renderMiniIndexStone() {
+        if(typeof window.installRuinMiniStoneFragments==="function"){
+          window.installRuinMiniStoneFragments();
+        }
+        if(typeof window.ensureIndexStoneFragmentsReady==="function"){
+          window.ensureIndexStoneFragmentsReady();
+        }
+        if(window.__indexStoneFragmentGeometry){
+          syncMiniSourceStoneMask(window.__indexStoneFragmentGeometry);
+        }
       }
 
       function rebuildArchiveDamagePlan() {
@@ -3668,7 +3275,11 @@ render();
 
           rebuildArchiveDamagePlan();
           layoutStacks();
-          renderMiniIndexStone();
+          if(typeof window.rerollIndexStoneFragments==="function"){
+            window.rerollIndexStoneFragments();
+          }else{
+            renderMiniIndexStone();
+          }
 
           requestAnimationFrame(function() {
             requestAnimationFrame(function() {
@@ -3714,6 +3325,7 @@ render();
         window.clearTimeout(drawerOpenTimer);
         window.clearTimeout(refractureTimer);
         if (refractureButton) refractureButton.removeEventListener("click",onRefracture);
+        window.removeEventListener("index-stone-geometry-ready",onMiniStoneGeometry);
         cleanupTimers.forEach(window.clearTimeout);
         cleanupTimers = [];
         if (resizeRaf) cancelAnimationFrame(resizeRaf);
@@ -4537,3 +4149,1575 @@ render();
   render();
   requestAnimationFrame(refineCurrentView);
 })();
+
+// === RUIN MINI SOURCE STONE PORT START ===
+// v268 · Index Drawer smoother stone + rubbing text reflow source geometry
+// ----------------------------------------------------------------------------
+// Goals of this pass:
+// - abandon the hub/radial topology: each fracture splits ONE existing slab;
+// - choose 1–4 fractures per page, so later breaks may terminate on older seams;
+// - fracture edges are independently irregular and often nearly coincide;
+// - seam width varies along the same break, creating dark/near-contact and
+//   lighter/open sections like tightly reassembled stone;
+// - edge mouths follow the ACTUAL incidence angle of each fracture, but the
+//   rim is now weathered as a shallow rounded bevel instead of a pointed tooth;
+// - top-edge mouths avoid the central title and prefer the two side bands;
+// - mouth size / erosion style varies from small to occasional large worn bays;
+// - mouth throat width is oriented perpendicular to the entering fracture, so
+//   the opening flows into the seam without a geometric kink;
+// - seams are opened a little more again to reveal rounded, rubbed fracture faces.
+// Text interruption remains disabled for this stage.
+// ============================================================================
+(() => {
+    const NS = 'http://www.w3.org/2000/svg';
+    const LAYER_ID = 'ruin-mini-index-stone-layer';
+
+    function hash32(str) {
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+
+    function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function () {
+            a |= 0;
+            a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function pageSeed(forceNew = false) {
+        if (!forceNew && Number.isFinite(window.__indexStoneFragmentSeed)) return window.__indexStoneFragmentSeed >>> 0;
+        try {
+            const params = new URLSearchParams(location.search);
+            // v268 · IMPORTANT: URLSearchParams#get() returns null when the key
+            // is absent, and Number(null) === 0. v267 therefore accidentally
+            // interpreted every normal URL as ?stone-seed=0, freezing the same
+            // fracture on every reload. Only honor an explicit, non-empty seed.
+            if (params.has('stone-seed')) {
+                const rawSeed = (params.get('stone-seed') || '').trim();
+                if (rawSeed !== '') {
+                    const querySeed = Number(rawSeed);
+                    if (Number.isFinite(querySeed) && querySeed >= 0) {
+                        window.__indexStoneFragmentSeed = querySeed >>> 0;
+                        return window.__indexStoneFragmentSeed;
+                    }
+                }
+            }
+        } catch (_) {}
+        let seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
+        try {
+            const u = new Uint32Array(2);
+            crypto.getRandomValues(u);
+            seed ^= u[0];
+            seed ^= ((u[1] << 7) | (u[1] >>> 25)) >>> 0;
+        } catch (_) {}
+        seed ^= (Math.floor((performance.timeOrigin || 0)) >>> 0);
+        seed ^= ((Math.floor((performance.now() || 0) * 1000) * 2654435761) >>> 0);
+        window.__indexStoneFragmentSeed = seed >>> 0;
+        return window.__indexStoneFragmentSeed;
+    }
+
+    let seed = pageSeed(true);
+
+    function svgEl(tag, attrs = {}) {
+        const el = document.createElementNS(NS, tag);
+        Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+        return el;
+    }
+
+    function cssNumber(name, fallback) {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        const n = parseFloat(value);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    function v(x, y, outer = false) { return { x, y, outer }; }
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+    function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+    function distance(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+    function toward(a, b, dist) {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const l = Math.hypot(dx, dy) || 1;
+        return { x: a.x + dx / l * dist, y: a.y + dy / l * dist };
+    }
+    function centroid(points) {
+        let x = 0, y = 0;
+        points.forEach(p => { x += p.x; y += p.y; });
+        return { x: x / points.length, y: y / points.length };
+    }
+    function polygonArea(points) {
+        let area = 0;
+        for (let i = 0; i < points.length; i++) {
+            const a = points[i], b = points[(i + 1) % points.length];
+            area += a.x * b.y - b.x * a.y;
+        }
+        return area * 0.5;
+    }
+    function absArea(points) { return Math.abs(polygonArea(points)); }
+    function cross(ax, ay, bx, by) { return ax * by - ay * bx; }
+    function unitVec(a) {
+        const l = Math.hypot(a.x, a.y) || 1;
+        return { x: a.x / l, y: a.y / l };
+    }
+    function dotVec(a, b) { return a.x * b.x + a.y * b.y; }
+    function blendDir(a, b, t) {
+        return unitVec({ x: a.x * (1 - t) + b.x * t, y: a.y * (1 - t) + b.y * t });
+    }
+    function smoothstep01(x) {
+        x = clamp(x, 0, 1);
+        return x * x * (3 - 2 * x);
+    }
+    function projectAlong(origin, dir, p) {
+        return (p.x - origin.x) * dir.x + (p.y - origin.y) * dir.y;
+    }
+    function smoothChainInterior(points, passes = 1, blend = 0.20) {
+        const out = points.map(p => ({ ...p }));
+        for (let pass = 0; pass < passes; pass++) {
+            for (let i = 1; i < out.length - 1; i++) {
+                const prev = out[i - 1], cur = out[i], next = out[i + 1];
+                out[i] = {
+                    ...cur,
+                    x: cur.x * (1 - blend * 2) + (prev.x + next.x) * blend,
+                    y: cur.y * (1 - blend * 2) + (prev.y + next.y) * blend
+                };
+            }
+        }
+        return out;
+    }
+
+    function pathD(points) {
+        // v258 · only INTERNAL fracture vertices can be softly rounded.
+        // The true outer silhouette remains literal / faceted.  A tiny quadratic
+        // radius on seam vertices suggests abrasion after broken slabs rubbed
+        // against one another, without turning the stone into a soft blob.
+        const n = points.length;
+        if (n < 3) return '';
+
+        const rounded = points.map((cur, i) => {
+            const prev = points[(i - 1 + n) % n];
+            const next = points[(i + 1) % n];
+            const requested = ((cur.mouth && cur.rimWear) || (!cur.outer && (cur.seam || cur.mouth)))
+                ? (cur.wear || 0)
+                : 0;
+            if (requested <= 0.05) return { round: false, cur };
+
+            const lenPrev = distance(prev, cur);
+            const lenNext = distance(cur, next);
+            // v265 · rounded mouths and rubbed contact nodes need slightly more
+            // local radius than ordinary seam points, otherwise the geometry is
+            // technically worn but still reads as a kink. Keep the outer frame
+            // literal, but allow mouth/junction/contact points to consume more
+            // edge length and reveal the intended eroded trajectory.
+            const roundLimit = cur.junction
+                ? (cur.mouth ? 0.56 : 0.38)
+                : cur.contact
+                    ? 0.38
+                    : cur.mouth
+                        ? 0.44
+                        : 0.22;
+            const roundBias = cur.roundBias ?? 1;
+            const r = Math.min(requested * roundBias, lenPrev * roundLimit, lenNext * roundLimit);
+            if (r < 0.18) return { round: false, cur };
+
+            return {
+                round: true,
+                cur,
+                entry: toward(cur, prev, r),
+                exit: toward(cur, next, r)
+            };
+        });
+
+        const first = rounded[0];
+        let d;
+        if (first.round) {
+            d = `M ${first.entry.x.toFixed(2)} ${first.entry.y.toFixed(2)} `;
+            d += `Q ${first.cur.x.toFixed(2)} ${first.cur.y.toFixed(2)} ${first.exit.x.toFixed(2)} ${first.exit.y.toFixed(2)} `;
+        } else {
+            d = `M ${first.cur.x.toFixed(2)} ${first.cur.y.toFixed(2)} `;
+        }
+
+        for (let i = 1; i < n; i++) {
+            const item = rounded[i];
+            if (item.round) {
+                d += `L ${item.entry.x.toFixed(2)} ${item.entry.y.toFixed(2)} `;
+                d += `Q ${item.cur.x.toFixed(2)} ${item.cur.y.toFixed(2)} ${item.exit.x.toFixed(2)} ${item.exit.y.toFixed(2)} `;
+            } else {
+                d += `L ${item.cur.x.toFixed(2)} ${item.cur.y.toFixed(2)} `;
+            }
+        }
+        return d + 'Z';
+    }
+
+    function lineSegmentIntersection(linePoint, dir, p, q) {
+        const sx = q.x - p.x, sy = q.y - p.y;
+        const denom = cross(dir.x, dir.y, sx, sy);
+        if (Math.abs(denom) < 1e-8) return null;
+        const rx = p.x - linePoint.x, ry = p.y - linePoint.y;
+        const t = cross(rx, ry, sx, sy) / denom;
+        const u = cross(rx, ry, dir.x, dir.y) / denom;
+        if (u < -1e-6 || u > 1 + 1e-6) return null;
+        return { x: linePoint.x + dir.x * t, y: linePoint.y + dir.y * t, t, u };
+    }
+
+    function linePolygonIntersections(poly, linePoint, dir) {
+        const hits = [];
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i], b = poly[(i + 1) % poly.length];
+            const hit = lineSegmentIntersection(linePoint, dir, a, b);
+            if (!hit) continue;
+            const outerEdge = !!(a.outer && b.outer);
+            // v264 · a later fracture can terminate on an older fracture face.
+            // Keep that information: those junctions need their own rounded /
+            // rubbed opening instead of behaving like an anonymous polygon edge.
+            const seamEdge = !!((a.seam || a.mouth) && (b.seam || b.mouth));
+            const existing = hits.find(h => Math.hypot(h.x - hit.x, h.y - hit.y) < 0.45);
+            if (existing) {
+                existing.outer = existing.outer && outerEdge;
+                existing.seamEdge = existing.seamEdge || seamEdge;
+                existing.edgeIndex = i;
+                existing.u = hit.u;
+                if (Math.abs(hit.t) < Math.abs(existing.t)) existing.t = hit.t;
+                continue;
+            }
+            hits.push({
+                x: hit.x, y: hit.y, t: hit.t, u: hit.u,
+                edgeIndex: i,
+                outer: outerEdge,
+                seamEdge
+            });
+        }
+        hits.sort((a, b) => a.t - b.t);
+        return hits;
+    }
+
+    function buildArc(poly, startEdge, endEdge, startPoint, endPoint) {
+        const out = [{ ...startPoint }];
+        let i = (startEdge + 1) % poly.length;
+        const stop = (endEdge + 1) % poly.length;
+        let guard = 0;
+        while (i !== stop && guard++ < poly.length + 2) {
+            out.push({ ...poly[i] });
+            i = (i + 1) % poly.length;
+        }
+        out.push({ ...endPoint });
+        return out;
+    }
+
+    function edgeFrame(poly, hit) {
+        const a = poly[hit.edgeIndex];
+        const b = poly[(hit.edgeIndex + 1) % poly.length];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const edgeLen = Math.hypot(dx, dy) || 1;
+        const tangent = { x: dx / edgeLen, y: dy / edgeLen };
+        const n1 = { x: -tangent.y, y: tangent.x };
+        const n2 = { x: tangent.y, y: -tangent.x };
+        const c = centroid(poly);
+        const p1 = { x: hit.x + n1.x * 10, y: hit.y + n1.y * 10 };
+        const p2 = { x: hit.x + n2.x * 10, y: hit.y + n2.y * 10 };
+        const d1 = Math.hypot(p1.x - c.x, p1.y - c.y);
+        const d2 = Math.hypot(p2.x - c.x, p2.y - c.y);
+        return { tangent, inward: d1 < d2 ? n1 : n2, edgeLen, a, b };
+    }
+
+    function pointOnHitEdge(poly, hit, u, flags = null) {
+        const a = poly[hit.edgeIndex];
+        const b = poly[(hit.edgeIndex + 1) % poly.length];
+        const t = clamp(u, 0.018, 0.982);
+        const result = {
+            x: a.x + (b.x - a.x) * t,
+            y: a.y + (b.y - a.y) * t,
+            outer: !!hit.outer,
+            edgeIndex: hit.edgeIndex,
+            edgeU: t
+        };
+        if (flags) Object.assign(result, flags);
+        return result;
+    }
+
+    // v261 · angle-aware, size-varied, eroded edge mouths.
+    // The reference is not a repeated notch. Some mouths are tiny and almost
+    // closed, some are medium scoops, and a minority are broader worn bays. The
+    // two sides are allowed to weather differently, while every mouth still
+    // turns into the actual fracture direction rather than the rim normal.
+    function chooseMouthProfile(rand) {
+        const r = rand();
+        if (r < 0.46) {
+            return {
+                name: 'small',
+                widthScale: 0.90 + rand() * 0.18,
+                depthScale: 0.90 + rand() * 0.16,
+                wearScale: 0.92 + rand() * 0.18,
+                throatScale: 0.96 + rand() * 0.12,
+                heavyChance: 0.18
+            };
+        }
+        if (r < 0.82) {
+            return {
+                name: 'medium',
+                widthScale: 1.18 + rand() * 0.28,
+                depthScale: 1.02 + rand() * 0.22,
+                wearScale: 1.12 + rand() * 0.24,
+                throatScale: 1.10 + rand() * 0.18,
+                heavyChance: 0.42
+            };
+        }
+        return {
+            name: 'large',
+            widthScale: 1.58 + rand() * 0.42,
+            depthScale: 1.18 + rand() * 0.30,
+            wearScale: 1.34 + rand() * 0.34,
+            throatScale: 1.24 + rand() * 0.24,
+            heavyChance: 0.68
+        };
+    }
+
+    function chooseMouthShape(rand, heavy) {
+        const r = rand();
+        if (heavy && r < 0.34) return 'worn-bay';
+        if (r < 0.30) return 'soft-scoop';
+        if (r < 0.58) return 'rounded-ledge';
+        if (r < 0.82) return 'worn-bay';
+        return 'plain-bevel';
+    }
+
+    function mouthSideChain(shoulder, throat, frame, entryDir, rand, opts = {}) {
+        const sign = opts.sign || 1;
+        const slowTaper = !!opts.slowTaper;
+        const weathered = !!opts.weathered;
+        const profile = opts.profile || { wearScale: 1, name: 'small' };
+        const shape = opts.shape || 'soft-scoop';
+        const wearScale = profile.wearScale || 1;
+        const heavy = weathered && (profile.name === 'large' || rand() < (profile.heavyChance || 0));
+
+        const pts = [{
+            ...shoulder,
+            mouth: true,
+            rimWear: true,
+            roundBias: 1.52 + rand() * 0.32,
+            wear: (2.45 + rand() * 2.10) * wearScale
+        }];
+
+        const direct = unitVec({ x: throat.x - shoulder.x, y: throat.y - shoulder.y });
+        const seamPull = blendDir(direct, entryDir, 0.66 + rand() * 0.14);
+        const sideNormal = unitVec({ x: -entryDir.y, y: entryDir.x });
+        const sidePolarity = dotVec(sideNormal, frame.tangent) * sign >= 0 ? 1 : -1;
+
+        let baseTs;
+        let scoopScale;
+        if (shape === 'rounded-ledge') {
+            baseTs = slowTaper ? [0.05, 0.11, 0.20, 0.33, 0.49, 0.66, 0.82] : [0.07, 0.15, 0.28, 0.46, 0.69, 0.84];
+            scoopScale = heavy ? 1.74 : 1.26;
+        } else if (shape === 'worn-bay') {
+            baseTs = slowTaper ? [0.05, 0.12, 0.22, 0.37, 0.53, 0.69, 0.84] : [0.08, 0.18, 0.33, 0.52, 0.72, 0.86];
+            scoopScale = heavy ? 2.32 : 1.64;
+        } else if (shape === 'plain-bevel') {
+            baseTs = slowTaper ? [0.08, 0.17, 0.31, 0.50, 0.72, 0.88] : [0.10, 0.23, 0.42, 0.66, 0.86];
+            scoopScale = 0.84;
+        } else {
+            baseTs = slowTaper ? [0.06, 0.14, 0.25, 0.40, 0.58, 0.77, 0.88] : [0.08, 0.18, 0.32, 0.52, 0.74, 0.88];
+            scoopScale = heavy ? 1.58 : 1.12;
+        }
+
+        const ts = baseTs
+            .map((t, idx) => {
+                const jitter = (shape === 'worn-bay' ? 0.052 : 0.036) * (idx === 0 || idx === baseTs.length - 1 ? 0.42 : 1);
+                return clamp(t + (rand() - 0.5) * jitter, 0.045, 0.92);
+            })
+            .sort((a, b) => a - b);
+
+        const interior = [];
+        const primaryBend = rand() < 0.5 ? -1 : 1;
+        const secondaryBend = rand() < 0.5 ? -primaryBend : primaryBend;
+        ts.forEach((t, i) => {
+            const easedT = smoothstep01(t);
+            const base = lerp(shoulder, throat, t);
+            const envelope = Math.sin(Math.PI * easedT);
+            const shoulderEase = smoothstep01(clamp(t / 0.26, 0, 1));
+            const throatEase = smoothstep01(clamp((1 - t) / 0.26, 0, 1));
+            const neckBell = cosineBell(t, 0.17 + rand() * 0.03, 0.11 + rand() * 0.03);
+            const bayBell = cosineBell(t, 0.42 + rand() * 0.07, 0.17 + rand() * 0.07);
+            const lateBell = cosineBell(t, 0.65 + rand() * 0.06, 0.12 + rand() * 0.05);
+
+            let scoop = envelope * (0.38 + rand() * 0.66) * scoopScale * wearScale;
+            if (shape === 'rounded-ledge' && i <= 1) scoop *= 0.18 + rand() * 0.16;
+            if (shape === 'worn-bay' && i === Math.floor(ts.length / 2)) scoop *= 1.18 + rand() * 0.22;
+            scoop *= 0.52 + shoulderEase * 0.58;
+            scoop *= 0.86 + (1 - throatEase) * 0.12;
+
+            const neckPull = neckBell * (0.42 + rand() * (heavy ? 0.78 : 0.52)) * wearScale;
+            const bayPush = bayBell * (0.28 + rand() * (heavy ? 1.08 : 0.74)) * wearScale;
+            const latePush = lateBell * (0.10 + rand() * 0.42) * wearScale;
+            scoop = Math.max(0.08, scoop - neckPull + bayPush + latePush);
+
+            const roughnessGate = 0.16 + envelope * 0.84;
+            const along = (rand() - 0.5) * (heavy ? 1.06 : 0.62) * wearScale * roughnessGate;
+            const lateralAmplitude = (0.08 + bayBell * (heavy ? 0.42 : 0.28) + lateBell * 0.16) * (0.72 + rand() * 0.70);
+            const lateral = sidePolarity * ((i % 2 === 0 ? primaryBend : secondaryBend) * lateralAmplitude + (rand() - 0.5) * 0.16) * (0.35 + envelope * 0.65);
+            const tangentWave = ((i % 2 === 0 ? -1 : 1) * (0.05 + bayBell * 0.20) + (rand() - 0.5) * 0.08) * sign * sidePolarity;
+            const tangentSlide = frame.tangent.x ? tangentWave : tangentWave;
+
+            interior.push({
+                x: base.x + frame.inward.x * scoop + seamPull.x * along + sideNormal.x * lateral + frame.tangent.x * tangentSlide,
+                y: base.y + frame.inward.y * scoop + seamPull.y * along + sideNormal.y * lateral + frame.tangent.y * tangentSlide,
+                outer: false,
+                mouth: true,
+                seam: true,
+                rimWear: t < 0.18,
+                roundBias: t < 0.22 || t > 0.70 ? 1.24 + rand() * 0.18 : 1.08 + rand() * 0.14,
+                wear: (2.55 + rand() * 2.05 + (slowTaper ? 0.52 : 0) + (heavy ? 0.96 : 0) + bayBell * 0.85) * wearScale
+            });
+        });
+
+        if ((shape === 'worn-bay' || heavy) && rand() < (heavy ? 0.82 : 0.48)) {
+            const t = 0.48 + rand() * 0.20;
+            const base = lerp(shoulder, throat, t);
+            interior.push({
+                x: base.x + frame.inward.x * (1.10 + rand() * (heavy ? 2.25 : 1.15)) * wearScale + frame.tangent.x * sign * (rand() - 0.5) * 0.50,
+                y: base.y + frame.inward.y * (1.10 + rand() * (heavy ? 2.25 : 1.15)) * wearScale + frame.tangent.y * sign * (rand() - 0.5) * 0.50,
+                outer: false,
+                mouth: true,
+                seam: true,
+                roundBias: 1.18 + rand() * 0.14,
+                wear: (3.10 + rand() * 2.20) * wearScale
+            });
+        }
+
+        interior.sort((a, b) => projectAlong(shoulder, direct, a) - projectAlong(shoulder, direct, b));
+        for (let i = 1; i < interior.length; i++) {
+            const prevProj = projectAlong(shoulder, direct, interior[i - 1]);
+            const proj = projectAlong(shoulder, direct, interior[i]);
+            const minStep = 0.24 + Math.min(0.34, i * 0.024);
+            if (proj < prevProj + minStep) {
+                const push = prevProj + minStep - proj;
+                interior[i].x += direct.x * push;
+                interior[i].y += direct.y * push;
+            }
+        }
+        const smoothed = smoothChainInterior(interior, heavy ? 2 : 1, heavy ? 0.16 : 0.13);
+        pts.push(...smoothed);
+
+        pts.push({
+            ...throat,
+            outer: false,
+            mouth: true,
+            seam: true,
+            roundBias: 1.34 + rand() * 0.22,
+            wear: (3.10 + rand() * 1.85 + (heavy ? 0.72 : 0)) * wearScale
+        });
+        return pts;
+    }
+
+
+    function chooseJunctionWearProfile(rand) {
+        const r = rand();
+        if (r < 0.46) return { name: 'small', side: 5.4 + rand() * 3.6, run: 6.6 + rand() * 4.2, throat: 1.30 + rand() * 0.92, wear: 1.08 + rand() * 0.30 };
+        if (r < 0.84) return { name: 'medium', side: 7.8 + rand() * 4.6, run: 9.2 + rand() * 5.5, throat: 1.82 + rand() * 1.36, wear: 1.28 + rand() * 0.40 };
+        return { name: 'large', side: 10.8 + rand() * 6.0, run: 12.6 + rand() * 6.5, throat: 2.30 + rand() * 1.76, wear: 1.50 + rand() * 0.56 };
+    }
+
+    function buildJunctionMouth(poly, hit, rand, approachDir) {
+        // A secondary crack meeting an existing fracture is a rubbed stone
+        // junction, not a mathematically sharp T/Y node. We shave a short,
+        // unequal section from the older seam and let the new fracture emerge
+        // from a rounded pocket. Size varies per junction so the wear reads as
+        // accumulated handling / rocking rather than a repeated UI motif.
+        const frame = edgeFrame(poly, hit);
+        const profile = chooseJunctionWearProfile(rand);
+        let incoming = unitVec(approachDir || frame.inward);
+        if (dotVec(incoming, frame.inward) < 0) incoming = { x: -incoming.x, y: -incoming.y };
+        // v265 · contact nodes should look rubbed, not snapped. Blend a little
+        // more toward the host seam's inward normal so the new branch peels out
+        // of a shallow worn pocket instead of leaving a hard angular hinge.
+        const entryDir = blendDir(incoming, frame.inward, 0.22 + rand() * 0.16);
+
+        const edgeAvailBefore = hit.u * frame.edgeLen;
+        const edgeAvailAfter = (1 - hit.u) * frame.edgeLen;
+        if (edgeAvailBefore < 4.0 || edgeAvailAfter < 4.0) return null;
+
+        let beforePx = profile.side * (0.82 + rand() * 0.54);
+        let afterPx = profile.side * (0.82 + rand() * 0.54);
+        // Unequal wear is important: one fragment often rounds farther than its
+        // neighbour after repeated contact.
+        if (rand() < 0.5) beforePx *= 1.15 + rand() * 0.32;
+        else afterPx *= 1.15 + rand() * 0.32;
+        beforePx = Math.min(beforePx, edgeAvailBefore * 0.58);
+        afterPx = Math.min(afterPx, edgeAvailAfter * 0.58);
+
+        const beforeU = hit.u - beforePx / frame.edgeLen;
+        const afterU = hit.u + afterPx / frame.edgeLen;
+        const shoulderBefore = pointOnHitEdge(poly, hit, beforeU, {
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.50 + rand() * 0.26,
+            wear: (3.15 + rand() * 2.75) * profile.wear
+        });
+        const shoulderAfter = pointOnHitEdge(poly, hit, afterU, {
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.50 + rand() * 0.26,
+            wear: (3.15 + rand() * 2.75) * profile.wear
+        });
+
+        const run = profile.run * (0.96 + rand() * 0.30);
+        const throatCenter = {
+            x: hit.x + entryDir.x * run,
+            y: hit.y + entryDir.y * run,
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.34 + rand() * 0.20,
+            wear: (3.65 + rand() * 2.85) * profile.wear
+        };
+        let seamNormal = unitVec({ x: -entryDir.y, y: entryDir.x });
+        if (dotVec(seamNormal, frame.tangent) < 0) seamNormal = { x: -seamNormal.x, y: -seamNormal.y };
+        const throatHalf = profile.throat * (1.08 + rand() * 0.18);
+        const throatBefore = {
+            x: throatCenter.x - seamNormal.x * throatHalf,
+            y: throatCenter.y - seamNormal.y * throatHalf,
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.34 + rand() * 0.22,
+            wear: (3.85 + rand() * 2.95) * profile.wear
+        };
+        const throatAfter = {
+            x: throatCenter.x + seamNormal.x * throatHalf,
+            y: throatCenter.y + seamNormal.y * throatHalf,
+            outer: false, seam: true, mouth: true, junction: true,
+            roundBias: 1.34 + rand() * 0.22,
+            wear: (3.85 + rand() * 2.95) * profile.wear
+        };
+
+        // Use the existing mouth curve builder, but with a compact custom
+        // profile. One side can be visibly more worn than the other.
+        const pseudoProfile = {
+            name: profile.name === 'large' ? 'large' : 'medium',
+            widthScale: 1,
+            depthScale: 1,
+            throatScale: 1,
+            wearScale: profile.wear * (1.02 + rand() * 0.10),
+            heavyChance: profile.name === 'large' ? 0.66 : 0.36
+        };
+        const weatheredSide = rand() < 0.5 ? 'before' : 'after';
+        const beforeChain = mouthSideChain(shoulderBefore, throatBefore, frame, entryDir, rand, {
+            sign: -1,
+            slowTaper: profile.name !== 'small' && rand() < 0.56,
+            weathered: weatheredSide === 'before',
+            profile: pseudoProfile,
+            shape: weatheredSide === 'before' && rand() < 0.58 ? 'worn-bay' : 'soft-scoop'
+        }).map(p => ({ ...p, junction: true }));
+        const afterChain = mouthSideChain(shoulderAfter, throatAfter, frame, entryDir, rand, {
+            sign: 1,
+            slowTaper: profile.name === 'large' || rand() < 0.42,
+            weathered: weatheredSide === 'after',
+            profile: pseudoProfile,
+            shape: weatheredSide === 'after' && rand() < 0.58 ? 'worn-bay' : 'rounded-ledge'
+        }).map(p => ({ ...p, junction: true }));
+
+        return {
+            hasMouth: true,
+            isJunction: true,
+            shoulderBefore, shoulderAfter,
+            throatBefore, throatAfter, throatCenter,
+            beforeChain, afterChain,
+            entryDir,
+            junctionProfile: profile.name
+        };
+    }
+
+    function buildEdgeMouth(poly, hit, rand, approachDir) {
+        const rawApproach = unitVec(approachDir || { x: 0, y: 1 });
+        if (!hit.outer) {
+            // v264 · when a new branch lands on an older seam, carve a rounded
+            // variable-size contact pocket at the junction. Only fall back to a
+            // point hit for non-seam internal edges.
+            if (hit.seamEdge) {
+                const junction = buildJunctionMouth(poly, hit, rand, rawApproach);
+                if (junction) return junction;
+            }
+            const p = { x: hit.x, y: hit.y, outer: false, seam: true, mouth: false, wear: 1.9 };
+            return {
+                hasMouth: false,
+                shoulderBefore: p,
+                shoulderAfter: p,
+                throatBefore: p,
+                throatAfter: p,
+                throatCenter: p,
+                beforeChain: [p],
+                afterChain: [p],
+                entryDir: rawApproach
+            };
+        }
+
+        const frame = edgeFrame(poly, hit);
+        if (hit.u < 0.075 || hit.u > 0.925) return null;
+
+        let incoming = rawApproach;
+        if (dotVec(incoming, frame.inward) < 0) incoming = { x: -incoming.x, y: -incoming.y };
+        const incidence = clamp(dotVec(incoming, frame.inward), 0.16, 1);
+        const entryDir = blendDir(incoming, frame.inward, incidence < 0.34 ? 0.18 : 0.035);
+        const tangentIncidence = dotVec(entryDir, frame.tangent);
+
+        const profile = chooseMouthProfile(rand);
+        const slowTaper = rand() < (profile.name === 'large' ? 0.72 : profile.name === 'medium' ? 0.60 : 0.48);
+        const weatheredSide = rand() < 0.5 ? 'before' : 'after';
+        const heavyBefore = weatheredSide === 'before' && rand() < profile.heavyChance;
+        const heavyAfter = weatheredSide === 'after' && rand() < profile.heavyChance;
+        const beforeShape = chooseMouthShape(rand, heavyBefore);
+        let afterShape = chooseMouthShape(rand, heavyAfter);
+        if (afterShape === beforeShape && rand() < 0.62) afterShape = chooseMouthShape(rand, heavyAfter);
+
+        // Variable mouth scale: most are modest; some refreshes contain one of
+        // the broader, more weathered openings visible in the reference.
+        const glancing = 1 - incidence;
+        const base = (4.2 + glancing * 2.3 + rand() * 1.8) * profile.widthScale;
+        let beforePx = base * (0.80 + rand() * 0.34);
+        let afterPx = base * (0.80 + rand() * 0.34);
+        if (tangentIncidence > 0.08) afterPx *= 1 + Math.min(0.34, tangentIncidence * 0.42);
+        if (tangentIncidence < -0.08) beforePx *= 1 + Math.min(0.34, -tangentIncidence * 0.42);
+        if (weatheredSide === 'before') beforePx *= 1.10 + rand() * 0.22;
+        else afterPx *= 1.10 + rand() * 0.22;
+
+        const maxMouthSide = profile.name === 'large' ? 19.5 : profile.name === 'medium' ? 15.2 : 11.0;
+        beforePx = clamp(beforePx, 3.6, maxMouthSide);
+        afterPx = clamp(afterPx, 3.6, maxMouthSide);
+
+        const beforeU = hit.u - beforePx / frame.edgeLen;
+        const afterU = hit.u + afterPx / frame.edgeLen;
+        if (beforeU <= 0.025 || afterU >= 0.975) return null;
+
+        const shoulderBefore = pointOnHitEdge(poly, hit, beforeU);
+        const shoulderAfter = pointOnHitEdge(poly, hit, afterU);
+
+        const baseDepth = slowTaper ? (12.6 + rand() * 8.8) : (9.4 + rand() * 6.4);
+        const desiredInwardDepth = baseDepth * profile.depthScale;
+        const run = clamp(
+            desiredInwardDepth / Math.max(0.38, dotVec(entryDir, frame.inward)),
+            8.0,
+            (slowTaper ? 29.0 : 21.8) * profile.depthScale
+        );
+        const throatCenter = {
+            x: hit.x + entryDir.x * run + frame.tangent.x * (rand() - 0.5) * (profile.name === 'large' ? 1.6 : 1.0),
+            y: hit.y + entryDir.y * run + frame.tangent.y * (rand() - 0.5) * (profile.name === 'large' ? 1.6 : 1.0),
+            outer: false,
+            mouth: true,
+            seam: true,
+            wear: 2.7 * profile.wearScale
+        };
+
+        let seamNormal = unitVec({ x: -entryDir.y, y: entryDir.x });
+        if (dotVec(seamNormal, frame.tangent) < 0) seamNormal = { x: -seamNormal.x, y: -seamNormal.y };
+
+        // Wider throat than v260. Large mouths also feed a visibly broader seam,
+        // giving the quadratic abrasion enough physical space to show.
+        const throatBase = slowTaper ? (1.58 + rand() * 1.02) : (1.34 + rand() * 0.88);
+        const throatHalf = throatBase * profile.throatScale;
+        const throatBefore = {
+            x: throatCenter.x - seamNormal.x * throatHalf,
+            y: throatCenter.y - seamNormal.y * throatHalf,
+            outer: false, mouth: true, seam: true, wear: 2.8 * profile.wearScale
+        };
+        const throatAfter = {
+            x: throatCenter.x + seamNormal.x * throatHalf,
+            y: throatCenter.y + seamNormal.y * throatHalf,
+            outer: false, mouth: true, seam: true, wear: 2.8 * profile.wearScale
+        };
+
+        const beforeChain = mouthSideChain(shoulderBefore, throatBefore, frame, entryDir, rand, {
+            sign: -1,
+            slowTaper,
+            weathered: weatheredSide === 'before',
+            profile,
+            shape: beforeShape
+        });
+        const afterChain = mouthSideChain(shoulderAfter, throatAfter, frame, entryDir, rand, {
+            sign: 1,
+            slowTaper,
+            weathered: weatheredSide === 'after',
+            profile,
+            shape: afterShape
+        });
+
+        return {
+            hasMouth: true,
+            shoulderBefore, shoulderAfter,
+            throatBefore, throatAfter, throatCenter,
+            beforeChain, afterChain,
+            weatheredSide,
+            slowTaper,
+            entryDir,
+            incidence,
+            mouthProfile: profile.name,
+            beforeShape,
+            afterShape
+        };
+    }
+
+
+    function buildFractureCenterline(start, end, rand, startEntryDir, endEntryDir) {
+        const dx = end.x - start.x, dy = end.y - start.y;
+        const l = Math.hypot(dx, dy) || 1;
+        const ux = dx / l, uy = dy / l;
+        const nx = -uy, ny = ux;
+        const segments = clamp(Math.round(l / 72), 7, 14);
+        const pts = [{ ...start, seam: true }];
+
+        const startHint = unitVec(startEntryDir || { x: ux, y: uy });
+        const endHintInward = unitVec(endEntryDir || { x: -ux, y: -uy });
+        const mouthGuide = Math.min(24, Math.max(12, l * 0.055));
+
+        if (segments >= 5) {
+            pts.push({
+                x: start.x + startHint.x * mouthGuide + nx * (rand() - 0.5) * 1.2,
+                y: start.y + startHint.y * mouthGuide + ny * (rand() - 0.5) * 1.2,
+                outer: false,
+                seam: true
+            });
+        }
+
+        let drift = 0;
+        const firstI = segments >= 5 ? 2 : 1;
+        for (let i = firstI; i < segments - 1; i++) {
+            const t = i / segments;
+            drift += (rand() - 0.5) * 4.2;
+            const maxDrift = Math.min(10.5, 3.0 + l * 0.0105);
+            drift = clamp(drift, -maxDrift, maxDrift);
+            let kink = 0;
+            if (rand() < 0.30) kink = (rand() < 0.5 ? -1 : 1) * (1.1 + rand() * 3.5);
+            pts.push({
+                x: start.x + dx * t + nx * (drift + kink),
+                y: start.y + dy * t + ny * (drift + kink),
+                outer: false,
+                seam: true
+            });
+        }
+
+        if (segments >= 5) {
+            pts.push({
+                x: end.x + endHintInward.x * mouthGuide + nx * (rand() - 0.5) * 1.2,
+                y: end.y + endHintInward.y * mouthGuide + ny * (rand() - 0.5) * 1.2,
+                outer: false,
+                seam: true
+            });
+        }
+        pts.push({ ...end, seam: true });
+        return pts;
+    }
+
+
+    function localNormal(points, i) {
+        const a = points[Math.max(0, i - 1)];
+        const b = points[Math.min(points.length - 1, i + 1)];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const l = Math.hypot(dx, dy) || 1;
+        return { x: -dy / l, y: dx / l, tx: dx / l, ty: dy / l };
+    }
+
+    function seamSideSignFromEndpoint(centerline, endpoint, atStart = true) {
+        // v263 · derive the retreat side from the ACTUAL mouth throat geometry.
+        // v261 hard-coded +1/-1 here. That assumption fails when a fracture's
+        // line direction is reversed by the intersection ordering: both slab
+        // boundaries can then be displaced toward the same side and visually
+        // overlap, leaving only a faint doubled line instead of negative space.
+        const i = atStart ? 0 : centerline.length - 1;
+        const c = centerline[i];
+        const n = localNormal(centerline, i);
+        const vx = endpoint.x - c.x;
+        const vy = endpoint.y - c.y;
+        const d = vx * n.x + vy * n.y;
+        if (Math.abs(d) > 0.05) return d >= 0 ? 1 : -1;
+
+        // Extremely narrow mouths can be numerically almost centered. Sample
+        // the neighbouring centerline segment as a fallback rather than making
+        // the old global-direction assumption again.
+        const j = atStart ? Math.min(1, centerline.length - 1) : Math.max(0, centerline.length - 2);
+        const c2 = centerline[j];
+        const n2 = localNormal(centerline, j);
+        const d2 = (endpoint.x - c2.x) * n2.x + (endpoint.y - c2.y) * n2.y;
+        return d2 >= 0 ? 1 : -1;
+    }
+
+    function seamSidesAreSeparated(centerline, sideA, sideB) {
+        if (!centerline.length || !sideA.length || !sideB.length) return false;
+        const probes = [
+            Math.max(1, Math.floor((centerline.length - 1) * 0.30)),
+            Math.max(1, Math.floor((centerline.length - 1) * 0.50)),
+            Math.max(1, Math.floor((centerline.length - 1) * 0.70))
+        ];
+        let opposite = 0;
+        let tested = 0;
+        for (const i0 of probes) {
+            const i = Math.min(centerline.length - 2, i0);
+            if (i <= 0 || i >= sideA.length - 1 || i >= sideB.length - 1) continue;
+            const c = centerline[i];
+            const n = localNormal(centerline, i);
+            const da = (sideA[i].x - c.x) * n.x + (sideA[i].y - c.y) * n.y;
+            const db = (sideB[i].x - c.x) * n.x + (sideB[i].y - c.y) * n.y;
+            if (Math.abs(da) < 0.03 || Math.abs(db) < 0.03) continue;
+            tested++;
+            if (da * db < 0) opposite++;
+        }
+        return tested === 0 || opposite >= Math.ceil(tested * 0.67);
+    }
+
+    function cosineBell(t, center, radius) {
+        const d = Math.abs(t - center);
+        if (d >= radius) return 0;
+        const x = d / radius;
+        return 0.5 + 0.5 * Math.cos(Math.PI * x);
+    }
+
+    function buildSeamGapPlan(count, rand) {
+        const widths = new Array(count).fill(0);
+        const contact = new Array(count).fill(0);
+        const openBoost = new Array(count).fill(0);
+        const n = Math.max(1, count - 1);
+
+        let state = 1.00 + rand() * 0.92;
+        for (let i = 0; i < count; i++) {
+            state = clamp(state * 0.60 + (0.70 + rand() * 1.95) * 0.40, 0.60, 2.9);
+            widths[i] = state;
+        }
+
+        const bayCount = rand() < 0.56 ? 2 : 1;
+        for (let b = 0; b < bayCount; b++) {
+            const center = 0.22 + rand() * 0.56;
+            const radius = 0.10 + rand() * 0.14;
+            const amp = 0.92 + rand() * 1.85;
+            for (let i = 1; i < count - 1; i++) {
+                const t = i / n;
+                const bell = cosineBell(t, center, radius);
+                openBoost[i] += bell * amp;
+                widths[i] += bell * amp;
+            }
+        }
+
+        const mouthPinchSeeds = [];
+        if (count >= 7) {
+            mouthPinchSeeds.push(clamp(1 + Math.round(rand() * 2), 1, count - 3));
+            if (count >= 9) mouthPinchSeeds.push(clamp(count - 2 - Math.round(rand() * 2), 2, count - 2));
+        }
+        mouthPinchSeeds.forEach((idx, order) => {
+            const shouldApply = order === 0 ? true : rand() < 0.78;
+            if (!shouldApply) return;
+            contact[idx] = Math.max(contact[idx], 0.94);
+            widths[idx] = Math.min(widths[idx], 0.055 + rand() * 0.11);
+            const shoulder = idx + (idx < count / 2 ? 1 : -1);
+            if (shoulder > 0 && shoulder < count - 1) {
+                contact[shoulder] = Math.max(contact[shoulder], 0.52);
+                widths[shoulder] = Math.min(widths[shoulder], 0.22 + rand() * 0.18);
+            }
+            const openIdx = idx + (idx < count / 2 ? 2 : -2);
+            if (openIdx > 0 && openIdx < count - 1) {
+                const openAmp = 0.72 + rand() * 1.18;
+                widths[openIdx] += openAmp;
+                openBoost[openIdx] += openAmp;
+            }
+        });
+
+        const maxContacts = count >= 12 ? 3 : count >= 8 ? 2 : 1;
+        const contactCount = 1 + Math.floor(rand() * maxContacts);
+        const chosen = [];
+        let guard = 0;
+        while (chosen.length < contactCount && guard++ < 30) {
+            const idx = clamp(Math.round((0.22 + rand() * 0.56) * n), 2, count - 3);
+            if (chosen.every(v => Math.abs(v - idx) >= 2)) chosen.push(idx);
+        }
+        if (!chosen.length && count > 4) chosen.push(Math.floor(count / 2));
+
+        chosen.forEach(idx => {
+            contact[idx] = Math.max(contact[idx], 1);
+            widths[idx] = Math.min(widths[idx], 0.030 + rand() * 0.075);
+            if (idx - 1 > 0) {
+                contact[idx - 1] = Math.max(contact[idx - 1], 0.68);
+                widths[idx - 1] = Math.min(widths[idx - 1], 0.22 + rand() * 0.22);
+            }
+            if (idx + 1 < count - 1) {
+                contact[idx + 1] = Math.max(contact[idx + 1], 0.68);
+                widths[idx + 1] = Math.min(widths[idx + 1], 0.22 + rand() * 0.22);
+            }
+            if (idx - 2 > 0 && rand() < 0.72) {
+                contact[idx - 2] = Math.max(contact[idx - 2], 0.32);
+                widths[idx - 2] *= 0.44 + rand() * 0.18;
+            }
+            if (idx + 2 < count - 1 && rand() < 0.72) {
+                contact[idx + 2] = Math.max(contact[idx + 2], 0.32);
+                widths[idx + 2] *= 0.44 + rand() * 0.18;
+            }
+        });
+
+        if (count) {
+            widths[0] *= 0.48;
+            widths[count - 1] *= 0.48;
+        }
+        return { widths, contact, openBoost, contactIndices: chosen };
+    }
+
+
+    function buildSeamSide(centerline, sideSign, rand, startPoint, endPoint, gapPlan, sideIdentity = 0) {
+        const plan = gapPlan || buildSeamGapPlan(centerline.length, rand);
+        const widths = plan.widths;
+        const contacts = plan.contact || [];
+        const out = [];
+        const abrasionMode = rand() < 0.90;
+        const abrasionStrength = 0.58 + rand() * 0.78;
+        const nCount = Math.max(1, centerline.length - 1);
+        // Keep each face independent, but only modestly so shared contact points
+        // actually meet rather than being destroyed by unrelated randomness.
+        const faceBias = sideIdentity === 0 ? (0.90 + rand() * 0.18) : (0.86 + rand() * 0.24);
+
+        for (let i = 0; i < centerline.length; i++) {
+            if (i === 0) {
+                out.push({ ...startPoint, outer: false, seam: true, wear: 1.65 + rand() * 1.15 });
+                continue;
+            }
+            if (i === centerline.length - 1) {
+                out.push({ ...endPoint, outer: false, seam: true, wear: 1.65 + rand() * 1.15 });
+                continue;
+            }
+
+            const p = centerline[i];
+            const n = localNormal(centerline, i);
+            const t = i / nCount;
+            const edgeProximity = Math.pow(clamp(1 - Math.min(t, 1 - t) / 0.34, 0, 1), 1.35);
+            const contactness = contacts[i] || 0;
+            const contactGuard = 1 - contactness * 0.965;
+            const localWear = abrasionMode
+                ? edgeProximity * abrasionStrength * (0.82 + rand() * 0.74) * contactGuard
+                : 0;
+
+            let asym = faceBias * (0.86 + rand() * 0.24);
+            if (contactness > 0.55) asym = 0.95 + rand() * 0.06;
+            const rubbed = contactness > 0.22;
+            const off = Math.min(6.1, widths[i] * asym + localWear);
+            const tangential = (rand() - 0.5) * (0.34 + edgeProximity * 0.24) * (1 - contactness * 0.78);
+            out.push({
+                x: p.x + n.x * off * sideSign + n.tx * tangential,
+                y: p.y + n.y * off * sideSign + n.ty * tangential,
+                outer: false,
+                seam: true,
+                contact: rubbed,
+                roundBias: rubbed ? (1.12 + rand() * 0.18) : undefined,
+                wear: contactness > 0.55
+                    ? (1.24 + rand() * 1.02)
+                    : rubbed
+                        ? (1.58 + rand() * 1.18 + (plan.openBoost?.[i] || 0) * 0.18)
+                        : (1.75 + rand() * 1.32 + edgeProximity * (1.36 + rand() * 1.66) + (plan.openBoost?.[i] || 0) * 0.54)
+            });
+        }
+        return out;
+    }
+
+
+    function splitPolygonByFracture(poly, linePoint, dir, rand) {
+        const hits = linePolygonIntersections(poly, linePoint, dir);
+        if (hits.length < 2) return null;
+        const first = hits[0], last = hits[hits.length - 1];
+        if (distance(first, last) < 110) return null;
+
+        const firstApproach = unitVec(dir);
+        const lastApproach = { x: -firstApproach.x, y: -firstApproach.y };
+        const firstMouth = buildEdgeMouth(poly, first, rand, firstApproach);
+        const lastMouth = buildEdgeMouth(poly, last, rand, lastApproach);
+        if (!firstMouth || !lastMouth) return null;
+
+        const center = buildFractureCenterline(
+            firstMouth.throatCenter,
+            lastMouth.throatCenter,
+            rand,
+            firstMouth.entryDir,
+            lastMouth.entryDir
+        );
+
+        // v263 · IMPORTANT: retreat each stone face toward its own side of the
+        // fracture. Do not assume that localNormal(+1) always corresponds to the
+        // `after` mouth and localNormal(-1) to `before`; intersection ordering can
+        // reverse that relationship. Derive it from the actual throat points.
+        const sideASign = seamSideSignFromEndpoint(center, firstMouth.throatAfter, true);
+        let sideBSign = seamSideSignFromEndpoint(center, firstMouth.throatBefore, true);
+        if (sideBSign === sideASign) sideBSign = -sideASign;
+
+        const gapPlan = buildSeamGapPlan(center.length, rand);
+        let sideA = buildSeamSide(center, sideASign, rand, firstMouth.throatAfter, lastMouth.throatBefore, gapPlan, 0);
+        let sideB = buildSeamSide(center, sideBSign, rand, firstMouth.throatBefore, lastMouth.throatAfter, gapPlan, 1);
+
+        // Safety check for the exact regression visible in the user's screenshot:
+        // if the two generated fracture faces still land on the same side at
+        // most interior probes, rebuild B on the opposite side. This preserves
+        // all v261 mouth/wear parameters while guaranteeing a real gap.
+        if (!seamSidesAreSeparated(center, sideA, sideB)) {
+            sideBSign = -sideASign;
+            sideB = buildSeamSide(center, sideBSign, rand, firstMouth.throatBefore, lastMouth.throatAfter, gapPlan, 1);
+        }
+
+        const arcA = buildArc(poly, first.edgeIndex, last.edgeIndex, firstMouth.shoulderAfter, lastMouth.shoulderBefore);
+        const arcB = buildArc(poly, last.edgeIndex, first.edgeIndex, lastMouth.shoulderAfter, firstMouth.shoulderBefore);
+
+        const polyA = [
+            ...arcA,
+            ...lastMouth.beforeChain.slice(1),
+            ...sideA.slice(0, -1).reverse(),
+            ...firstMouth.afterChain.slice(0, -1).reverse()
+        ];
+        const polyB = [
+            ...arcB,
+            ...firstMouth.beforeChain.slice(1),
+            ...sideB.slice(1),
+            ...lastMouth.afterChain.slice(0, -1).reverse()
+        ];
+
+        if (polyA.length < 5 || polyB.length < 5) return null;
+        if (absArea(polyA) < 9000 || absArea(polyB) < 9000) return null;
+        return [polyA, polyB];
+    }
+
+    function cornerAngle(prev, cur, next) {
+        const ax = prev.x - cur.x, ay = prev.y - cur.y;
+        const bx = next.x - cur.x, by = next.y - cur.y;
+        const al = Math.hypot(ax, ay) || 1, bl = Math.hypot(bx, by) || 1;
+        const dot = clamp((ax * bx + ay * by) / (al * bl), -1, 1);
+        return Math.acos(dot) * 180 / Math.PI;
+    }
+
+    function chamferAndRoughen(points, rand) {
+        const base = [];
+        for (let i = 0; i < points.length; i++) {
+            const prev = points[(i - 1 + points.length) % points.length];
+            const cur = points[i];
+            const next = points[(i + 1) % points.length];
+
+            // fracture edges and mouths are already purpose-built; don't apply
+            // generic noise that would turn them into busy saw-teeth.
+            if (cur.outer || cur.seam || cur.mouth) {
+                base.push({ ...cur });
+                continue;
+            }
+
+            const angle = cornerAngle(prev, cur, next);
+            const chance = angle < 112 ? 0.52 : angle < 132 ? 0.28 : 0.12;
+            if (rand() < chance) {
+                const cut = 3.4 + rand() * 6.0;
+                base.push(
+                    { ...toward(cur, prev, Math.min(cut, distance(cur, prev) * 0.18)), outer: false },
+                    { ...toward(cur, next, Math.min(cut * (0.76 + rand() * 0.30), distance(cur, next) * 0.18)), outer: false }
+                );
+            } else base.push({ ...cur });
+        }
+        return base;
+    }
+
+    // v291-opt31 · REAL desktop Index Drawer outer-rim pits.
+    // Desktop V291 does not render #index-drawer::before/::after; the visible
+    // shell is the generated stone-fragment silhouette itself. Therefore the
+    // pit must become part of this polygon BEFORE fracture partitioning.
+    function buildOuterRimPitEdge(a, b, pit = null) {
+        if (!pit) return [{ ...a }, { ...b }];
+
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const centerT = clamp(pit.centerT, 0.06, 0.94);
+        const halfT = clamp(pit.halfT, 0.025, 0.18);
+        const depth = clamp(pit.depth, 1.8, 8.8);
+        const variant = pit.variant || 'shallow';
+        const bias = clamp(pit.bias ?? 0, -0.85, 0.85);
+        const profile = variant === 'deep'
+            ? [
+                [-1.38, 0.00], [-1.08, 0.02], [-0.84, 0.10], [-0.62, 0.26],
+                [-0.46, 0.56], [-0.28, 0.90], [-0.12, 1.16], [0.05, 1.30],
+                [0.18, 1.12], [0.34, 0.78], [0.54, 0.54], [0.76, 0.30],
+                [1.00, 0.10], [1.26, 0.02], [1.42, 0.00]
+            ]
+            : [
+                [-1.28, 0.00], [-0.96, 0.10], [-0.62, 0.34], [-0.30, 0.68],
+                [-0.08, 0.94], [0.00, 1.00], [0.18, 0.82], [0.46, 0.48],
+                [0.82, 0.17], [1.24, 0.00]
+            ];
+        const edgeReach = variant === 'deep' ? 1.42 : 1.30;
+        const startT = clamp(centerT - halfT * edgeReach, 0, 1);
+        const endT = clamp(centerT + halfT * edgeReach, 0, 1);
+        const out = [{ ...a }];
+        const makeBase = (t) => ({ x: a.x + dx * t, y: a.y + dy * t });
+        if (startT > 0.002) out.push({ ...makeBase(startT), outer: true, pitShoulder: true });
+        profile.forEach(([offset, weight]) => {
+            const side = offset < 0 ? -1 : 1;
+            const sideScale = variant === 'deep'
+                ? 1 + bias * side * 0.24
+                : 1 + bias * side * 0.14;
+            const shiftedOffset = offset * sideScale;
+            const t = clamp(centerT + shiftedOffset * halfT, startT, endT);
+            const base = makeBase(t);
+            const lip = variant === 'deep'
+                ? (Math.abs(offset) < 0.24 ? 1.08 : 1.0)
+                : 1.0;
+            out.push({
+                x: base.x + nx * depth * weight * lip,
+                y: base.y + ny * depth * weight * lip,
+                outer: true,
+                pit: weight > 0.001,
+                pitShoulder: weight <= 0.001,
+                pitVariant: variant
+            });
+        });
+        if (endT < 0.998) out.push({ ...makeBase(endT), outer: true, pitShoulder: true });
+        out.push({ ...b });
+        return out.filter((point, index, arr) => {
+            if (index === 0) return true;
+            const prev = arr[index - 1];
+            return Math.hypot(point.x - prev.x, point.y - prev.y) > 0.12;
+        });
+    }
+
+    function makeOuterRimPitPlan(w, h) {
+        const pitRand = mulberry32(seed ^ hash32(`${Math.round(w)}x${Math.round(h)}-outer-rim-pits-v291-opt32-r1`));
+        const plan = { left: null, top: null, right: null };
+        const makePit = (segment) => {
+            const isDeep = pitRand() < 0.32;
+            if (segment === 'top') {
+                const safe = [[0.090, 0.155], [0.845, 0.910]];
+                const range = safe[Math.floor(pitRand() * safe.length)] || safe[0];
+                return {
+                    centerT: range[0] + pitRand() * (range[1] - range[0]),
+                    halfT: isDeep ? (0.040 + pitRand() * 0.014) : (0.040 + pitRand() * 0.018),
+                    depth: isDeep ? (5.6 + pitRand() * 2.6) : (2.3 + pitRand() * 1.10),
+                    variant: isDeep ? 'deep' : 'shallow',
+                    bias: (pitRand() - 0.5) * 1.45
+                };
+            }
+            const safe = segment === 'left'
+                ? [[0.16, 0.28], [0.74, 0.86]]
+                : [[0.14, 0.26], [0.72, 0.84]];
+            const range = safe[Math.floor(pitRand() * safe.length)] || safe[0];
+            return {
+                centerT: range[0] + pitRand() * (range[1] - range[0]),
+                halfT: isDeep ? (0.070 + pitRand() * 0.022) : (0.082 + pitRand() * 0.026),
+                depth: isDeep ? (5.8 + pitRand() * 2.8) : (2.5 + pitRand() * 1.20),
+                variant: isDeep ? 'deep' : 'shallow',
+                bias: (pitRand() - 0.5) * 1.35
+            };
+        };
+        const roll = pitRand();
+        const primary = roll < 0.50 ? 'top' : (roll < 0.75 ? 'left' : 'right');
+        plan[primary] = makePit(primary);
+        return plan;
+    }
+
+    function protectedTitleCrossing(points, w, h) {
+        // Keep the central title bands readable for the future text-fracture pass.
+        const zones = [
+            { x1: w * 0.34, x2: w * 0.66, y1: h * 0.025, y2: h * 0.16 },
+            { x1: w * 0.34, x2: w * 0.66, y1: h * 0.73, y2: h * 0.84 }
+        ];
+        return points.some(p => zones.some(z => p.x >= z.x1 && p.x <= z.x2 && p.y >= z.y1 && p.y <= z.y2));
+    }
+
+    function topMouthHitAllowed(poly, hit, w) {
+        if (!hit.outer) return true;
+        const a = poly[hit.edgeIndex];
+        const b = poly[(hit.edgeIndex + 1) % poly.length];
+        if (!a || !b) return true;
+        if (hit.outer && (a.pit || b.pit)) return false;
+
+        // Only police the long horizontal top rim. The user's marked preferred
+        // regions correspond roughly to these two bands; the central title gap
+        // and the far corners are kept free of edge mouths.
+        const isTopHorizontal = Math.abs(a.y - b.y) < 1.2 && Math.max(Math.abs(a.y), Math.abs(b.y)) < 2.5;
+        if (!isTopHorizontal) return true;
+        const x = hit.x / Math.max(1, w);
+        return (x >= 0.21 && x <= 0.47) || (x >= 0.57 && x <= 0.82);
+    }
+
+    function splitCell(cells, index, point, angleDeg, rand, w, h) {
+        if (index < 0 || index >= cells.length) return false;
+        const theta = angleDeg * Math.PI / 180;
+        const dir = { x: Math.cos(theta), y: Math.sin(theta) };
+
+        // Preview the entire candidate, not only its midpoint. Top-edge mouths
+        // are accepted only in the two side bands marked by the user, and the
+        // crack itself must not run through the title zones.
+        const hits = linePolygonIntersections(cells[index].points, point, dir);
+        if (hits.length < 2) return false;
+        const firstHit = hits[0];
+        const lastHit = hits[hits.length - 1];
+        if (!topMouthHitAllowed(cells[index].points, firstHit, w)
+            || !topMouthHitAllowed(cells[index].points, lastHit, w)) return false;
+
+        const preview = [];
+        for (let i = 0; i <= 10; i++) preview.push(lerp(firstHit, lastHit, i / 10));
+        if (protectedTitleCrossing(preview, w, h)) return false;
+
+        const result = splitPolygonByFracture(cells[index].points, point, dir, rand);
+        if (!result) return false;
+        const original = cells[index];
+        cells.splice(index, 1,
+            { id: `${original.id}-a`, points: result[0] },
+            { id: `${original.id}-b`, points: result[1] }
+        );
+        return true;
+    }
+
+    function weightedCellIndex(cells, rand) {
+        const weights = cells.map(c => Math.max(0, absArea(c.points) - 12000));
+        const total = weights.reduce((a, b) => a + b, 0);
+        if (total <= 0) return -1;
+        let r = rand() * total;
+        for (let i = 0; i < cells.length; i++) {
+            r -= weights[i];
+            if (r <= 0) return i;
+        }
+        return cells.length - 1;
+    }
+
+    function buildPartition(w, h, rand) {
+        const miniDrawer = document.getElementById('ruin-mini-index-drawer');
+        let leftInset = w * 0.195;
+        let rightInset = w * 0.115;
+        let handleH = parseFloat(
+            getComputedStyle(miniDrawer || document.documentElement)
+                .getPropertyValue('--mini-index-handle-h')
+        ) || Math.max(28, h * 0.12);
+
+        // v377 · Preserve the desktop fracture algorithm, but feed it the
+        // authored MOBILE outer silhouette on compact screens. The previous
+        // shared renderer could occasionally resolve the desktop 230/168px
+        // shoulder values during startup, producing the giant X-like diagonals
+        // seen across the phone drawer. Mobile now derives both shoulders from
+        // the real viewport frame and the real handle height.
+        const compact = false;
+        if (compact) {
+            const drawer = document.getElementById('ruin-mini-index-drawer');
+            const frame = document.querySelector('.ruin-mini-cabinet-frame');
+            const handle = document.getElementById('ruin-mini-index-handle');
+            const drawerRect = drawer?.getBoundingClientRect?.();
+            const frameRect = frame?.getBoundingClientRect?.();
+            const handleRect = handle?.getBoundingClientRect?.();
+            const maxMobileInset = Math.min(32, w * 0.12);
+
+            const liveLeft = Number(frameRect?.left) - Number(drawerRect?.left);
+            const liveRight = Number(drawerRect?.right) - Number(frameRect?.right);
+            const liveHandleH = Number(handleRect?.height);
+
+            leftInset = Number.isFinite(liveLeft) && liveLeft > 0
+                ? clamp(liveLeft, 10, maxMobileInset)
+                : clamp(cssNumber('--frame-left', 14), 10, maxMobileInset);
+
+            rightInset = Number.isFinite(liveRight) && liveRight > 0
+                ? clamp(liveRight, 10, maxMobileInset)
+                : clamp(cssNumber('--frame-right', 14), 10, maxMobileInset);
+
+            if (Number.isFinite(liveHandleH) && liveHandleH > 8) {
+                handleH = liveHandleH;
+            } else {
+                handleH = clamp(handleH, 44, 60);
+            }
+        }
+
+        const pitPlan = makeOuterRimPitPlan(w, h);
+        const leftStart = v(0, handleH, true);
+        const leftTop = v(leftInset, 0, true);
+        const rightTop = v(w - rightInset, 0, true);
+        const rightEnd = v(w, handleH, true);
+        const leftEdge = buildOuterRimPitEdge(leftStart, leftTop, pitPlan.left);
+        const topEdge = buildOuterRimPitEdge(leftTop, rightTop, pitPlan.top);
+        const rightEdge = buildOuterRimPitEdge(rightTop, rightEnd, pitPlan.right);
+        const silhouette = [
+            ...leftEdge.slice(0, -1),
+            ...topEdge.slice(0, -1),
+            ...rightEdge,
+            v(w, h, true),
+            v(0, h, true)
+        ];
+
+        const cells = [{ id: 'slab-0', points: silhouette }];
+        // v393 · Phone-sized stone rubbings keep the desktop split logic, but
+        // reduce density to suit the much smaller slab: usually 1–2 seams, rarely 3.
+        // Desktop keeps the original 1–4 fracture range unchanged.
+        const compactFractureRoll = compact ? rand() : 0;
+        const target = compact
+            ? (compactFractureRoll < 0.56 ? 1 : (compactFractureRoll < 0.92 ? 2 : 3))
+            : 1 + Math.floor(rand() * 4);
+        let made = 0;
+        let attempts = 0;
+
+        // avoid low-angle horizontal cuts. Most stone breaks are diagonal or
+        // near-vertical, with secondary cuts attaching to existing seams.
+        const anglePools = [
+            [42, 68], [112, 138], [78, 101],
+            [36, 48], [132, 145]
+        ];
+
+        const maxAttempts = 34 + target * 12;
+        while (made < target && attempts++ < maxAttempts) {
+            const index = weightedCellIndex(cells, rand);
+            if (index < 0) break;
+            const cell = cells[index];
+            const c = centroid(cell.points);
+            const pool = anglePools[Math.floor(rand() * anglePools.length)];
+            let angle = pool[0] + rand() * (pool[1] - pool[0]);
+            if (rand() < 0.5) angle += (rand() - 0.5) * 5;
+
+            const p = {
+                x: c.x + (rand() - 0.5) * w * 0.18,
+                y: clamp(c.y + (rand() - 0.5) * h * 0.18, h * 0.18, h * 0.90)
+            };
+
+            if (splitCell(cells, index, p, angle, rand, w, h)) made++;
+        }
+
+        return {
+            crackCount: made,
+            outerPits: pitPlan,
+            cells: cells
+                .filter(cell => absArea(cell.points) > 5000)
+                .sort((a, b) => centroid(a.points).y - centroid(b.points).y || centroid(a.points).x - centroid(b.points).x)
+                .map((cell, i) => ({ id: `stone-${i + 1}`, points: cell.points }))
+        };
+    }
+
+    // v291-opt01-r1 · single frosted surface, minimal-diff edition.
+    // Important: no Index Drawer layout CSS is changed. The original V291
+    // .index-stone-frost-face rule is reused verbatim; only the N fragment
+    // surfaces are replaced by one full-size surface carrying a union SVG mask.
+    function buildFrostMaskUrl(refinedCells, w, h) {
+        const polygons = refinedCells.map(cell => {
+            const points = cell.points
+                .map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+                .join(' ');
+            return `<polygon points="${points}" fill="white"/>`;
+        }).join('');
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="none">${polygons}</svg>`;
+        return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+    }
+
+    function buildFrostHost(refinedCells, w, h) {
+        const host = document.createElement('div');
+        host.className = 'index-stone-frost-host';
+        host.setAttribute('aria-hidden', 'true');
+
+        const face = document.createElement('div');
+        face.className = 'index-stone-frost-face';
+        face.dataset.stoneFrostSurface = 'union';
+        const mask = buildFrostMaskUrl(refinedCells, w, h);
+        face.style.maskImage = mask;
+        face.style.webkitMaskImage = mask;
+        face.style.maskSize = '100% 100%';
+        face.style.webkitMaskSize = '100% 100%';
+        face.style.maskPosition = '0 0';
+        face.style.webkitMaskPosition = '0 0';
+        face.style.maskRepeat = 'no-repeat';
+        face.style.webkitMaskRepeat = 'no-repeat';
+        host.appendChild(face);
+        return host;
+    }
+
+    function buildIndexImmuneFrost(drawer, drawerRect) {
+        const stable = document.getElementById('ruin-mini-index-stable-zone');
+        if (!stable) return null;
+        const sr = stable.getBoundingClientRect();
+        if (sr.width < 10 || sr.height < 10) return null;
+
+        // v271 · Treat the lexicology area as one calm lower inscription field,
+        // not merely a padded box around #index-stable-zone. The immunity veil
+        // starts above the heading and feathers in vertically, then spans almost
+        // the full slab width and continues to the bottom rim. This prevents a
+        // diagonal seam from reappearing beside or below the last tag while the
+        // 3px guard still leaves the physical outer contour visible.
+        const fade = Math.max(64, Math.min(108, drawerRect.height * 0.135));
+        const rimGuard = 3;
+        const upperLift = Math.max(18, Math.min(34, drawerRect.height * 0.032));
+        const top = Math.max(0, sr.top - drawerRect.top - fade - upperLift);
+        const left = rimGuard;
+        const right = rimGuard;
+
+        // opt57 · seal the lexicology immunity field all the way to the lower
+        // edge.  The old 3px bottom rim guard could expose the terminal few
+        // pixels of a random stone seam, so a crack occasionally leaked out
+        // beneath the last index row.  The drawer's authored outer contour is
+        // rendered by its own SVG layer, therefore the immunity veil can safely
+        // reach bottom:0 without erasing the physical frame line.
+        const bottom = 0;
+
+        const veil = document.createElement('div');
+        veil.className = 'index-stone-crack-immunity';
+        veil.setAttribute('aria-hidden', 'true');
+        veil.style.top = `${top.toFixed(2)}px`;
+        veil.style.left = `${left.toFixed(2)}px`;
+        veil.style.right = `${right.toFixed(2)}px`;
+        veil.style.bottom = `${bottom.toFixed(2)}px`;
+        veil.style.setProperty('--index-immune-fade-px', `${fade.toFixed(1)}px`);
+        return veil;
+    }
+
+    function ensureLayer(drawer) {
+        let layer = document.getElementById(LAYER_ID);
+        if (!layer) {
+            layer = document.createElement('div');
+            layer.id = LAYER_ID;
+            layer.setAttribute('aria-hidden', 'true');
+            drawer.prepend(layer);
+        }
+        return layer;
+    }
+
+    function render() {
+        const drawer = document.getElementById('ruin-mini-index-drawer');
+        if (!drawer) return;
+        const compact = window.innerWidth <= 760;
+        const rect = drawer.getBoundingClientRect();
+        const w = rect.width, h = rect.height;
+        // v393 · mobile keeps the desktop stone-partition METHOD and silhouette logic,
+        // but uses a sparse fracture-count rule sized for a phone slab.
+        if (w < (compact ? 260 : 400) || h < (compact ? 140 : 180)) return;
+
+        const rand = mulberry32(seed ^ hash32(`${Math.round(w)}x${Math.round(h)}-v268`));
+        const layer = ensureLayer(drawer);
+        const svg = svgEl('svg', {
+            viewBox: `0 0 ${w} ${h}`,
+            preserveAspectRatio: 'none',
+            class: 'index-stone-fragment-svg'
+        });
+
+        const partition = buildPartition(w, h, rand);
+        const refinedCells = [];
+        partition.cells.forEach((cell, index) => {
+            const localRand = mulberry32(seed ^ hash32(cell.id) ^ (index * 0x9E3779B9));
+            const refined = chamferAndRoughen(cell.points, localRand);
+            refinedCells.push({
+                id: cell.id,
+                points: refined.map(pt => ({ ...pt }))
+            });
+            const path = svgEl('path', {
+                d: pathD(refined),
+                class: `index-stone-fragment-face index-stone-fragment-${cell.id}`,
+                'data-stone-fragment': cell.id,
+                'vector-effect': 'non-scaling-stroke'
+            });
+            path.style.setProperty('--stone-alpha', (0.84 + localRand() * 0.065).toFixed(3));
+            // tiny per-face stroke variation lets near-coincident seams create
+            // natural dark/light depth without a fake shadow.
+            path.style.setProperty('--stone-stroke-alpha', (0.72 + localRand() * 0.15).toFixed(3));
+            path.style.setProperty('--stone-stroke-width', (0.72 + localRand() * 0.16).toFixed(3));
+            svg.appendChild(path);
+        });
+
+        const frostHost = buildFrostHost(refinedCells, w, h);
+        const immuneVeil = compact ? null : buildIndexImmuneFrost(drawer, rect);
+        if (compact) layer.replaceChildren(frostHost, svg);
+        else if (immuneVeil) layer.replaceChildren(frostHost, svg, immuneVeil);
+        else layer.replaceChildren(frostHost, svg);
+        drawer.classList.add('index-stone-fragments-ready', 'index-stone-frosted-ready');
+        drawer.dataset.stoneFragmentCount = String(partition.cells.length);
+        drawer.dataset.stoneCrackCount = String(partition.crackCount);
+        drawer.dataset.stoneFragmentSeed = String(seed >>> 0);
+        drawer.dataset.outerRimPits = JSON.stringify(partition.outerPits || {});
+
+        // v266 · expose the actual rendered stone polygons. The text rubbing
+        // engine consumes these slab faces directly: text is allowed only where
+        // a scanline intersects stone, so the complement becomes the crack mask.
+        // This avoids trying to reconstruct a centerline from variable-width,
+        // rounded negative seams.
+        window.__indexStoneFragmentGeometry = {
+            width: w,
+            height: h,
+            seed: seed >>> 0,
+            crackCount: partition.crackCount,
+            outerPits: partition.outerPits,
+            cells: refinedCells,
+            renderedAt: performance.now(),
+            crackImmunity: immuneVeil ? {
+                top: parseFloat(immuneVeil.style.top) || 0,
+                left: parseFloat(immuneVeil.style.left) || 0,
+                right: parseFloat(immuneVeil.style.right) || 0,
+                bottom: parseFloat(immuneVeil.style.bottom) || 0
+            } : null
+        };
+        window.dispatchEvent(new CustomEvent('index-stone-geometry-ready', {
+            detail: window.__indexStoneFragmentGeometry
+        }));
+    }
+
+    let raf = 0;
+    let initialRenderComplete = false;
+    function schedule() {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => requestAnimationFrame(() => {
+            render();
+            if (window.__indexStoneFragmentGeometry) initialRenderComplete = true;
+        }));
+    }
+
+    function scheduleInitialIdle() {
+        if (initialRenderComplete || window.__indexStoneFragmentGeometry) {
+            initialRenderComplete = true;
+            return;
+        }
+        // opt16 · historical name retained to keep call sites stable, but this is
+        // no longer an idle task. Index stone geometry belongs to critical startup.
+        window.StartupIdleQueue?.cancel?.('index-stone-initial');
+        schedule();
+    }
+
+    function ensureReady() {
+        if (window.__indexStoneFragmentGeometry) {
+            initialRenderComplete = true;
+            return;
+        }
+        window.StartupIdleQueue?.cancel?.('index-stone-initial');
+        schedule();
+    }
+
+    function install() {
+        const drawer = document.getElementById('ruin-mini-index-drawer');
+        if (!drawer) return;
+        if (drawer.dataset.ruinMiniStoneInstalled === 'true') {
+            schedule();
+            return;
+        }
+        drawer.dataset.ruinMiniStoneInstalled = 'true';
+        window.__indexStoneFragmentGeometry = null;
+        // v268 · if this preview shell preserves the page context between opens,
+        // force a fresh random seed unless the user explicitly supplied ?stone-seed=.
+        let queryHasSeed = false;
+        try {
+            queryHasSeed = new URLSearchParams(location.search).has('stone-seed');
+        } catch (_) {}
+        if (!queryHasSeed) seed = pageSeed(true);
+        window.rerollIndexStoneFragments = () => {
+            seed = pageSeed(true);
+            initialRenderComplete = true;
+            schedule();
+        };
+        window.ensureIndexStoneFragmentsReady = ensureReady;
+        ensureLayer(drawer);
+        if ('ResizeObserver' in window) {
+            const ro = new ResizeObserver(() => {
+                if (initialRenderComplete || window.__indexStoneFragmentGeometry) schedule();
+                else scheduleInitialIdle();
+            });
+            ro.observe(drawer);
+        } else {
+            window.addEventListener('resize', () => {
+                if (initialRenderComplete || window.__indexStoneFragmentGeometry) schedule();
+                else scheduleInitialIdle();
+            }, { passive: true });
+        }
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted && !queryHasSeed) {
+                seed = pageSeed(true);
+                schedule();
+            }
+        });
+        document.fonts?.ready?.then(() => {
+            if (initialRenderComplete || window.__indexStoneFragmentGeometry) schedule();
+            else scheduleInitialIdle();
+        }).catch(() => {});
+        scheduleInitialIdle();
+    }
+
+    window.installRuinMiniStoneFragments = install;
+    if (document.getElementById('ruin-mini-index-drawer')) install();
+})();
+// === RUIN MINI SOURCE STONE PORT END ===
