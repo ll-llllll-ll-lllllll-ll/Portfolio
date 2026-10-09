@@ -868,3 +868,117 @@
     display: none !important;
   }
 }
+
+
+/* ===== Mini Index Drawer · white slab + bottom protected index ===== */
+.room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-shell {
+  --index-stone-frost-bg: rgba(255,255,255,.965);
+  --index-stone-face-wash: rgba(255,255,255,.24);
+  --index-stone-immune-bg: #fff;
+}
+
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stone-layer .index-stone-frost-face {
+  background: rgba(255,255,255,.965) !important;
+  backdrop-filter:
+    blur(4.2px)
+    saturate(.90)
+    brightness(1.025) !important;
+  -webkit-backdrop-filter:
+    blur(4.2px)
+    saturate(.90)
+    brightness(1.025) !important;
+}
+
+/* The source immunity veil was a solid rectangle above the generated fragments.
+   In the miniature that rectangle was masking the lower half of the fractures
+   after the drawer opened. The protected index now owns a softer gradient veil. */
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stone-layer > .index-stone-crack-immunity {
+  display: none !important;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-content {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  top: var(--mini-index-handle-h,42px);
+  bottom: 0;
+  width: auto;
+  height: auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  pointer-events: none;
+  z-index: 3 !important;
+}
+
+/* Only the index survives. It sits at the very bottom and is protected by a
+   progressive white field: transparent above, increasingly opaque toward the
+   controls, so fractures remain readable until they approach the index. */
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stable-zone {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 36%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: clamp(54px,8.5%,84px) 9.5% 20px !important;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,.14) 18%,
+      rgba(255,255,255,.44) 34%,
+      rgba(255,255,255,.76) 52%,
+      rgba(255,255,255,.94) 70%,
+      rgba(255,255,255,1) 86%,
+      rgba(255,255,255,1) 100%
+    );
+  z-index: 14 !important;
+  isolation: isolate;
+  pointer-events: auto;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-title {
+  margin: 0;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: clamp(8px,.78vw,11px);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: .18em;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-system {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin: 0 auto;
+  width: min(92%,760px);
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-fracture-zone,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-top-title,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-columns,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-lex,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-bottom-labels {
+  display: none !important;
+}
+
+@media (max-width:760px) {
+  .room-view[data-room="ruin-atlas"] #ruin-mini-index-stable-zone {
+    min-height: 42%;
+    gap: 9px;
+    padding: 46px 7.5% 16px !important;
+  }
+
+  .room-view[data-room="ruin-atlas"] .ruin-mini-index-system {
+    width: 96%;
+    gap: 5px 10px;
+  }
+}
