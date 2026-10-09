@@ -982,3 +982,158 @@
     gap: 5px 10px;
   }
 }
+
+
+/* ===== Mini stele inscription · no frosted backing ===== */
+
+/* Remove the source's frosted-glass host entirely. The only visible surface is
+   now the white fragment geometry itself. */
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stone-layer > .index-stone-frost-host,
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stone-layer .index-stone-frost-face,
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stone-layer > .index-stone-crack-immunity {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* White stone, without a second translucent plate behind it. */
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stone-layer .index-stone-fragment-face {
+  fill: #fff !important;
+  fill-opacity: 1 !important;
+}
+
+/* Clear the previous protected-index gradient and every old index-system layer. */
+.room-view[data-room="ruin-atlas"] #ruin-mini-index-stable-zone,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-system,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-title,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-row,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-tags,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-tag {
+  display: none !important;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-content {
+  position: absolute !important;
+  inset: var(--mini-index-handle-h,42px) 0 0 !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  pointer-events: none !important;
+  z-index: 3 !important;
+}
+
+/* The inscription is an actual rubbing: the exact source stone-polygons are
+   applied as a CSS mask by syncMiniSourceStoneMask(), so glyphs disappear at
+   the same physical fractures as the white stele. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: rgba(23,24,19,.72);
+  font-family: "IBM Plex Sans JP", var(--serif);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  pointer-events: none;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Chinese / Japanese follow the Ruin Archive stele convention: vertical-rl. */
+html[lang="zh-Hans"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy,
+html[lang="ja"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy {
+  top: 5%;
+  bottom: 6%;
+  left: 19%;
+  right: 19%;
+  writing-mode: vertical-rl;
+  -webkit-writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  text-align: start;
+}
+
+html[lang="zh-Hans"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy {
+  font-size: clamp(9.5px,.82vw,12.4px);
+  line-height: 1.84;
+  letter-spacing: .10em;
+}
+
+html[lang="ja"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy {
+  left: 18%;
+  right: 18%;
+  font-size: clamp(9px,.78vw,11.9px);
+  line-height: 1.91;
+  letter-spacing: .055em;
+}
+
+/* English remains horizontal, matching the source site's inscription mode. */
+html[lang="en"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy {
+  top: 14%;
+  left: 15%;
+  right: 15%;
+  width: auto;
+  height: auto;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: normal;
+  text-align: left;
+  font-size: clamp(9px,.76vw,11.5px);
+  line-height: 1.72;
+  letter-spacing: .035em;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-stele-lead {
+  font-weight: 400;
+  color: rgba(23,24,19,.88);
+}
+
+html[lang="zh-Hans"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-lead {
+  font-size: 1.08em;
+  letter-spacing: .135em;
+}
+
+html[lang="ja"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-lead {
+  font-size: 1.08em;
+  letter-spacing: .085em;
+}
+
+html[lang="en"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-lead {
+  font-size: 1.06em;
+  letter-spacing: .055em;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-stele-separator,
+.room-view[data-room="ruin-atlas"] .ruin-mini-stele-body {
+  color: rgba(23,24,19,.70);
+}
+
+/* No old white protection slab behind the inscription. */
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-content::before,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-content::after {
+  content: none !important;
+  display: none !important;
+}
+
+@media (max-width:760px) {
+  html[lang="zh-Hans"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy,
+  html[lang="ja"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy {
+    top: 4%;
+    bottom: 5%;
+    left: 15%;
+    right: 15%;
+  }
+
+  html[lang="en"] .room-view[data-room="ruin-atlas"] .ruin-mini-stele-copy {
+    top: 12%;
+    left: 11%;
+    right: 11%;
+    font-size: 9px;
+  }
+}
