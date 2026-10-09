@@ -942,6 +942,12 @@ function renderRuinArchiveCabinetPreview() {
 
   var source = sourceCopy[state.lang] || sourceCopy.en;
   var drawer = drawerCopy[state.lang] || drawerCopy.zh;
+  var fractureCopy = {
+    zh: { button: "再碎裂", note: "瞬息万变的废墟，没有固定的模样。" },
+    en: { button: "fracture again", note: "A ruin in constant change has no fixed appearance." },
+    ja: { button: "もう一度砕く", note: "移ろい続ける廃墟に、定まった姿はない。" }
+  };
+  var fracture = fractureCopy[state.lang] || fractureCopy.zh;
 
   function indexRows() {
     return indexGroups.map(function(group, groupIndex) {
@@ -996,6 +1002,10 @@ function renderRuinArchiveCabinetPreview() {
           '</section>' +
         '</div>' +
       '</div>' +
+    '</div>' +
+    '<div class="ruin-mini-refracture-control">' +
+      '<button type="button" class="ruin-mini-refracture-button">' + escapeHtml(fracture.button) + '</button>' +
+      '<p class="ruin-mini-refracture-note">' + escapeHtml(fracture.note) + '</p>' +
     '</div>' +
     '<p class="ruin-mini-source ruin-mini-cabinet-source">' +
       escapeHtml(source.before) +
@@ -2758,6 +2768,8 @@ render();
       var scale = 1;
       var selectedTags = new Set();
       var cleanupTimers = [];
+      var fractureIteration = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
+      var archiveDamagePlan = { record: new Map(), garden: new Map() };
 
       function currentScale() {
         return Math.max(0.26, Math.min(0.84, system.clientHeight / 900));
@@ -2778,7 +2790,7 @@ render();
         system.style.setProperty("--mini-garden-stack-w", rightRailWidth.toFixed(2) + "px");
         system.style.setProperty("--mini-record-left", "0px");
         system.style.setProperty("--mini-garden-right", "0px");
-        system.style.setProperty("--mini-garden-bottom", (285 * scale).toFixed(2) + "px");
+        system.style.setProperty("--mini-garden-bottom", (355 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-record-extract-x", (190 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-garden-extract-x", (-205 * scale).toFixed(2) + "px");
         system.style.setProperty("--mini-garden-extract-top", (-255 * scale).toFixed(2) + "px");
@@ -2836,7 +2848,7 @@ render();
         indexDrawer.style.setProperty("--mini-index-handle-h",handleH.toFixed(2)+"px");
 
         var seed = hashString(
-          "mini-index-stone-v2:" + Math.round(w) + "x" + Math.round(h)
+          "mini-index-stone-v3:" + fractureIteration + ":" + Math.round(w) + "x" + Math.round(h)
         );
         var rand = seededRandom(seed);
 
@@ -3040,9 +3052,48 @@ render();
             mouthWidth:mouthWidth,
             mouthDepth:mouthDepth,
             profile:profile,
-            phase:crackRand()*Math.PI*2
+            phase:crackRand()*Math.PI*2,
+            branches:[]
           });
         }
+
+        // Secondary fissures: the source stele sometimes lets a main seam shed
+        // a shorter branch. Keep them sparse and lighter than the structural cuts.
+        cracks.forEach(function(crack, crackIndex){
+          var branchRand = seededRandom(seed ^ ((crackIndex + 11) * 1597334677));
+          var branchCount = branchRand() < .28 ? 0 : (branchRand() < .82 ? 1 : 2);
+          for(var bi=0;bi<branchCount;bi++){
+            if(crack.path.length < 4) continue;
+            var anchorIndex = 1 + Math.floor(branchRand() * (crack.path.length - 2));
+            var anchor = crack.path[anchorIndex];
+            var before = crack.path[Math.max(0,anchorIndex-1)];
+            var after = crack.path[Math.min(crack.path.length-1,anchorIndex+1)];
+            var baseDir = unit(after.x-before.x,after.y-before.y);
+            var sign = branchRand()<.5 ? -1 : 1;
+            var angle = sign * ((24 + branchRand()*31) * Math.PI/180);
+            var bd = {
+              x:baseDir.x*Math.cos(angle)-baseDir.y*Math.sin(angle),
+              y:baseDir.x*Math.sin(angle)+baseDir.y*Math.cos(angle)
+            };
+            var length = Math.min(w,h) * (.055 + branchRand()*.085);
+            var segCount = 3 + Math.floor(branchRand()*3);
+            var points=[{x:anchor.x,y:anchor.y}];
+            var bn={x:-bd.y,y:bd.x};
+            for(var bsi=1;bsi<=segCount;bsi++){
+              var bt=bsi/segCount;
+              var jitter=(branchRand()-.5)*Math.min(w,h)*.008*Math.sin(Math.PI*bt);
+              points.push({
+                x:anchor.x+bd.x*length*bt+bn.x*jitter,
+                y:anchor.y+bd.y*length*bt+bn.y*jitter
+              });
+            }
+            crack.branches.push({
+              path:points,
+              gap:.62+branchRand()*1.18,
+              phase:branchRand()*Math.PI*2
+            });
+          }
+        });
 
         function roughened(poly,index){
           var c=centroid(poly);
@@ -3147,6 +3198,32 @@ render();
             });
           }
 
+          crack.branches.forEach(function(branch){
+            for(var bsi=0;bsi<branch.path.length-1;bsi++){
+              var ba=branch.path[bsi], bb=branch.path[bsi+1];
+              var wave=.62+.38*Math.abs(Math.sin((bsi+.5)*1.7+branch.phase));
+              var branchGap=branch.gap*wave;
+
+              var bVoid=document.createElementNS(NS,"line");
+              bVoid.setAttribute("x1",ba.x.toFixed(2));
+              bVoid.setAttribute("y1",ba.y.toFixed(2));
+              bVoid.setAttribute("x2",bb.x.toFixed(2));
+              bVoid.setAttribute("y2",bb.y.toFixed(2));
+              bVoid.setAttribute("class","ruin-mini-index-crack-void ruin-mini-index-crack-branch-void");
+              bVoid.style.setProperty("--crack-gap",branchGap.toFixed(2)+"px");
+              crackGroup.appendChild(bVoid);
+
+              var bEdge=document.createElementNS(NS,"line");
+              bEdge.setAttribute("x1",ba.x.toFixed(2));
+              bEdge.setAttribute("y1",ba.y.toFixed(2));
+              bEdge.setAttribute("x2",bb.x.toFixed(2));
+              bEdge.setAttribute("y2",bb.y.toFixed(2));
+              bEdge.setAttribute("class","ruin-mini-index-crack-face ruin-mini-index-crack-branch-face");
+              bEdge.style.setProperty("--crack-face-alpha",(0.28+((bsi+crackIndex)%3)*.09).toFixed(2));
+              crackGroup.appendChild(bEdge);
+            }
+          });
+
           if(pts.length>2){
             addMouth(pts[0],pts[1],1);
             addMouth(pts[pts.length-1],pts[pts.length-2],0);
@@ -3166,6 +3243,14 @@ render();
             var gap=crack.baseGap*contactWave;
             maskSvg+='<line x1="'+a.x.toFixed(2)+'" y1="'+a.y.toFixed(2)+'" x2="'+b.x.toFixed(2)+'" y2="'+b.y.toFixed(2)+'" stroke="black" stroke-width="'+gap.toFixed(2)+'" stroke-linecap="round"/>';
           }
+          crack.branches.forEach(function(branch){
+            for(var bsi=0;bsi<branch.path.length-1;bsi++){
+              var ba=branch.path[bsi],bb=branch.path[bsi+1];
+              var wave=.62+.38*Math.abs(Math.sin((bsi+.5)*1.7+branch.phase));
+              var branchGap=branch.gap*wave;
+              maskSvg+='<line x1="'+ba.x.toFixed(2)+'" y1="'+ba.y.toFixed(2)+'" x2="'+bb.x.toFixed(2)+'" y2="'+bb.y.toFixed(2)+'" stroke="black" stroke-width="'+branchGap.toFixed(2)+'" stroke-linecap="round"/>';
+            }
+          });
           [0,crack.path.length-1].forEach(function(which){
             var endpoint=crack.path[which];
             var nextPoint=which===0?crack.path[1]:crack.path[crack.path.length-2];
@@ -3197,60 +3282,206 @@ render();
         indexDrawer.classList.add("stone-ready");
       }
 
+      function rebuildArchiveDamagePlan() {
+        archiveDamagePlan = { record: new Map(), garden: new Map() };
+
+        function put(map,index,damage){
+          if(index < 0) return;
+          map.set(index,damage);
+        }
+
+        function cluster(count,isRecord){
+          if(count <= 0) return;
+          var rand = seededRandom(hashString(
+            "mini-archive-cluster-v1:" + fractureIteration + ":" + (isRecord ? "record" : "garden")
+          ));
+          var map = isRecord ? archiveDamagePlan.record : archiveDamagePlan.garden;
+          var indices;
+          if(count >= 3){
+            var center = 1 + Math.floor(rand() * (count - 2));
+            indices = [center-1,center,center+1];
+          } else {
+            indices = Array.from({length:count},function(_,i){return i;});
+          }
+
+          // Port the source bias: left/record stack breaks mostly on its right
+          // edge; garden is more evenly distributed across top/left/right.
+          var roll=rand();
+          var side=isRecord
+            ? (roll<.20 ? "top" : (roll<.32 ? "left" : "right"))
+            : (roll<.36 ? "top" : (roll<.68 ? "left" : "right"));
+          var sharedT=isRecord ? .20+rand()*.30 : .24+rand()*.52;
+          var baseWidth=side==="top" ? 14+rand()*10 : 15+rand()*12;
+          var baseDepth=side==="top" ? 3.2+rand()*2.0 : 2.8+rand()*1.8;
+          var scales=indices.length===3 ? [.66,1,.72] : indices.length===2 ? [1,.72] : [1];
+
+          indices.forEach(function(index,i){
+            var sc=scales[i]||.72;
+            put(map,index,{
+              side:side,
+              t:Math.max(.14,Math.min(.84,sharedT+(rand()-.5)*.045)),
+              width:baseWidth*(.84+sc*.36),
+              depth:baseDepth*(.76+sc*.34)
+            });
+          });
+
+          // One or two isolated shallow chips keep the stack from becoming a
+          // perfectly repeated triplet, matching the source wear system.
+          var extras = count >= 7 ? 2 : 1;
+          for(var e=0;e<extras;e++){
+            if(rand()>.62) continue;
+            var idx=Math.floor(rand()*count);
+            if(map.has(idx)) continue;
+            var sideRoll=rand();
+            var extraSide=sideRoll<.34?"top":(sideRoll<.67?"left":"right");
+            put(map,idx,{
+              side:extraSide,
+              t:.18+rand()*.64,
+              width:8+rand()*10,
+              depth:1.8+rand()*2.1
+            });
+          }
+        }
+
+        cluster(recordStack.querySelectorAll(".ruin-mini-archive-doc").length,true);
+        cluster(gardenStack.querySelectorAll(".ruin-mini-archive-doc").length,false);
+      }
+
       function applyCut(doc, index, isGarden) {
         if (!doc || !doc.isConnected) return;
         var rect = doc.getBoundingClientRect();
         if (rect.width < 8 || rect.height < 8) return;
 
-        var w = rect.width;
-        var h = rect.height;
-        var rand = seededRandom(hashString((isGarden ? "mini-garden-" : "mini-record-") + index + "-cut-v2"));
+        var w=rect.width,h=rect.height;
+        var seedLabel=(isGarden?"mini-garden-":"mini-record-")+index+"-cut-v3:"+fractureIteration;
+        var rand=seededRandom(hashString(seedLabel));
 
-        // Larger geometric corner cuts than the prior pass, with four corners
-        // independently authored so the sheets do not read as one repeated icon.
-        var tl = (10 + rand() * 24) * scale;
-        var tr = (8 + rand() * 26) * scale;
-        var br = (rand() < 0.44 ? 7 + rand() * 20 : 0) * scale;
-        var bl = (rand() < 0.38 ? 7 + rand() * 18 : 0) * scale;
+        // Smaller corner chamfers than the previous pass.
+        var tl=(3.5+rand()*7.0)*scale;
+        var tr=(3.0+rand()*7.5)*scale;
+        var br=(rand()<.28 ? 2.5+rand()*5.5 : 0)*scale;
+        var bl=(rand()<.24 ? 2.5+rand()*5.0 : 0)*scale;
+        tl=Math.min(tl,w*.13,h*.075);
+        tr=Math.min(tr,w*.13,h*.075);
+        br=Math.min(br,w*.10,h*.060);
+        bl=Math.min(bl,w*.10,h*.060);
 
-        tl = Math.min(tl, w * 0.24, h * 0.15);
-        tr = Math.min(tr, w * 0.24, h * 0.15);
-        br = Math.min(br, w * 0.20, h * 0.12);
-        bl = Math.min(bl, w * 0.20, h * 0.12);
+        var damage=(isGarden?archiveDamagePlan.garden:archiveDamagePlan.record).get(index)||null;
 
-        var points = [
-          [tl,0],
-          [w-tr,0],
-          [w,tr],
-          [w,h-br],
-          [w-br,h],
-          [bl,h],
-          [0,h-bl],
-          [0,tl]
-        ];
+        function point(x,y){ return [x,y]; }
+        function edgeWithChip(a,b,side){
+          if(!damage||damage.side!==side) return [a,b];
+          var dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1;
+          var t=Math.max(.10,Math.min(.90,damage.t));
+          var half=Math.min(.16,Math.max(.025,(damage.width*scale*.5)/len));
+          var t0=Math.max(.02,t-half),t1=Math.min(.98,t+half);
+          var n;
+          if(side==="top") n=[0,1];
+          else if(side==="right") n=[-1,0];
+          else n=[1,0];
+          var depth=Math.min((damage.depth*scale),side==="top"?h*.055:w*.09);
+          var asym=.78+rand()*.42;
+          var samples=[
+            [0,0],
+            [.20,.18*asym],
+            [.42,.62],
+            [.54,1],
+            [.70,.54/asym],
+            [1,0]
+          ];
+          var out=[a];
+          samples.forEach(function(sample){
+            var et=t0+(t1-t0)*sample[0];
+            out.push([
+              a[0]+dx*et+n[0]*depth*sample[1],
+              a[1]+dy*et+n[1]*depth*sample[1]
+            ]);
+          });
+          out.push(b);
+          return out;
+        }
 
-        var polygon = points.map(function(p) {
-          return p[0].toFixed(2) + "px " + p[1].toFixed(2) + "px";
+        var tlTop=point(tl,0);
+        var trTop=point(w-tr,0);
+        var trRight=point(w,tr);
+        var brRight=point(w,h-br);
+        var brBottom=point(w-br,h);
+        var blBottom=point(bl,h);
+        var blLeft=point(0,h-bl);
+        var tlLeft=point(0,tl);
+
+        var top=edgeWithChip(tlTop,trTop,"top");
+        var right=edgeWithChip(trRight,brRight,"right");
+        var left=edgeWithChip(blLeft,tlLeft,"left");
+
+        var points=[];
+        points=points.concat(top);
+        points.push(trRight);
+        points=points.concat(right.slice(1));
+        points.push(brBottom,blBottom,blLeft);
+        points=points.concat(left.slice(1));
+
+        // Deduplicate adjacent points generated at edge junctions.
+        points=points.filter(function(p,i,arr){
+          if(i===0) return true;
+          var q=arr[i-1];
+          return Math.hypot(p[0]-q[0],p[1]-q[1])>.12;
+        });
+
+        var polygon=points.map(function(p){
+          return p[0].toFixed(2)+"px "+p[1].toFixed(2)+"px";
         }).join(", ");
-        var clip = "polygon(" + polygon + ")";
-        doc.style.clipPath = clip;
-        doc.style.webkitClipPath = clip;
-        doc.style.setProperty("--archive-doc-shape-clip", clip);
+        var clip="polygon("+polygon+")";
+        doc.style.clipPath=clip;
+        doc.style.webkitClipPath=clip;
+        doc.style.setProperty("--archive-doc-shape-clip",clip);
 
-        var oldOutline = doc.querySelector(":scope > .ruin-mini-archive-cut-outline");
-        if (oldOutline) oldOutline.remove();
+        doc.querySelectorAll(":scope > .ruin-mini-archive-cut-outline").forEach(function(node){node.remove();});
 
-        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("class", "ruin-mini-archive-cut-outline");
-        svg.setAttribute("viewBox", "0 0 " + w + " " + h);
-        svg.setAttribute("preserveAspectRatio", "none");
+        var NS="http://www.w3.org/2000/svg";
+        var svg=document.createElementNS(NS,"svg");
+        svg.setAttribute("class","ruin-mini-archive-cut-outline");
+        svg.setAttribute("viewBox","0 0 "+w+" "+h);
+        svg.setAttribute("preserveAspectRatio","none");
 
-        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", points.map(function(p, pointIndex) {
-          return (pointIndex ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2);
-        }).join(" ") + " Z");
+        var path=document.createElementNS(NS,"path");
+        path.setAttribute("d",points.map(function(p,pointIndex){
+          return (pointIndex?"L":"M")+p[0].toFixed(2)+" "+p[1].toFixed(2);
+        }).join(" ")+" Z");
         svg.appendChild(path);
-        doc.insertBefore(svg, doc.firstChild);
+
+        // A short interior continuation grows from some chips. It is subtle:
+        // the source system treats the missing edge as primary and the hairline
+        // continuation as secondary.
+        if(damage&&rand()<.58){
+          var crack=document.createElementNS(NS,"path");
+          var side=damage.side;
+          var startX,startY,angle,length;
+          if(side==="top"){
+            startX=w*damage.t;
+            startY=Math.min(h*.08,damage.depth*scale);
+            angle=(.34+rand()*.30)*Math.PI;
+          }else if(side==="right"){
+            startX=w-Math.min(w*.09,damage.depth*scale);
+            startY=h*damage.t;
+            angle=(.72+rand()*.18)*Math.PI;
+          }else{
+            startX=Math.min(w*.09,damage.depth*scale);
+            startY=h*(1-damage.t);
+            angle=(-.18-rand()*.18)*Math.PI;
+          }
+          length=(6+rand()*14)*scale;
+          var midX=startX+Math.cos(angle)*length*.52+(rand()-.5)*2*scale;
+          var midY=startY+Math.sin(angle)*length*.52+(rand()-.5)*2*scale;
+          var endX=startX+Math.cos(angle)*length;
+          var endY=startY+Math.sin(angle)*length;
+          crack.setAttribute("d","M"+startX.toFixed(2)+" "+startY.toFixed(2)+
+            " Q"+midX.toFixed(2)+" "+midY.toFixed(2)+" "+endX.toFixed(2)+" "+endY.toFixed(2));
+          crack.setAttribute("class","ruin-mini-archive-hairline-crack");
+          svg.appendChild(crack);
+        }
+
+        doc.insertBefore(svg,doc.firstChild);
       }
 
       function layoutStacks() {
@@ -3258,7 +3489,7 @@ render();
         setGeometryVariables();
 
         var recordDocs = Array.from(recordStack.querySelectorAll(".ruin-mini-archive-doc"));
-        var recordBaseTop = 390;
+        var recordBaseTop = 455;
         var recordGapY = 35;
         var recordGapX = 3.2;
 
@@ -3355,13 +3586,17 @@ render();
         gardenStack.appendChild(doc);
       });
 
+      rebuildArchiveDamagePlan();
       layoutStacks();
       renderMiniIndexStone();
 
       // Miniature port of the source index-drawer + procedural broken-stone rubbing:
       // slide the slab upward, and sink/restore the archive stacks around it.
       var surfaceTrigger = indexDrawer.querySelector(".ruin-mini-index-surface-trigger");
+      var cabinetShell = system.closest(".ruin-mini-cabinet-shell");
+      var refractureButton = document.querySelector(".ruin-mini-cabinet-section .ruin-mini-refracture-button");
       var drawerOpenTimer = 0;
+      var refractureTimer = 0;
 
       function setDrawerOpen(open) {
         indexDrawer.classList.toggle("open",open);
@@ -3416,6 +3651,41 @@ render();
         });
       });
 
+      var onRefracture = function(event) {
+        event.preventDefault();
+        if (!cabinetShell || cabinetShell.classList.contains("is-refracturing")) return;
+
+        if (refractureButton) refractureButton.disabled = true;
+        cabinetShell.classList.add("is-refracturing");
+
+        window.clearTimeout(refractureTimer);
+        refractureTimer = window.setTimeout(function() {
+          fractureIteration = (
+            fractureIteration +
+            1 +
+            Math.floor(Math.random() * 0x3fffffff)
+          ) >>> 0;
+
+          rebuildArchiveDamagePlan();
+          layoutStacks();
+          renderMiniIndexStone();
+
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              if (!cabinetShell || !cabinetShell.isConnected) return;
+              cabinetShell.classList.remove("is-refracturing");
+              window.setTimeout(function() {
+                if (refractureButton) refractureButton.disabled = false;
+              },360);
+            });
+          });
+        },230);
+      };
+
+      if (refractureButton) {
+        refractureButton.addEventListener("click",onRefracture);
+      }
+
       var onOutside = function(event) {
         if (!system.isConnected) return;
         if (indexDrawer.classList.contains("open") && !indexDrawer.contains(event.target)) {
@@ -3442,6 +3712,8 @@ render();
 
       ruinMiniArchiveCleanup = function() {
         window.clearTimeout(drawerOpenTimer);
+        window.clearTimeout(refractureTimer);
+        if (refractureButton) refractureButton.removeEventListener("click",onRefracture);
         cleanupTimers.forEach(window.clearTimeout);
         cleanupTimers = [];
         if (resizeRaf) cancelAnimationFrame(resizeRaf);
