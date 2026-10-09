@@ -10,7 +10,9 @@
   /* Clean rebuild: the frame is only a transparent outlined construction.
      No cracks, chips, filled material or random fracture geometry. */
   --ruin-mini-frame-top: 7.8%;
-  --ruin-mini-frame-bottom: 11.5%;
+  --ruin-mini-frame-bottom: 11.585%;
+  --ruin-mini-frame-left: 19.5%;
+  --ruin-mini-frame-right: 11.5%;
   --ruin-mini-frame-side: 15%;
   position: relative;
   width: 100%;
@@ -104,7 +106,7 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-tone-control.leaflet-bar {
-  margin: calc(var(--ruin-mini-frame-top) + 7px) calc(var(--ruin-mini-frame-side) + 7px) 0 0 !important;
+  margin: calc(var(--ruin-mini-frame-top) + 7px) calc(var(--ruin-mini-frame-right) + 7px) 0 0 !important;
   transform: scale(.88);
   transform-origin: top right;
 }
@@ -153,9 +155,11 @@
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-shell {
-    --ruin-mini-frame-top: 6.2%;
-    --ruin-mini-frame-bottom: 9%;
-    --ruin-mini-frame-side: 10.5%;
+    --ruin-mini-frame-top: 7.8%;
+    --ruin-mini-frame-bottom: 11.585%;
+    --ruin-mini-frame-left: 19.5%;
+    --ruin-mini-frame-right: 11.5%;
+    --ruin-mini-frame-side: 15%;
     aspect-ratio: 1.06 / 1;
   }
 
@@ -165,7 +169,7 @@
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-tone-control.leaflet-bar {
-    margin: calc(var(--ruin-mini-frame-top) + 4px) calc(var(--ruin-mini-frame-side) + 4px) 0 0 !important;
+    margin: calc(var(--ruin-mini-frame-top) + 4px) calc(var(--ruin-mini-frame-right) + 4px) 0 0 !important;
     transform: scale(.72);
   }
 
@@ -193,6 +197,7 @@
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-cabinet-shell {
+  --ruin-mini-page: #f7f5ef;
   overflow: hidden;
   background: transparent;
 }
@@ -363,7 +368,7 @@
   width: 100%;
   height: 79%;
   z-index: 190;
-  transform: translateY(calc(100% - 42px));
+  transform: translateY(calc(100% - var(--mini-index-handle-h, 42px)));
   transition: transform .4s cubic-bezier(.25,1,.5,1);
   pointer-events: auto;
   clip-path: var(--mini-index-drawer-shell-clip, polygon(0 42px, 19.5% 0, 88.5% 0, 100% 42px, 100% 100%, 0 100%));
@@ -377,7 +382,7 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  height: 42px;
+  height: var(--mini-index-handle-h, 42px);
   pointer-events: none;
 }
 
@@ -405,6 +410,30 @@
   vector-effect: non-scaling-stroke;
   stroke-linecap: butt;
   stroke-linejoin: bevel;
+}
+
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-crack-void {
+  stroke: var(--ruin-mini-page, #f7f5ef);
+  stroke-width: var(--crack-gap, 2px);
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-crack-face,
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-crack-mouth-edge {
+  fill: none;
+  stroke: var(--ruin-mini-line-strong, rgba(102,102,96,.72));
+  stroke-width: .78px;
+  stroke-opacity: var(--crack-face-alpha,.62);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.room-view[data-room="ruin-atlas"] .ruin-mini-index-crack-mouth {
+  fill: var(--ruin-mini-page, #f7f5ef);
+  stroke: none;
 }
 
 .room-view[data-room="ruin-atlas"] .ruin-mini-index-surface-trigger {
@@ -461,7 +490,7 @@
 .room-view[data-room="ruin-atlas"] .ruin-mini-index-content {
   position: relative;
   z-index: 2;
-  height: calc(100% - 42px);
+  height: calc(100% - var(--mini-index-handle-h, 42px));
   box-sizing: border-box;
   padding: 26px 9.5% 20px 12.5%;
   overflow-y: auto;
@@ -471,10 +500,10 @@
   backdrop-filter: none;
   -webkit-mask-image: var(--mini-index-stone-mask, none);
   mask-image: var(--mini-index-stone-mask, none);
-  -webkit-mask-size: 100% calc(100% + 42px);
-  mask-size: 100% calc(100% + 42px);
-  -webkit-mask-position: 0 -42px;
-  mask-position: 0 -42px;
+  -webkit-mask-size: 100% calc(100% + var(--mini-index-handle-h, 42px));
+  mask-size: 100% calc(100% + var(--mini-index-handle-h, 42px));
+  -webkit-mask-position: 0 calc(-1 * var(--mini-index-handle-h, 42px));
+  mask-position: 0 calc(-1 * var(--mini-index-handle-h, 42px));
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   scrollbar-width: none;
@@ -608,16 +637,16 @@
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-index-drawer {
     height: 82%;
-    transform: translateY(calc(100% - 34px));
-    clip-path: var(--mini-index-drawer-shell-clip, polygon(0 34px, 19.5% 0, 88.5% 0, 100% 34px, 100% 100%, 0 100%));
+    transform: translateY(calc(100% - var(--mini-index-handle-h, 34px)));
+    clip-path: var(--mini-index-drawer-shell-clip, polygon(0 var(--mini-index-handle-h, 34px), 19.5% 0, 88.5% 0, 100% var(--mini-index-handle-h, 34px), 100% 100%, 0 100%));
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-index-handle {
-    height: 34px;
+    height: var(--mini-index-handle-h, 34px);
   }
 
   .room-view[data-room="ruin-atlas"] .ruin-mini-index-content {
-    height: calc(100% - 34px);
+    height: calc(100% - var(--mini-index-handle-h, 34px));
     padding: 16px 8% 18px;
   }
 
