@@ -1,6 +1,6 @@
 "use strict";
 
-/* Ruin Archive miniature frame v4.0
+/* Ruin Archive miniature frame v4.3
    First clean rebuild step:
    - fully transparent frame
    - outer rectangle
@@ -77,12 +77,14 @@
 
     host.innerHTML = "";
 
-    var side = parsePct(shell, "--ruin-mini-frame-side", 0.069);
+    var legacySide = parsePct(shell, "--ruin-mini-frame-side", 0.069);
+    var leftPct = parsePct(shell, "--ruin-mini-frame-left", legacySide);
+    var rightPct = parsePct(shell, "--ruin-mini-frame-right", legacySide);
     var topPct = parsePct(shell, "--ruin-mini-frame-top", 0.036);
     var bottomPct = parsePct(shell, "--ruin-mini-frame-bottom", 0.0624);
 
-    var il = w * side;
-    var ir = w * (1 - side);
+    var il = w * leftPct;
+    var ir = w * (1 - rightPct);
     var it = h * topPct;
     var ib = h * (1 - bottomPct);
 
@@ -122,8 +124,8 @@
     var shell = document.querySelector('.room-view[data-room="ruin-atlas"] .ruin-mini-shell');
     if (!shell) return;
 
-    if (shell.dataset.cleanFrameV40 !== "1") {
-      shell.dataset.cleanFrameV40 = "1";
+    if (shell.dataset.cleanFrameV43 !== "1") {
+      shell.dataset.cleanFrameV43 = "1";
       architecture(shell);
     }
 
