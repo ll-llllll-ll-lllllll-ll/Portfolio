@@ -948,6 +948,12 @@ function renderRuinArchiveCabinetPreview() {
     ja: { button: "もう一度砕く", note: "移ろい続ける廃墟に、定まった姿はない。" }
   };
   var fracture = fractureCopy[state.lang] || fractureCopy.zh;
+  var indexHeadingCopy = {
+    zh: "索引系统",
+    en: "INDEX SYSTEM",
+    ja: "索引システム"
+  };
+  var indexHeading = indexHeadingCopy[state.lang] || indexHeadingCopy.zh;
 
   function indexRows() {
     return indexGroups.map(function(group, groupIndex) {
@@ -984,20 +990,10 @@ function renderRuinArchiveCabinetPreview() {
         '<div id="ruin-mini-index-stone-layer" class="ruin-mini-index-stone-layer" aria-hidden="true"></div>' +
         '<div id="ruin-mini-index-handle" class="ruin-mini-index-handle">' +
           '<button type="button" class="ruin-mini-index-surface-trigger" aria-expanded="false" aria-label="' + escapeHtml(drawer.center) + '"></button>' +
-          '<div class="ruin-mini-index-bottom-labels" aria-hidden="true">' +
-            '<span>' + escapeHtml(drawer.record) + '</span>' +
-            '<strong>' + escapeHtml(drawer.center) + '</strong>' +
-            '<span>' + escapeHtml(drawer.garden) + '</span>' +
-          '</div>' +
         '</div>' +
         '<div class="ruin-mini-index-content">' +
-          '<section class="ruin-mini-index-fracture-zone">' +
-            '<p class="ruin-mini-index-top-title">' + escapeHtml(drawer.intro) + '</p>' +
-            '<div class="ruin-mini-index-columns"><p>' + escapeHtml(drawer.p1) + '</p><p>' + escapeHtml(drawer.p2) + '</p></div>' +
-          '</section>' +
           '<section id="ruin-mini-index-stable-zone" class="ruin-mini-index-stable-zone">' +
-            '<div class="ruin-mini-index-title">' + escapeHtml(drawer.title) + '</div>' +
-            '<p class="ruin-mini-index-lex">' + escapeHtml(drawer.lex) + '</p>' +
+            '<div class="ruin-mini-index-title">' + escapeHtml(indexHeading) + '</div>' +
             '<div class="ruin-mini-index-system">' + indexRows() + '</div>' +
           '</section>' +
         '</div>' +
@@ -2868,8 +2864,8 @@ render();
           el.style.setProperty("mask-repeat","no-repeat");
         }
 
-        applySharedMask(indexDrawer.querySelector(".ruin-mini-index-fracture-zone"));
-        applySharedMask(indexDrawer.querySelector(".ruin-mini-index-bottom-labels"));
+        // The miniature now contains only the protected index system.
+        // Keep the stone geometry visible; do not cut the controls/text itself.
       }
 
       var onMiniStoneGeometry=function(event){
@@ -2877,7 +2873,15 @@ render();
       };
       window.addEventListener("index-stone-geometry-ready",onMiniStoneGeometry);
 
+      function syncMiniIndexDrawerBaseline() {
+        var shellHeight = system.clientHeight || 0;
+        if (!shellHeight) return;
+        var exactHandleH = shellHeight * (95 / 820);
+        indexDrawer.style.setProperty("--mini-index-handle-h",exactHandleH.toFixed(2)+"px");
+      }
+
       function renderMiniIndexStone() {
+        syncMiniIndexDrawerBaseline();
         if(typeof window.installRuinMiniStoneFragments==="function"){
           window.installRuinMiniStoneFragments();
         }
@@ -3206,6 +3210,7 @@ render();
       var refractureTimer = 0;
 
       function setDrawerOpen(open) {
+        syncMiniIndexDrawerBaseline();
         indexDrawer.classList.toggle("open",open);
         if (surfaceTrigger) surfaceTrigger.setAttribute("aria-expanded",open ? "true" : "false");
 
